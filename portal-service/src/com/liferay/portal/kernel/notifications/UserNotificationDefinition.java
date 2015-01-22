@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,14 +22,18 @@ import java.util.Map;
  */
 public class UserNotificationDefinition {
 
+	public static final int NOTIFICATION_TYPE_ADD_ENTRY = 0;
+
+	public static final int NOTIFICATION_TYPE_UPDATE_ENTRY = 1;
+
 	public UserNotificationDefinition(
 		String portletId, long classNameId, int notificationType,
 		String description) {
 
-		_classNameId = classNameId;
-		_description = description;
-		_notificationType = notificationType;
 		_portletId = portletId;
+		_classNameId = classNameId;
+		_notificationType = notificationType;
+		_description = description;
 	}
 
 	public void addUserNotificationDeliveryType(
@@ -68,12 +72,11 @@ public class UserNotificationDefinition {
 		return _userNotificationDeliveryTypes;
 	}
 
-	private long _classNameId;
-	private String _description;
-	private int _notificationType;
-	private String _portletId;
-	private Map<Integer, UserNotificationDeliveryType>
-		_userNotificationDeliveryTypes =
-			new HashMap<Integer, UserNotificationDeliveryType>();
+	private final long _classNameId;
+	private final String _description;
+	private final int _notificationType;
+	private final String _portletId;
+	private final Map<Integer, UserNotificationDeliveryType>
+		_userNotificationDeliveryTypes = new HashMap<>();
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,17 +23,17 @@ import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.messaging.MessageListenerException;
 import com.liferay.portal.kernel.messaging.SynchronousDestination;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
-import com.liferay.portal.kernel.nio.intraband.MockIntraband;
-import com.liferay.portal.kernel.nio.intraband.MockRegistrationReference;
 import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerUtilAdvice;
 import com.liferay.portal.kernel.nio.intraband.SystemDataType;
+import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
+import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.NewEnv;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJMockingNewClassLoaderJUnitTestRunner;
-
-import java.lang.reflect.Field;
+import com.liferay.portal.test.AspectJNewEnvTestRule;
 
 import java.nio.ByteBuffer;
 
@@ -41,20 +41,22 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(AspectJMockingNewClassLoaderJUnitTestRunner.class)
 public class MessageDatagramReceiveHandlerTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			CodeCoverageAssertor.INSTANCE, AspectJNewEnvTestRule.INSTANCE);
 
 	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testDoReceive1() throws Exception {
 
@@ -132,7 +134,7 @@ public class MessageDatagramReceiveHandlerTest {
 		// Normal destination, synchronized, with listener
 
 		final AtomicReference<Message> messageReference =
-			new AtomicReference<Message>();
+			new AtomicReference<>();
 
 		baseDestination.register(
 			new MessageListener() {
@@ -205,7 +207,7 @@ public class MessageDatagramReceiveHandlerTest {
 			MessageDatagramReceiveHandlerTest.class.getName());
 
 		final AtomicReference<MessageRoutingBag> messageRoutingBagReference =
-			new AtomicReference<MessageRoutingBag>();
+			new AtomicReference<>();
 
 		IntrabandBridgeDestination intrabandBridgeDestination =
 			new IntrabandBridgeDestination(baseDestination) {
@@ -255,9 +257,8 @@ public class MessageDatagramReceiveHandlerTest {
 	}
 
 	protected void assertMessageRoutingBagEquals(
-			MessageRoutingBag expectedMessageRoutingBag,
-			MessageRoutingBag actualMessageRoutingBag)
-		throws Exception {
+		MessageRoutingBag expectedMessageRoutingBag,
+		MessageRoutingBag actualMessageRoutingBag) {
 
 		Assert.assertEquals(
 			expectedMessageRoutingBag.getDestinationName(),
@@ -265,17 +266,15 @@ public class MessageDatagramReceiveHandlerTest {
 		Assert.assertEquals(
 			expectedMessageRoutingBag.isRoutingDowncast(),
 			actualMessageRoutingBag.isRoutingDowncast());
-
-		Field routingTraceField = ReflectionUtil.getDeclaredField(
-			MessageRoutingBag.class, "_routingTrace");
-
 		Assert.assertEquals(
-			routingTraceField.get(expectedMessageRoutingBag),
-			routingTraceField.get(actualMessageRoutingBag));
+			ReflectionTestUtil.getFieldValue(
+				expectedMessageRoutingBag, "_routingTrace"),
+			ReflectionTestUtil.getFieldValue(
+				actualMessageRoutingBag, "_routingTrace"));
 	}
 
-	private MockIntraband _mockIntraband = new MockIntraband();
-	private MockRegistrationReference _mockRegistrationReference =
+	private final MockIntraband _mockIntraband = new MockIntraband();
+	private final MockRegistrationReference _mockRegistrationReference =
 		new MockRegistrationReference(_mockIntraband);
 
 }

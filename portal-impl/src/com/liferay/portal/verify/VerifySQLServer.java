@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -250,7 +250,7 @@ public class VerifySQLServer extends VerifyProcess {
 	}
 
 	protected List<String> getPrimaryKeyColumnNames(String indexName) {
-		List<String> columnNames = new ArrayList<String>();
+		List<String> columnNames = new ArrayList<>();
 
 		Connection con = null;
 		PreparedStatement ps = null;
@@ -299,10 +299,12 @@ public class VerifySQLServer extends VerifyProcess {
 			"'Cyrus%') and (sysobjects.name not like 'QUARTZ%')";
 
 	private static final String _FILTER_NONUNICODE_DATA_TYPES =
-		"((systypes.name = 'varchar') OR (systypes.name = 'text'))";
+		"((systypes.name = 'ntext') OR (systypes.name = 'text') OR " +
+			"(systypes.name = 'varchar'))";
 
-	private static Log _log = LogFactoryUtil.getLog(VerifySQLServer.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		VerifySQLServer.class);
 
-	private List<String> _addPrimaryKeySQLs = new ArrayList<String>();
+	private final List<String> _addPrimaryKeySQLs = new ArrayList<>();
 
 }

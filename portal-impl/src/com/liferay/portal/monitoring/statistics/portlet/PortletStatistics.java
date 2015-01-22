@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -121,14 +121,14 @@ public class PortletStatistics
 		_resourceRequestStatistics.reset();
 	}
 
-	private RequestStatistics _actionRequestStatistics;
-	private String _displayName;
-	private RequestStatistics _eventRequestStatistics;
-	private String _portletId;
-	private String _portletName;
-	private RequestStatistics _renderRequestStatistics;
-	private Map<PortletRequestType, RequestStatistics> _requestStatistics =
-		new HashMap<PortletRequestType, RequestStatistics>();
-	private RequestStatistics _resourceRequestStatistics;
+	private final RequestStatistics _actionRequestStatistics;
+	private final String _displayName;
+	private final RequestStatistics _eventRequestStatistics;
+	private final String _portletId;
+	private final String _portletName;
+	private final RequestStatistics _renderRequestStatistics;
+	private final Map<PortletRequestType, RequestStatistics>
+		_requestStatistics = new HashMap<>();
+	private final RequestStatistics _resourceRequestStatistics;
 
 }

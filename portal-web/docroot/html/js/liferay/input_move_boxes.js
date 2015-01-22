@@ -97,27 +97,44 @@ AUI.add(
 					_afterMoveClick: function(event) {
 						var instance = this;
 
-						var cssClass;
 						var target = event.domEvent.target;
 						var targetBtn = target.ancestor('.btn', true);
 
 						if (targetBtn) {
-							cssClass = targetBtn.get('className');
-						}
+							var cssClass = targetBtn.get('className');
 
-						var from = instance._leftBox;
-						var to = instance._rightBox;
-						var sort;
+							var from = instance._leftBox;
+							var to = instance._rightBox;
+							var sort = !instance.get('rightReorder');
 
-						if (cssClass.indexOf('move-right') !== -1) {
-							from = instance._rightBox;
-							to = instance._leftBox;
-							sort = !instance.get('rightReorder');
-						}
-						else {
-							sort = !instance.get('leftReorder');
-						}
+							if (cssClass.indexOf('move-right') !== -1) {
+								from = instance._rightBox;
+								to = instance._leftBox;
+								sort = !instance.get('leftReorder');
+							}
 
+							instance._moveItem(from, to, sort);
+						}
+					},
+
+					_afterOrderClick: function(event, box) {
+						var target = event.domEvent.target;
+						var targetBtn = target.ancestor('.btn', true);
+
+						if (targetBtn) {
+							var cssClass = targetBtn.get('className');
+
+							var direction = 1;
+
+							if (cssClass.indexOf('reorder-up') !== -1) {
+								direction = 0;
+							}
+
+							Util.reorder(box, direction);
+						}
+					},
+
+					_moveItem: function(from, to, sort) {
 						Util.moveItem(from, to, sort);
 
 						Liferay.fire(
@@ -129,28 +146,10 @@ AUI.add(
 						);
 					},
 
-					_afterOrderClick: function(event, box) {
-						var cssClass;
-						var target = event.domEvent.target;
-						var targetBtn = target.ancestor('.btn', true);
-
-						if (targetBtn) {
-							cssClass = targetBtn.get('className');
-						}
-
-						var direction = 1;
-
-						if (cssClass.indexOf('reorder-up') !== -1) {
-							direction = 0;
-						}
-
-						Util.reorder(box, direction);
-					},
-
 					_onSelectFocus: function(event, box) {
 						var instance = this;
 
-						box.set('selectedIndex', '-1');
+						box.attr('selectedIndex', '-1');
 					},
 
 					_renderBoxes: function() {
@@ -166,10 +165,9 @@ AUI.add(
 						var instance = this;
 
 						var contentBox = instance.get('contentBox');
+						var strings = instance.get('strings');
 
 						var moveButtonsColumn = contentBox.one('.move-arrow-buttons');
-
-						var strings = instance.get('strings');
 
 						if (moveButtonsColumn) {
 							instance._moveToolbar = new A.Toolbar(
@@ -181,22 +179,22 @@ AUI.add(
 											{
 												cssClass: 'move-left',
 												icon: 'icon-circle-arrow-right',
-												title: strings.MOVE_LEFT,
 												on: {
 													click: function(event) {
 														event.domEvent.preventDefault();
 													}
-												}
+												},
+												title: strings.MOVE_LEFT
 											},
 											{
 												cssClass: 'move-right',
 												icon: 'icon-circle-arrow-left',
-												title: strings.MOVE_RIGHT,
 												on: {
 													click: function(event) {
 														event.domEvent.preventDefault();
 													}
-												}
+												},
+												title: strings.MOVE_RIGHT
 											}
 										]
 									]

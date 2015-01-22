@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,19 +26,23 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.ElementHandler;
 import com.liferay.portal.kernel.xml.ElementProcessor;
+import com.liferay.portal.security.xml.SecureXMLFactoryProviderUtil;
 
 import java.io.StringReader;
 
 import java.util.Set;
 
-import org.apache.xerces.parsers.SAXParser;
-
 import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
 
 /**
  * @author Zsolt Berentey
  */
 public class DeletionSystemEventImporter {
+
+	public static DeletionSystemEventImporter getInstance() {
+		return _instance;
+	}
 
 	public void importDeletionSystemEvents(
 			final PortletDataContext portletDataContext)
@@ -59,7 +63,7 @@ public class DeletionSystemEventImporter {
 			return;
 		}
 
-		SAXParser saxParser = new SAXParser();
+		XMLReader xmlReader = SecureXMLFactoryProviderUtil.newXMLReader();
 
 		ElementHandler elementHandler = new ElementHandler(
 			new ElementProcessor() {
@@ -72,9 +76,9 @@ public class DeletionSystemEventImporter {
 			},
 			new String[] {"deletion-system-event"});
 
-		saxParser.setContentHandler(elementHandler);
+		xmlReader.setContentHandler(elementHandler);
 
-		saxParser.parse(new InputSource(new StringReader(xml)));
+		xmlReader.parse(new InputSource(new StringReader(xml)));
 	}
 
 	protected void doImportDeletionSystemEvents(
@@ -109,7 +113,13 @@ public class DeletionSystemEventImporter {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private DeletionSystemEventImporter() {
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
 		DeletionSystemEventImporter.class);
+
+	private static final DeletionSystemEventImporter _instance =
+		new DeletionSystemEventImporter();
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -74,8 +74,7 @@ public class PrettyDateFormat extends DateFormat {
 
 		if (dateString.equals(dateFormatDate.format(today))) {
 			dateString =
-				_todayString + StringPool.SPACE +
-					dateFormatTime.format(date);
+				_todayString + StringPool.SPACE + dateFormatTime.format(date);
 		}
 		else if (dateString.equals(dateFormatDate.format(yesterday))) {
 			dateString =
@@ -119,9 +118,9 @@ public class PrettyDateFormat extends DateFormat {
 		return dateFormatDateTime.parse(dateString, new ParsePosition(0));
 	}
 
-	private Locale _locale;
-	private TimeZone _timeZone;
-	private String _todayString;
-	private String _yesterdayString;
+	private final Locale _locale;
+	private final TimeZone _timeZone;
+	private final String _todayString;
+	private final String _yesterdayString;
 
 }

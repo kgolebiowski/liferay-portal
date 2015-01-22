@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,9 +28,9 @@ import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.ac.AccessControlUtil;
-import com.liferay.portal.security.auth.AuthSettingsUtil;
 import com.liferay.portal.security.auth.AuthTokenUtil;
 import com.liferay.portal.security.auth.PortalSessionAuthVerifier;
+import com.liferay.portal.security.sso.SSOUtil;
 import com.liferay.portal.servlet.SharedSessionServletRequest;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsValues;
@@ -68,7 +68,6 @@ public abstract class JSONAction extends Action {
 		}
 
 		String callback = ParamUtil.getString(request, "callback");
-		String instance = ParamUtil.getString(request, "inst");
 
 		String json = null;
 
@@ -79,9 +78,6 @@ public abstract class JSONAction extends Action {
 
 			if (Validator.isNotNull(callback)) {
 				json = callback + "(" + json + ");";
-			}
-			else if (Validator.isNotNull(instance)) {
-				json = "var " + instance + "=" + json + ";";
 			}
 		}
 		catch (SecurityException se) {
@@ -113,13 +109,11 @@ public abstract class JSONAction extends Action {
 				HttpHeaders.CACHE_CONTROL,
 				HttpHeaders.CACHE_CONTROL_NO_CACHE_VALUE);
 
-			OutputStream outputStream = response.getOutputStream();
+			try (OutputStream outputStream = response.getOutputStream()) {
+				byte[] bytes = json.getBytes(StringPool.UTF8);
 
-			byte[] bytes = json.getBytes(StringPool.UTF8);
-
-			outputStream.write(bytes);
-
-			outputStream.close();
+				outputStream.write(bytes);
+			}
 		}
 
 		return null;
@@ -159,7 +153,7 @@ public abstract class JSONAction extends Action {
 		}
 
 		if (PropsValues.JSON_SERVICE_AUTH_TOKEN_ENABLED) {
-			if (!AuthSettingsUtil.isAccessAllowed(request, _hostsAllowed)) {
+			if (!SSOUtil.isAccessAllowed(request, _hostsAllowed)) {
 				AuthTokenUtil.checkCSRFToken(request, getCSRFOrigin(request));
 			}
 		}
@@ -223,9 +217,9 @@ public abstract class JSONAction extends Action {
 		return true;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(JSONAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(JSONAction.class);
 
-	private Set<String> _hostsAllowed = SetUtil.fromArray(
+	private final Set<String> _hostsAllowed = SetUtil.fromArray(
 		PropsValues.JSON_SERVICE_AUTH_TOKEN_HOSTS_ALLOWED);
 	private ServletContext _servletContext;
 

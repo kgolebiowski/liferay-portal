@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -37,7 +37,7 @@ public class DateFieldRenderer extends BaseFieldRenderer {
 	protected String doRender(Field field, Locale locale) throws Exception {
 		Format format = FastDateFormatFactoryUtil.getDate(locale);
 
-		List<String> values = new ArrayList<String>();
+		List<String> values = new ArrayList<>();
 
 		for (Serializable value : field.getValues(locale)) {
 			if (Validator.isNull(value)) {

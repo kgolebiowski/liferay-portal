@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.dynamicdatamapping.model.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
 import com.liferay.portlet.dynamicdatamapping.service.DDMTemplateLocalServiceUtil;
@@ -31,6 +31,7 @@ import com.liferay.portlet.dynamicdatamapping.service.DDMTemplateLocalServiceUti
  * @see com.liferay.portlet.dynamicdatamapping.model.DDMTemplate
  * @generated
  */
+@ProviderType
 public abstract class DDMTemplateBaseImpl extends DDMTemplateModelImpl
 	implements DDMTemplate {
 	/*
@@ -39,7 +40,7 @@ public abstract class DDMTemplateBaseImpl extends DDMTemplateModelImpl
 	 * Never modify or reference this class directly. All methods that expect a d d m template model instance should use the {@link DDMTemplate} interface instead.
 	 */
 	@Override
-	public void persist() throws SystemException {
+	public void persist() {
 		if (this.isNew()) {
 			DDMTemplateLocalServiceUtil.addDDMTemplate(this);
 		}

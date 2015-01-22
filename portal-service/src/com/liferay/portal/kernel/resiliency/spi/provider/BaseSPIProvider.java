@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,13 +16,16 @@ package com.liferay.portal.kernel.resiliency.spi.provider;
 
 import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
 import com.liferay.portal.kernel.nio.intraband.welder.Welder;
-import com.liferay.portal.kernel.process.ProcessExecutor;
+import com.liferay.portal.kernel.process.ProcessChannel;
+import com.liferay.portal.kernel.process.ProcessConfig.Builder;
+import com.liferay.portal.kernel.process.ProcessExecutorUtil;
 import com.liferay.portal.kernel.resiliency.PortalResiliencyException;
 import com.liferay.portal.kernel.resiliency.mpi.MPIHelperUtil;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
 import com.liferay.portal.kernel.resiliency.spi.SPIConfiguration;
 import com.liferay.portal.kernel.resiliency.spi.remote.RemoteSPI;
 import com.liferay.portal.kernel.resiliency.spi.remote.RemoteSPIProxy;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 
 import java.util.concurrent.Callable;
@@ -43,7 +46,13 @@ public abstract class BaseSPIProvider implements SPIProvider {
 	public SPI createSPI(SPIConfiguration spiConfiguration)
 		throws PortalResiliencyException {
 
-		String classPath = getClassPath();
+		Builder builder = new Builder();
+
+		builder.setArguments(spiConfiguration.getJVMArguments());
+		builder.setBootstrapClassPath(getClassPath());
+		builder.setJavaExecutable(spiConfiguration.getJavaExecutable());
+		builder.setReactClassLoader(PortalClassLoaderUtil.getClassLoader());
+		builder.setRuntimeClassPath(getClassPath());
 
 		RemoteSPI remoteSPI = createRemoteSPI(spiConfiguration);
 
@@ -53,8 +62,7 @@ public abstract class BaseSPIProvider implements SPIProvider {
 			SPISynchronousQueueUtil.createSynchronousQueue(spiUUID);
 
 		FutureTask<RegistrationReference> weldServerFutureTask =
-			new FutureTask<RegistrationReference>(
-				new WeldServerCallable(remoteSPI.getWelder()));
+			new FutureTask<>(new WeldServerCallable(remoteSPI.getWelder()));
 
 		Thread weldServerThread = new Thread(
 			weldServerFutureTask,
@@ -65,9 +73,11 @@ public abstract class BaseSPIProvider implements SPIProvider {
 		weldServerThread.start();
 
 		try {
-			Future<SPI> cancelHandlerFuture = ProcessExecutor.execute(
-				spiConfiguration.getJavaExecutable(), classPath,
-				spiConfiguration.getJVMArguments(), remoteSPI);
+			ProcessChannel<SPI> processChannel = ProcessExecutorUtil.execute(
+				builder.build(), remoteSPI);
+
+			Future<SPI> cancelHandlerFuture =
+				processChannel.getProcessNoticeableFuture();
 
 			SPI spi = synchronousQueue.poll(
 				spiConfiguration.getRegisterTimeout(), TimeUnit.MILLISECONDS);

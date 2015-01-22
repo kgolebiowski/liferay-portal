@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,39 +16,73 @@ package com.liferay.portlet.documentlibrary.service;
 
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.model.Group;
+import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileShortcut;
 import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
-import com.liferay.portlet.documentlibrary.util.DLAppTestUtil;
+import com.liferay.portlet.documentlibrary.util.test.DLAppTestUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.testng.Assert;
 
 /**
  * @author Shinn Lok
  */
-@ExecutionTestListeners(listeners = {MainServletExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class DLFileShortcutLocalServiceTreeTest {
 
-	@After
-	public void tearDown() throws Exception {
-		for (int i = _dlFileShortcuts.size() - 1; i >= 0; i--) {
-			DLFileShortcutLocalServiceUtil.deleteDLFileShortcut(
-				_dlFileShortcuts.get(i));
-		}
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
-		DLAppLocalServiceUtil.deleteFileEntry(_fileEntry.getFileEntryId());
-		DLAppLocalServiceUtil.deleteFolder(_folder.getFolderId());
+	@Before
+	public void setUp() throws Exception {
+		_group = GroupTestUtil.addGroup();
+	}
+
+	@Test
+	public void testFileShortcutTreePathWhenMovingSubfolderWithFileShortcut()
+		throws Exception {
+
+		Folder folderA = DLAppTestUtil.addFolder(
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Folder A");
+
+		Folder folderAA = DLAppTestUtil.addFolder(
+			_group.getGroupId(), folderA.getFolderId(), "Folder AA");
+
+		FileEntry fileEntry = DLAppTestUtil.addFileEntry(
+			_group.getGroupId(), folderA.getFolderId(), "Entry.txt");
+
+		DLFileShortcut dlFileShortcut = DLAppTestUtil.addDLFileShortcut(
+			fileEntry, TestPropsValues.getGroupId(), folderAA.getFolderId());
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		DLAppLocalServiceUtil.moveFolder(
+			TestPropsValues.getUserId(), folderAA.getFolderId(),
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, serviceContext);
+
+		dlFileShortcut = DLFileShortcutLocalServiceUtil.getDLFileShortcut(
+			dlFileShortcut.getFileShortcutId());
+
+		Assert.assertEquals(
+			dlFileShortcut.buildTreePath(), dlFileShortcut.getTreePath());
 	}
 
 	@Test
@@ -75,8 +109,8 @@ public class DLFileShortcutLocalServiceTreeTest {
 
 	protected void createTree() throws Exception {
 		_fileEntry = DLAppTestUtil.addFileEntry(
-			TestPropsValues.getGroupId(),
-			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Entry A.txt");
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Entry A.txt");
 
 		DLFileShortcut dlFileShortcutA = DLAppTestUtil.addDLFileShortcut(
 			_fileEntry, TestPropsValues.getGroupId(),
@@ -85,8 +119,8 @@ public class DLFileShortcutLocalServiceTreeTest {
 		_dlFileShortcuts.add(dlFileShortcutA);
 
 		_folder = DLAppTestUtil.addFolder(
-			TestPropsValues.getGroupId(),
-			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Folder A");
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Folder A");
 
 		DLFileShortcut dlFileShortcutAA = DLAppTestUtil.addDLFileShortcut(
 			_fileEntry, TestPropsValues.getGroupId(), _folder.getFolderId());
@@ -94,9 +128,11 @@ public class DLFileShortcutLocalServiceTreeTest {
 		_dlFileShortcuts.add(dlFileShortcutAA);
 	}
 
-	private List<DLFileShortcut> _dlFileShortcuts =
-		new ArrayList<DLFileShortcut>();
+	private final List<DLFileShortcut> _dlFileShortcuts = new ArrayList<>();
 	private FileEntry _fileEntry;
 	private Folder _folder;
+
+	@DeleteAfterTestRun
+	private Group _group;
 
 }

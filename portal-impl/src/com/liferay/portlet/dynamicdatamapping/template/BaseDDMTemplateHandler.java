@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,13 +15,11 @@
 package com.liferay.portlet.dynamicdatamapping.template;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.mobile.device.Device;
 import com.liferay.portal.kernel.template.BaseTemplateHandler;
 import com.liferay.portal.kernel.template.TemplateVariableCodeHandler;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
 import com.liferay.portal.kernel.templateparser.TemplateNode;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
@@ -44,7 +42,7 @@ public abstract class BaseDDMTemplateHandler extends BaseTemplateHandler {
 		throws Exception {
 
 		Map<String, TemplateVariableGroup> templateVariableGroups =
-			new LinkedHashMap<String, TemplateVariableGroup>();
+			new LinkedHashMap<>();
 
 		addTemplateVariableGroup(
 			templateVariableGroups, getGeneralVariablesTemplateVariableGroup());
@@ -89,12 +87,9 @@ public abstract class BaseDDMTemplateHandler extends BaseTemplateHandler {
 		return templateVariableGroup;
 	}
 
-	protected abstract TemplateVariableCodeHandler
-		getTemplateVariableCodeHandler();
-
 	protected TemplateVariableGroup getStructureFieldsTemplateVariableGroup(
 			long ddmStructureId, Locale locale)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (ddmStructureId <= 0) {
 			return null;
@@ -109,10 +104,6 @@ public abstract class BaseDDMTemplateHandler extends BaseTemplateHandler {
 		List<String> fieldNames = ddmStructure.getRootFieldNames();
 
 		for (String fieldName : fieldNames) {
-			if (fieldName.startsWith(StringPool.UNDERLINE)) {
-				continue;
-			}
-
 			String label = ddmStructure.getFieldLabel(fieldName, locale);
 			String tip = ddmStructure.getFieldTip(fieldName, locale);
 			String dataType = ddmStructure.getFieldDataType(fieldName);
@@ -125,6 +116,9 @@ public abstract class BaseDDMTemplateHandler extends BaseTemplateHandler {
 
 		return templateVariableGroup;
 	}
+
+	protected abstract TemplateVariableCodeHandler
+		getTemplateVariableCodeHandler();
 
 	protected TemplateVariableGroup getUtilTemplateVariableGroup() {
 		TemplateVariableGroup templateVariableGroup = new TemplateVariableGroup(

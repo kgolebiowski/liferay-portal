@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -52,14 +52,14 @@
 				</aui:script>
 			</c:when>
 			<c:otherwise>
-				<ul class="unstyled">
+				<ul class="list-unstyled <%= displayStyle %>">
 
 					<%
 					for (int i = 0; i < typesArray.length; i++) {
 						String styleClass = "taglib-social-bookmark-" + typesArray[i];
 					%>
 
-						<li class="<%= styleClass %>">
+						<li class="taglib-social-bookmark <%= styleClass %>">
 							<liferay-ui:social-bookmark contentId="<%= contentId %>" displayStyle="<%= displayStyle %>"  target="<%= target %>" title="<%= title %>" type="<%= typesArray[i] %>" url="<%= url %>" />
 						</li>
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,13 +19,22 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.aui.base.BaseButtonTag;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.tagext.BodyTag;
 
 /**
  * @author Julio Camarero
  * @author Jorge Ferrer
  * @author Brian Wing Shun Chan
  */
-public class ButtonTag extends BaseButtonTag {
+public class ButtonTag extends BaseButtonTag implements BodyTag {
+
+	@Override
+	public int doStartTag() throws JspException {
+		super.doStartTag();
+
+		return BodyTag.EVAL_BODY_BUFFERED;
+	}
 
 	@Override
 	public void setIconAlign(String iconAlign) {

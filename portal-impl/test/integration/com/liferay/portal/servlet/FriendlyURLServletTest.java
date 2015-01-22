@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,50 +15,51 @@
 package com.liferay.portal.servlet;
 
 import com.liferay.portal.NoSuchGroupException;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextThreadLocal;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.LayoutTestUtil;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.util.Portal;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
 
 import java.util.Collections;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import org.testng.Assert;
 
 /**
  * @author László Csontos
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-@Transactional
 public class FriendlyURLServletTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext();
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext();
 
 		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+		_group = GroupTestUtil.addGroup();
 	}
 
 	@After
@@ -68,13 +69,10 @@ public class FriendlyURLServletTest {
 
 	@Test
 	public void testGetRedirectWithExistentSite() throws Exception {
-		Group group = GroupTestUtil.addGroup();
-
-		Layout layout = LayoutTestUtil.addLayout(
-			group.getGroupId(), ServiceTestUtil.randomString());
+		Layout layout = LayoutTestUtil.addLayout(_group);
 
 		testGetRedirect(
-			getPath(group, layout), Portal.PATH_MAIN,
+			getPath(_group, layout), Portal.PATH_MAIN,
 			new Object[] {getURL(layout), false});
 	}
 
@@ -87,8 +85,8 @@ public class FriendlyURLServletTest {
 	}
 
 	@Test(expected = NoSuchGroupException.class)
-	public void testGetRedirectWithNonExistentSite() throws Exception {
-		testGetRedirect("/non-existent-site/home", Portal.PATH_MAIN, null);
+	public void testGetRedirectWithNonexistentSite() throws Exception {
+		testGetRedirect("/nonexistent-site/home", Portal.PATH_MAIN, null);
 	}
 
 	protected String getPath(Group group, Layout layout) {
@@ -107,10 +105,15 @@ public class FriendlyURLServletTest {
 		Object[] actualRedirectArray = _friendlyURLServlet.getRedirect(
 			_request, path, mainPath, Collections.<String, String[]>emptyMap());
 
-		Assert.assertEquals(actualRedirectArray, expectedRedirectArray);
+		Assert.assertArrayEquals(actualRedirectArray, expectedRedirectArray);
 	}
 
-	private FriendlyURLServlet _friendlyURLServlet = new FriendlyURLServlet();
-	private HttpServletRequest _request = new MockHttpServletRequest();
+	private final FriendlyURLServlet _friendlyURLServlet =
+		new FriendlyURLServlet();
+
+	@DeleteAfterTestRun
+	private Group _group;
+
+	private final HttpServletRequest _request = new MockHttpServletRequest();
 
 }

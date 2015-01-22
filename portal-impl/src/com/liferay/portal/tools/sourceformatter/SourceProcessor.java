@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,15 +22,16 @@ import java.util.List;
 public interface SourceProcessor {
 
 	public void format(
-			boolean useProperties, boolean printErrors, boolean autoFix,
-			String mainReleaseVersion)
+			boolean useProperties, boolean printErrors, boolean autoFix)
 		throws Exception;
 
 	public String format(
 			String fileName, boolean useProperties, boolean printErrors,
-			boolean autoFix, String mainReleaseVersion)
+			boolean autoFix)
 		throws Exception;
 
 	public List<String> getErrorMessages();
+
+	public SourceMismatchException getFirstSourceMismatchException();
 
 }

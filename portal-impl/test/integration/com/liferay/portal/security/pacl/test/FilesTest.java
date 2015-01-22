@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,26 +15,27 @@
 package com.liferay.portal.security.pacl.test;
 
 import com.liferay.portal.kernel.security.pacl.permission.PortalFilePermission;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.OSDetector;
-import com.liferay.portal.security.pacl.PACLExecutionTestListener;
-import com.liferay.portal.security.pacl.PACLIntegrationJUnitTestRunner;
+import com.liferay.portal.test.PACLTestRule;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Raymond Augé
  */
-@ExecutionTestListeners(listeners = {PACLExecutionTestListener.class})
-@RunWith(PACLIntegrationJUnitTestRunner.class)
 public class FilesTest {
+
+	@ClassRule
+	@Rule
+	public static final PACLTestRule paclTestRule = new PACLTestRule();
 
 	@Test
 	public void testDelete1() throws Exception {
@@ -368,7 +369,7 @@ public class FilesTest {
 	@Test
 	public void testRead9() throws Exception {
 		try {
-			File file = new File(System.getenv("JAVA_HOME"));
+			File file = new File(System.getProperty("java.home"));
 
 			file.canRead();
 		}
@@ -380,7 +381,7 @@ public class FilesTest {
 	@Test
 	public void testRead10() throws Exception {
 		try {
-			File file = new File(System.getenv("JAVA_HOME"), "bin");
+			File file = new File(System.getProperty("java.home"), "bin");
 
 			file.canRead();
 
@@ -400,7 +401,7 @@ public class FilesTest {
 			}
 
 			File file = new File(
-				System.getenv("JAVA_HOME"),
+				System.getProperty("java.home"),
 				"bin" + File.separator + javaCommand);
 
 			file.canRead();
@@ -420,7 +421,7 @@ public class FilesTest {
 			}
 
 			File file = new File(
-				System.getenv("JAVA_HOME"),
+				System.getProperty("java.home"),
 				"bin".concat(File.separator).concat(javaCommand));
 
 			file.canRead();

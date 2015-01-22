@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -52,11 +52,7 @@ if (layout != null) {
 			liveFriendlyURL = PortalUtil.getLayoutFriendlyURL(liveLayout, themeDisplay);
 		}
 		else if ((layout.isPrivateLayout() && (liveGroup.getPrivateLayoutsPageCount() > 0)) || (layout.isPublicLayout() && (liveGroup.getPublicLayoutsPageCount() > 0))) {
-			liveFriendlyURL = PortalUtil.getGroupFriendlyURL(liveGroup, layout.isPrivateLayout(), themeDisplay);
-		}
-
-		if (Validator.isNotNull(liveFriendlyURL)) {
-			liveFriendlyURL = PortalUtil.addPreservedParameters(themeDisplay, liveFriendlyURL);
+			liveFriendlyURL = liveGroup.getDisplayURL(themeDisplay, layout.isPrivateLayout());
 		}
 	}
 
@@ -69,11 +65,7 @@ if (layout != null) {
 			stagingFriendlyURL = PortalUtil.getLayoutFriendlyURL(stagingLayout, themeDisplay);
 		}
 		else {
-			stagingFriendlyURL = PortalUtil.getGroupFriendlyURL(stagingGroup, layout.isPrivateLayout(), themeDisplay);
-		}
-
-		if (Validator.isNotNull(stagingFriendlyURL)) {
-			stagingFriendlyURL = PortalUtil.addPreservedParameters(themeDisplay, stagingFriendlyURL);
+			stagingFriendlyURL = stagingGroup.getDisplayURL(themeDisplay, layout.isPrivateLayout());
 		}
 	}
 
@@ -84,13 +76,13 @@ if (layout != null) {
 	}
 	%>
 
-	<aui:nav collapsible="<%= false %>" cssClass="staging-bar" id="stagingBar">
+	<aui:nav collapsible="<%= false %>" cssClass="navbar-nav staging-bar" id="stagingBar">
 		<c:if test="<%= (liveGroup != null) %>">
 			<c:choose>
 				<c:when test="<%= group.isStagingGroup() || group.isStagedRemotely() %>">
 					<c:if test="<%= stagingGroup != null %>">
-						<aui:nav-item anchorCssClass="staging-link" cssClass="active staging-toggle site-variations" dropdown="<%= true %>" id="stagingLink" label="staging" toggle="<%= true %>">
-							<aui:nav-item cssClass="row-fluid">
+						<aui:nav-item anchorCssClass="staging-link" cssClass="active site-variations staging-toggle" dropdown="<%= true %>" id="stagingLink" label="staging" toggle="<%= true %>">
+							<aui:nav-item cssClass="row">
 								<c:choose>
 									<c:when test="<%= (group.isStagingGroup() || group.isStagedRemotely()) && branchingEnabled %>">
 
@@ -118,7 +110,7 @@ if (layout != null) {
 											<liferay-util:include page="/html/portlet/staging_bar/view_layout_revision_details.jsp" />
 										</div>
 
-										<liferay-ui:staging cssClass="branching-enabled span4" extended="<%= false %>" layoutSetBranchId="<%= layoutRevision.getLayoutSetBranchId() %>" onlyActions="<%= true %>" />
+										<liferay-staging:menu cssClass="branching-enabled col-md-4" extended="<%= false %>" layoutSetBranchId="<%= layoutRevision.getLayoutSetBranchId() %>" onlyActions="<%= true %>" />
 									</c:when>
 
 									<c:otherwise>
@@ -141,7 +133,7 @@ if (layout != null) {
 										</div>
 
 										<c:if test="<%= group.isStagingGroup() || group.isStagedRemotely() %>">
-											<liferay-ui:staging cssClass="publish-link" extended="<%= false %>" onlyActions="<%= true %>" />
+											<liferay-staging:menu cssClass="publish-link" extended="<%= false %>" onlyActions="<%= true %>" />
 										</c:if>
 									</c:otherwise>
 								</c:choose>
@@ -178,7 +170,7 @@ if (layout != null) {
 				</c:when>
 				<c:otherwise>
 					<aui:nav-item anchorCssClass="staging-link" cssClass="active live-link staging-toggle" dropdown="<%= true %>" id="liveLink" label="live" toggle="<%= true %>">
-						<aui:nav-item cssClass="row-fluid">
+						<aui:nav-item cssClass="row">
 							<div class="staging-details">
 								<div class="alert alert-warning hide warning-content" id="<portlet:namespace />warningMessage">
 									<liferay-ui:message key="an-inital-staging-publication-is-in-progress" />

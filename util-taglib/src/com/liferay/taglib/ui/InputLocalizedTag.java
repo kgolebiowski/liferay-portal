@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,9 @@ package com.liferay.taglib.ui;
 
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.ModelHintsConstants;
+import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.taglib.util.IncludeTag;
 
 import java.util.Locale;
@@ -60,6 +62,14 @@ public class InputLocalizedTag extends IncludeTag {
 		_displayWidth = displayWidth;
 	}
 
+	public void setFieldPrefix(String fieldPrefix) {
+		_fieldPrefix = fieldPrefix;
+	}
+
+	public void setFieldPrefixSeparator(String fieldPrefixSeparator) {
+		_fieldPrefixSeparator = fieldPrefixSeparator;
+	}
+
 	public void setFormName(String formName) {
 		_formName = formName;
 	}
@@ -84,6 +94,10 @@ public class InputLocalizedTag extends IncludeTag {
 		_name = name;
 	}
 
+	public void setToolbarSet(String toolbarSet) {
+		_toolbarSet = toolbarSet;
+	}
+
 	public void setType(String type) {
 		_type = type;
 	}
@@ -99,12 +113,15 @@ public class InputLocalizedTag extends IncludeTag {
 		_cssClass = null;
 		_disabled = false;
 		_displayWidth = ModelHintsConstants.TEXT_DISPLAY_WIDTH;
+		_fieldPrefix = null;
+		_fieldPrefixSeparator = null;
 		_formName = null;
 		_id = null;
 		_ignoreRequestValue = false;
 		_languageId = null;
 		_maxLength = null;
 		_name = null;
+		_toolbarSet = "simple";
 		_type = "input";
 		_xml = null;
 	}
@@ -119,7 +136,11 @@ public class InputLocalizedTag extends IncludeTag {
 		Locale[] availableLocales = _availableLocales;
 
 		if (availableLocales == null) {
-			availableLocales = LanguageUtil.getAvailableLocales();
+			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+			availableLocales = LanguageUtil.getAvailableLocales(
+				themeDisplay.getSiteGroupId());
 		}
 
 		String formName = _formName;
@@ -150,6 +171,11 @@ public class InputLocalizedTag extends IncludeTag {
 		request.setAttribute(
 			"liferay-ui:input-localized:dynamicAttributes",
 			getDynamicAttributes());
+		request.setAttribute(
+			"liferay-ui:input-localized:fieldPrefix", _fieldPrefix);
+		request.setAttribute(
+			"liferay-ui:input-localized:fieldPrefixSeparator",
+			_fieldPrefixSeparator);
 		request.setAttribute("liferay-ui:input-localized:formName", formName);
 		request.setAttribute("liferay-ui:input-localized:id", id);
 		request.setAttribute(
@@ -160,6 +186,8 @@ public class InputLocalizedTag extends IncludeTag {
 		request.setAttribute(
 			"liferay-ui:input-localized:maxLength", _maxLength);
 		request.setAttribute("liferay-ui:input-localized:name", _name);
+		request.setAttribute(
+			"liferay-ui:input-localized:toolbarSet", _toolbarSet);
 		request.setAttribute("liferay-ui:input-localized:type", _type);
 		request.setAttribute("liferay-ui:input-localized:xml", _xml);
 	}
@@ -174,12 +202,15 @@ public class InputLocalizedTag extends IncludeTag {
 	private String _defaultLanguageId;
 	private boolean _disabled;
 	private String _displayWidth = ModelHintsConstants.TEXT_DISPLAY_WIDTH;
+	private String _fieldPrefix;
+	private String _fieldPrefixSeparator;
 	private String _formName;
 	private String _id;
 	private boolean _ignoreRequestValue;
 	private String _languageId;
 	private String _maxLength;
 	private String _name;
+	private String _toolbarSet = "simple";
 	private String _type = "input";
 	private String _xml;
 

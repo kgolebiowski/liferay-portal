@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.dao.db;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import aQute.bnd.annotation.ProviderType;
 
 import java.io.IOException;
 
@@ -29,6 +29,7 @@ import javax.naming.NamingException;
 /**
  * @author Brian Wing Shun Chan
  */
+@ProviderType
 public interface DB {
 
 	public static final int BARE = 0;
@@ -72,7 +73,7 @@ public interface DB {
 
 	public static final String TYPE_SYBASE = "sybase";
 
-	void addIndexes(
+	public void addIndexes(
 			Connection con, String indexesSQL, Set<String> validIndexNames)
 		throws IOException;
 
@@ -85,8 +86,7 @@ public interface DB {
 
 	public String buildSQL(String template) throws IOException;
 
-	public void buildSQLFile(String sqlDir, String fileName)
-		throws IOException;
+	public void buildSQLFile(String sqlDir, String fileName) throws IOException;
 
 	public List<Index> getIndexes(Connection con) throws SQLException;
 
@@ -96,9 +96,9 @@ public interface DB {
 
 	public String getType();
 
-	public long increment() throws SystemException;
+	public long increment();
 
-	public long increment(String name) throws SystemException;
+	public long increment(String name);
 
 	public boolean isSupportsAlterColumnName();
 
@@ -130,6 +130,11 @@ public interface DB {
 		throws IOException, NamingException, SQLException;
 
 	public void runSQLTemplate(String path, boolean failOnError)
+		throws IOException, NamingException, SQLException;
+
+	public void runSQLTemplateString(
+			Connection connection, String template, boolean evaluate,
+			boolean failOnError)
 		throws IOException, NamingException, SQLException;
 
 	public void runSQLTemplateString(

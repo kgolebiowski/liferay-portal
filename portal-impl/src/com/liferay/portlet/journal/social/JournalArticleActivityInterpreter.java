@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,6 +15,7 @@
 package com.liferay.portlet.journal.social;
 
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.model.Layout;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.service.ServiceContext;
@@ -23,7 +24,7 @@ import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalArticleConstants;
 import com.liferay.portlet.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portlet.journal.service.permission.JournalArticlePermission;
-import com.liferay.portlet.journal.service.permission.JournalPermission;
+import com.liferay.portlet.journal.service.permission.JournalFolderPermission;
 import com.liferay.portlet.social.model.BaseSocialActivityInterpreter;
 import com.liferay.portlet.social.model.SocialActivity;
 import com.liferay.portlet.social.model.SocialActivityConstants;
@@ -49,10 +50,11 @@ public class JournalArticleActivityInterpreter
 			JournalArticleLocalServiceUtil.getLatestArticle(
 				activity.getClassPK());
 
-		if (Validator.isNotNull(article.getLayoutUuid())) {
+		Layout layout = article.getLayout();
+
+		if (layout != null) {
 			String groupFriendlyURL = PortalUtil.getGroupFriendlyURL(
-				serviceContext.getScopeGroup(), false,
-				serviceContext.getThemeDisplay());
+				layout.getLayoutSet(), serviceContext.getThemeDisplay());
 
 			return groupFriendlyURL.concat(
 				JournalArticleConstants.CANONICAL_URL_SEPARATOR).concat(
@@ -114,19 +116,18 @@ public class JournalArticleActivityInterpreter
 
 		int activityType = activity.getType();
 
-		if ((activityType == JournalActivityKeys.ADD_ARTICLE) &&
-			!JournalPermission.contains(
-				permissionChecker, activity.getGroupId(),
-				ActionKeys.ADD_ARTICLE)) {
+		if (activityType == JournalActivityKeys.ADD_ARTICLE) {
+			JournalArticle article =
+				JournalArticleLocalServiceUtil.getLatestArticle(
+					activity.getClassPK());
 
-			return false;
+			return JournalFolderPermission.contains(
+				permissionChecker, article.getGroupId(), article.getFolderId(),
+				ActionKeys.ADD_ARTICLE);
 		}
-		else if ((activityType == JournalActivityKeys.UPDATE_ARTICLE) &&
-				 !JournalArticlePermission.contains(
-					 permissionChecker, activity.getClassPK(),
-					 ActionKeys.UPDATE)) {
-
-			return false;
+		else if (activityType == JournalActivityKeys.UPDATE_ARTICLE) {
+			return JournalArticlePermission.contains(
+				permissionChecker, activity.getClassPK(), ActionKeys.UPDATE);
 		}
 
 		return JournalArticlePermission.contains(

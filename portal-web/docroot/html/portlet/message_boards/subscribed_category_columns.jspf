@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -70,17 +70,13 @@ private void _buildCategoryBreadcrumb(HttpServletRequest request, MBCategory cat
 			cssClass = "first";
 		}
 
-		sb.append("<li");
-		sb.append(" class=\"");
+		sb.append("<li class=\"");
 		sb.append(cssClass);
-		sb.append("\">");
-		sb.append("<a href=\"");
+		sb.append("\"><a href=\"");
 		sb.append(portletURL.toString());
 		sb.append("\">");
 		sb.append(HtmlUtil.escape(ancestorCategory.getName()));
-		sb.append("</a>");
-		sb.append("<span class=\"divider\">/</span>");
-		sb.append("</li>");
+		sb.append("</a></li>");
 	}
 
 	PortletURL portletURL = PortletURLFactoryUtil.create(request, PortletKeys.MESSAGE_BOARDS, themeDisplay.getPlid(), PortletRequest.RENDER_PHASE);

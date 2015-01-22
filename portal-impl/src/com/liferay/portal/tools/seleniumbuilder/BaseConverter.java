@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portal.tools.seleniumbuilder;
 
+import com.liferay.portal.kernel.util.StringUtil_IW;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,18 +24,20 @@ import java.util.Map;
  */
 public class BaseConverter {
 
-	public BaseConverter(SeleniumBuilderContext seleniumBuilderContext) {
-		this.seleniumBuilderContext = seleniumBuilderContext;
+	public BaseConverter(
+		SeleniumBuilderContext seleniumBuilderContext,
+		SeleniumBuilderFileUtil seleniumBuilderFileUtil) {
 
-		this.seleniumBuilderFileUtil = new SeleniumBuilderFileUtil(
-			seleniumBuilderContext.getBaseDir());
+		this.seleniumBuilderContext = seleniumBuilderContext;
+		this.seleniumBuilderFileUtil = seleniumBuilderFileUtil;
 	}
 
 	protected Map<String, Object> getContext() {
-		Map<String, Object> context = new HashMap<String, Object>();
+		Map<String, Object> context = new HashMap<>();
 
 		context.put("seleniumBuilderContext", seleniumBuilderContext);
 		context.put("seleniumBuilderFileUtil", seleniumBuilderFileUtil);
+		context.put("stringUtil", StringUtil_IW.getInstance());
 
 		return context;
 	}

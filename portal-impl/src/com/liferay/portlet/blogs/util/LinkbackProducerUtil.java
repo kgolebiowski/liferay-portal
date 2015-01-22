@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,6 @@
 
 package com.liferay.portlet.blogs.util;
 
-import com.liferay.ibm.icu.util.Calendar;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -34,6 +33,7 @@ import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.xml.StAXReaderUtil;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -251,9 +251,10 @@ public class LinkbackProducerUtil {
 		StringUtil.equalsIgnoreCase(
 			PropsValues.HTTP_HEADER_VERSION_VERBOSITY, "partial");
 
-	private static Log _log = LogFactoryUtil.getLog(LinkbackProducerUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LinkbackProducerUtil.class);
 
-	private static List<Tuple> _pingbackQueue = Collections.synchronizedList(
-		new ArrayList<Tuple>());
+	private static final List<Tuple> _pingbackQueue =
+		Collections.synchronizedList(new ArrayList<Tuple>());
 
 }

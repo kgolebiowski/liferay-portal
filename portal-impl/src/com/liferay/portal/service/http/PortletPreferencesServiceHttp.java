@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.service.http;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -49,11 +51,11 @@ import com.liferay.portal.service.PortletPreferencesServiceUtil;
  * @see com.liferay.portal.service.PortletPreferencesServiceUtil
  * @generated
  */
+@ProviderType
 public class PortletPreferencesServiceHttp {
 	public static void deleteArchivedPreferences(HttpPrincipal httpPrincipal,
 		long portletItemId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PortletPreferencesServiceUtil.class,
 					"deleteArchivedPreferences",
@@ -70,10 +72,6 @@ public class PortletPreferencesServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 		}
@@ -88,8 +86,7 @@ public class PortletPreferencesServiceHttp {
 		long groupId, com.liferay.portal.model.Layout layout,
 		java.lang.String portletId, long portletItemId,
 		javax.portlet.PortletPreferences preferences)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PortletPreferencesServiceUtil.class,
 					"restoreArchivedPreferences",
@@ -104,10 +101,6 @@ public class PortletPreferencesServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
@@ -125,8 +118,7 @@ public class PortletPreferencesServiceHttp {
 		java.lang.String portletId,
 		com.liferay.portal.model.PortletItem portletItem,
 		javax.portlet.PortletPreferences preferences)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PortletPreferencesServiceUtil.class,
 					"restoreArchivedPreferences",
@@ -143,10 +135,6 @@ public class PortletPreferencesServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 		}
@@ -161,8 +149,7 @@ public class PortletPreferencesServiceHttp {
 		long groupId, java.lang.String name,
 		com.liferay.portal.model.Layout layout, java.lang.String portletId,
 		javax.portlet.PortletPreferences preferences)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PortletPreferencesServiceUtil.class,
 					"restoreArchivedPreferences",
@@ -179,10 +166,6 @@ public class PortletPreferencesServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 		}
@@ -196,8 +179,7 @@ public class PortletPreferencesServiceHttp {
 	public static void updateArchivePreferences(HttpPrincipal httpPrincipal,
 		long userId, long groupId, java.lang.String name,
 		java.lang.String portletId, javax.portlet.PortletPreferences preferences)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PortletPreferencesServiceUtil.class,
 					"updateArchivePreferences",
@@ -212,10 +194,6 @@ public class PortletPreferencesServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);

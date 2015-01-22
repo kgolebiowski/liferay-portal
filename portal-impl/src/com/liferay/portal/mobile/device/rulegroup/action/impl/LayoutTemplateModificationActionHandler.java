@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,7 +23,7 @@ import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.mobiledevicerules.model.MDRAction;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -73,14 +73,7 @@ public class LayoutTemplateModificationActionHandler implements ActionHandler {
 		return getHandlerType();
 	}
 
-	private static Collection<String> _propertyNames;
-
-	static {
-		_propertyNames = new ArrayList<String>(1);
-
-		_propertyNames.add("layoutTemplateId");
-
-		_propertyNames = Collections.unmodifiableCollection(_propertyNames);
-	}
+	private static final Collection<String> _propertyNames =
+		Collections.unmodifiableCollection(Arrays.asList("layoutTemplateId"));
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -256,7 +256,7 @@ public abstract class BaseFriendlyURLMapper implements FriendlyURLMapper {
 
 	private static final boolean _CHECK_MAPPING_WITH_PREFIX = true;
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		BaseFriendlyURLMapper.class);
 
 	private String _mapping;

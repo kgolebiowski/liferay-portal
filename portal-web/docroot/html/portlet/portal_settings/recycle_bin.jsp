@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,23 +26,17 @@ boolean trashEnabled = PrefsPropsUtil.getBoolean(company.getCompanyId(), PropsKe
 	<aui:input helpMessage="enable-recycle-bin-default" id="trashEnabled" label="enable-recycle-bin" name='<%= "settings--" + PropsKeys.TRASH_ENABLED + "--" %>' type="checkbox" value="<%= trashEnabled %>" />
 </aui:fieldset>
 
-<aui:script use="aui-base">
-	var trashEnabledCheckbox = A.one('#<portlet:namespace />trashEnabledCheckbox');
+<aui:script>
+	var trashEnabledCheckbox = AUI.$('#<portlet:namespace />trashEnabled');
 
-	var trashEnabledDefault = trashEnabledCheckbox.attr('checked');
+	var trashEnabledDefault = trashEnabledCheckbox.prop('checked');
 
 	trashEnabledCheckbox.on(
 		'change',
 		function(event) {
-			var currentTarget = event.currentTarget;
-
-			var trashEnabled = currentTarget.attr('checked');
-
-			if (!trashEnabled && trashEnabledDefault) {
-				if (!confirm('<%= HtmlUtil.escapeJS(LanguageUtil.get(pageContext, "disabling-the-recycle-bin-will-prevent-the-restoring-of-content-that-has-been-moved-to-the-recycle-bin")) %>')) {
-					currentTarget.attr('checked', true);
-
-					trashEnabled = true;
+			if (!trashEnabledCheckbox.prop('checked') && trashEnabledDefault) {
+				if (!confirm('<%= HtmlUtil.escapeJS(LanguageUtil.get(request, "disabling-the-recycle-bin-will-prevent-the-restoring-of-content-that-has-been-moved-to-the-recycle-bin")) %>')) {
+					trashEnabledCheckbox.prop('checked', true);
 				}
 			}
 		}

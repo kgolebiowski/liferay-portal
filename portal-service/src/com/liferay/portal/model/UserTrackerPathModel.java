@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -171,19 +171,20 @@ public interface UserTrackerPathModel extends BaseModel<UserTrackerPath>,
 	public Object clone();
 
 	@Override
-	public int compareTo(UserTrackerPath userTrackerPath);
+	public int compareTo(
+		com.liferay.portal.model.UserTrackerPath userTrackerPath);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<UserTrackerPath> toCacheModel();
+	public CacheModel<com.liferay.portal.model.UserTrackerPath> toCacheModel();
 
 	@Override
-	public UserTrackerPath toEscapedModel();
+	public com.liferay.portal.model.UserTrackerPath toEscapedModel();
 
 	@Override
-	public UserTrackerPath toUnescapedModel();
+	public com.liferay.portal.model.UserTrackerPath toUnescapedModel();
 
 	@Override
 	public String toString();

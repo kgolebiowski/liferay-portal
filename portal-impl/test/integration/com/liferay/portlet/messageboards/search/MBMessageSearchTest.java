@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,7 @@ package com.liferay.portlet.messageboards.search;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.BaseModel;
@@ -25,39 +25,48 @@ import com.liferay.portal.model.ClassedModel;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.search.BaseSearchTestCase;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationExecutionTestListener;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.messageboards.model.MBCategory;
 import com.liferay.portlet.messageboards.model.MBMessage;
 import com.liferay.portlet.messageboards.service.MBCategoryServiceUtil;
 import com.liferay.portlet.messageboards.service.MBMessageLocalServiceUtil;
+import com.liferay.portlet.messageboards.service.MBThreadLocalServiceUtil;
 import com.liferay.portlet.messageboards.service.MBThreadServiceUtil;
-import com.liferay.portlet.messageboards.util.MBTestUtil;
+import com.liferay.portlet.messageboards.util.test.MBTestUtil;
 
 import java.io.InputStream;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.ClassRule;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Eudaldo Alonso
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		SynchronousDestinationExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 @Sync
 public class MBMessageSearchTest extends BaseSearchTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
+
+	@Ignore()
+	@Override
+	@Test
+	public void testLocalizedSearch() throws Exception {
+	}
 
 	@Ignore()
 	@Override
@@ -113,14 +122,14 @@ public class MBMessageSearchTest extends BaseSearchTestCase {
 
 		List<FileEntry> fileEntries = message.getAttachmentsFileEntries();
 
-		List<String> existingFiles = new ArrayList<String>();
+		List<String> existingFiles = new ArrayList<>();
 
 		for (FileEntry fileEntry : fileEntries) {
 			existingFiles.add(fileEntry.getTitle());
 		}
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			message.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(message.getGroupId());
 
 		List<ObjectValuePair<String, InputStream>> inputStreamOVPs =
 			MBTestUtil.getInputStreamOVPs(
@@ -141,7 +150,20 @@ public class MBMessageSearchTest extends BaseSearchTestCase {
 		MBCategory category = (MBCategory)parentBaseModel;
 
 		return MBTestUtil.addMessage(
-			category.getCategoryId(), keywords, approved, serviceContext);
+			category.getGroupId(), category.getCategoryId(), keywords, approved,
+			serviceContext);
+	}
+
+	@Override
+	protected void deleteBaseModel(long primaryKey) throws Exception {
+		MBMessage message = MBMessageLocalServiceUtil.getMessage(primaryKey);
+
+		if (!message.isRoot()) {
+			MBMessageLocalServiceUtil.deleteMessage(primaryKey);
+		}
+		else {
+			MBThreadLocalServiceUtil.deleteThread(message.getThreadId());
+		}
 	}
 
 	@Override
@@ -168,6 +190,13 @@ public class MBMessageSearchTest extends BaseSearchTestCase {
 	}
 
 	@Override
+	protected void moveBaseModelToTrash(long primaryKey) throws Exception {
+		MBMessage message =  MBMessageLocalServiceUtil.getMessage(primaryKey);
+
+		MBThreadServiceUtil.moveThreadToTrash(message.getThreadId());
+	}
+
+	@Override
 	protected void moveParentBaseModelToTrash(long primaryKey)
 		throws Exception {
 
@@ -183,6 +212,20 @@ public class MBMessageSearchTest extends BaseSearchTestCase {
 			QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 		return hits.getLength();
+	}
+
+	@Override
+	protected BaseModel<?> updateBaseModel(
+			BaseModel<?> baseModel, String keywords,
+			ServiceContext serviceContext)
+		throws Exception {
+
+		MBMessage message = (MBMessage)baseModel;
+
+		message.setSubject(keywords);
+		message.setBody(keywords);
+
+		return MBTestUtil.updateMessage(message, keywords, keywords, true);
 	}
 
 }

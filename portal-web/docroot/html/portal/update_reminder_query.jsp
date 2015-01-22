@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,7 +26,7 @@ if (referer.equals(themeDisplay.getPathMain() + "/portal/update_reminder_query")
 }
 %>
 
-<aui:form action='<%= themeDisplay.getPathMain() + "/portal/update_reminder_query" %>' cssClass="update-reminder-query" method="post" name="fm">
+<aui:form action='<%= themeDisplay.getPathMain() + "/portal/update_reminder_query" %>' autocomplete='<%= PropsValues.COMPANY_SECURITY_PASSWORD_REMINDER_QUERY_FORM_AUTOCOMPLETE ? "on" : "off" %>' cssClass="update-reminder-query" method="post" name="fm">
 	<aui:input name="p_auth" type="hidden" value="<%= AuthTokenUtil.getToken(request) %>" />
 	<aui:input name="doAsUserId" type="hidden" value="<%= themeDisplay.getDoAsUserId() %>" />
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.UPDATE %>" />
@@ -37,7 +37,7 @@ if (referer.equals(themeDisplay.getPathMain() + "/portal/update_reminder_query")
 	</div>
 
 	<c:if test="<%= SessionErrors.contains(request, UserReminderQueryException.class.getName()) %>">
-		<div class="alert alert-error">
+		<div class="alert alert-danger">
 			<liferay-ui:message key="reminder-query-and-answer-cannot-be-empty" />
 		</div>
 	</c:if>
@@ -51,7 +51,7 @@ if (referer.equals(themeDisplay.getPathMain() + "/portal/update_reminder_query")
 			</div>
 		</c:if>
 
-		<aui:input cssClass="reminder-query-answer" label="answer" maxlength="75" name="reminderQueryAnswer" size="50" type="text" value="<%= user.getReminderQueryAnswer() %>" />
+		<aui:input cssClass="reminder-query-answer" label="answer" maxlength="<%= ModelHintsConstants.TEXT_MAX_LENGTH %>" name="reminderQueryAnswer" size="50" type="text" value="<%= user.getReminderQueryAnswer() %>" />
 	</aui:fieldset>
 
 	<aui:button-row>

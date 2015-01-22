@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -29,6 +29,15 @@ import java.util.Map;
 public class StorageEngineUtil {
 
 	public static long create(
+			long companyId, long ddmStructureId, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws StorageException {
+
+		return getStorageEngine().create(
+			companyId, ddmStructureId, ddmFormValues, serviceContext);
+	}
+
+	public static long create(
 			long companyId, long ddmStructureId, Fields fields,
 			ServiceContext serviceContext)
 		throws StorageException {
@@ -45,6 +54,12 @@ public class StorageEngineUtil {
 		throws StorageException {
 
 		getStorageEngine().deleteByDDMStructure(ddmStructureId);
+	}
+
+	public static DDMFormValues getDDMFormValues(long classPK)
+		throws StorageException {
+
+		return getStorageEngine().getDDMFormValues(classPK);
 	}
 
 	public static Fields getFields(long classPK) throws StorageException {
@@ -66,7 +81,7 @@ public class StorageEngineUtil {
 
 	public static List<Fields> getFieldsList(
 			long ddmStructureId, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		return getStorageEngine().getFieldsList(
@@ -75,7 +90,7 @@ public class StorageEngineUtil {
 
 	public static List<Fields> getFieldsList(
 			long ddmStructureId, long[] classPKs, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		return getStorageEngine().getFieldsList(
@@ -84,7 +99,7 @@ public class StorageEngineUtil {
 
 	public static List<Fields> getFieldsList(
 			long ddmStructureId, long[] classPKs,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		return getStorageEngine().getFieldsList(
@@ -114,7 +129,7 @@ public class StorageEngineUtil {
 
 	public static List<Fields> query(
 			long ddmStructureId, List<String> fieldNames, Condition condition,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		return getStorageEngine().query(
@@ -125,6 +140,14 @@ public class StorageEngineUtil {
 		throws StorageException {
 
 		return getStorageEngine().queryCount(ddmStructureId, condition);
+	}
+
+	public static void update(
+			long classPK, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws StorageException {
+
+		getStorageEngine().update(classPK, ddmFormValues, serviceContext);
 	}
 
 	public static void update(

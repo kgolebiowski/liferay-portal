@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,17 +18,14 @@ import com.liferay.portal.ccpp.PortalProfileFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
-import com.liferay.portal.kernel.portlet.LiferayPortletContext;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletSession;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.servlet.ProtectedPrincipal;
-import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
-import com.liferay.portal.kernel.util.ContextPathUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -49,6 +46,7 @@ import com.liferay.portal.servlet.NamespaceServletRequest;
 import com.liferay.portal.servlet.SharedSessionServletRequest;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.portletconfiguration.util.PublicRenderParameterConfiguration;
 
@@ -63,6 +61,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ccpp.Profile;
 
@@ -77,7 +77,6 @@ import javax.portlet.PortletSession;
 import javax.portlet.WindowState;
 import javax.portlet.filter.PortletRequestWrapper;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -126,6 +125,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 		_request.removeAttribute(WebKeys.PORTLET_CONTENT);
 	}
 
+	@Override
 	public void defineObjects(
 		PortletConfig portletConfig, PortletResponse portletResponse) {
 
@@ -161,7 +161,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		List<String> names = new ArrayList<String>();
+		List<String> names = new ArrayList<>();
 
 		Enumeration<String> enu = _request.getAttributeNames();
 
@@ -191,21 +191,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 	@Override
 	public String getContextPath() {
-		LiferayPortletContext liferayPortletContext =
-			(LiferayPortletContext)_portletContext;
-
-		ServletContext servletContext =
-			liferayPortletContext.getServletContext();
-
-		String servletContextName = servletContext.getServletContextName();
-
-		if (ServletContextPool.containsKey(servletContextName)) {
-			servletContext = ServletContextPool.get(servletContextName);
-
-			return ContextPathUtil.getContextPath(servletContext);
-		}
-
-		return StringPool.SLASH.concat(_portletContext.getPortletContextName());
+		return _portlet.getContextPath();
 	}
 
 	@Override
@@ -384,8 +370,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 			}
 
 			if (privateParameterMap == null) {
-				privateParameterMap = new HashMap<String, String[]>(
-					parameterMap.size(), 1);
+				privateParameterMap = new HashMap<>(parameterMap.size(), 1);
 			}
 
 			privateParameterMap.put(name, entry.getValue());
@@ -400,7 +385,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 	@Override
 	public Enumeration<String> getProperties(String name) {
-		List<String> values = new ArrayList<String>();
+		List<String> values = new ArrayList<>();
 
 		String value = _portalContext.getProperty(name);
 
@@ -439,8 +424,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 			if (_portlet.getPublicRenderParameter(name) != null) {
 				if (publicParameterMap == null) {
-					publicParameterMap = new HashMap<String, String[]>(
-						parameterMap.size(), 1);
+					publicParameterMap = new HashMap<>(parameterMap.size(), 1);
 				}
 
 				publicParameterMap.put(name, entry.getValue());
@@ -493,7 +477,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 	@Override
 	public Enumeration<String> getResponseContentTypes() {
-		List<String> responseContentTypes = new ArrayList<String>();
+		List<String> responseContentTypes = new ArrayList<>();
 
 		responseContentTypes.add(getResponseContentType());
 
@@ -549,9 +533,17 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 			return true;
 		}
-		else {
-			return false;
+
+		if (_strutsPortlet) {
+			Matcher matcher = _strutsPortletIgnoredParamtersPattern.matcher(
+				name);
+
+			if (matcher.matches()) {
+				return true;
+			}
 		}
+
+		return false;
 	}
 
 	@Override
@@ -663,6 +655,14 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 		_portletName = portlet.getPortletId();
 		_publicRenderParameters = PublicRenderParametersPool.get(request, plid);
 
+		if (invokerPortlet != null) {
+			if (invokerPortlet.isStrutsPortlet() ||
+				invokerPortlet.isStrutsBridgePortlet()) {
+
+				_strutsPortlet = true;
+			}
+		}
+
 		String portletNamespace = PortalUtil.getPortletNamespace(_portletName);
 
 		PortletApp portletApp = portlet.getPortletApp();
@@ -753,8 +753,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 		}
 
 		if (portletFocus) {
-			Map<String, String[]> renderParameters =
-				new HashMap<String, String[]>();
+			Map<String, String[]> renderParameters = new HashMap<>();
 
 			if (getLifecycle().equals(PortletRequest.RENDER_PHASE) &&
 				!LiferayWindowState.isExclusive(request) &&
@@ -946,7 +945,11 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 		return name;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(PortletRequestImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortletRequestImpl.class);
+
+	private static final Pattern _strutsPortletIgnoredParamtersPattern =
+		Pattern.compile(PropsValues.STRUTS_PORTLET_IGNORED_PARAMETERS_REGEXP);
 
 	private boolean _invalidSession;
 	private Locale _locale;
@@ -965,6 +968,7 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 	private long _remoteUserId;
 	private HttpServletRequest _request;
 	private PortletSessionImpl _session;
+	private boolean _strutsPortlet;
 	private boolean _triggeredByActionURL;
 	private Principal _userPrincipal;
 	private boolean _wapTheme;

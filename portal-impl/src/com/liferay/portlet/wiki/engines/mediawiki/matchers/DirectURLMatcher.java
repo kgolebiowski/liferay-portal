@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -45,9 +45,9 @@ public class DirectURLMatcher extends CallbackMatcher {
 		"<a href=\"[^\"]*?Special:Edit[^\"]*?topic=[^\"]*?\".*?title=\"" +
 			"([^\"]*?)\".*?>(.*?)</a>";
 
-	private String _attachmentURLPrefix;
+	private final String _attachmentURLPrefix;
 
-	private Callback _callBack = new Callback() {
+	private final Callback _callBack = new Callback() {
 
 		@Override
 		public String foundMatch(MatchResult matchResult) {
@@ -87,6 +87,6 @@ public class DirectURLMatcher extends CallbackMatcher {
 
 	};
 
-	private WikiPage _page;
+	private final WikiPage _page;
 
 }

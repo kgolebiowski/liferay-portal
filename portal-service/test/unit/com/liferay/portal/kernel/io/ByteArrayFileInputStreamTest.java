@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -36,13 +36,13 @@ public class ByteArrayFileInputStreamTest {
 
 		_testFile = new File("ByteArrayFileInputStreamTest.testFile");
 
-		FileOutputStream fileOutputStream = new FileOutputStream(_testFile);
+		try (FileOutputStream fileOutputStream = new FileOutputStream(
+				_testFile)) {
 
-		for (int i = 0; i < 1024; i++) {
-			fileOutputStream.write(i);
+			for (int i = 0; i < 1024; i++) {
+				fileOutputStream.write(i);
+			}
 		}
-
-		fileOutputStream.close();
 	}
 
 	@After

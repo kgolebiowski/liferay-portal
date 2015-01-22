@@ -1,5 +1,5 @@
 @import "aui/alloy-font-awesome/scss/variables";
-@import "compass";
+@import "bourbon";
 
 /* ---------- Dragging/sorting indicators ---------- */
 
@@ -16,7 +16,7 @@
 }
 
 .portlet-boundary.yui3-dd-dragging {
-	@include opacity(0.6);
+	opacity: 0.6;
 
 	.portlet {
 		border: 2px dashed #CCC;
@@ -24,7 +24,7 @@
 }
 
 .sortable-layout-proxy {
-	@include opacity(1);
+	opacity: 1;
 
 	.portlet-topper {
 		background-image: none;
@@ -34,7 +34,7 @@
 .proxy {
 	cursor: move;
 
-	@include opacity(0.65);
+	opacity: 0.65;
 
 	position: absolute;
 
@@ -75,6 +75,43 @@
 
 .sortable-layout-drag-target-indicator {
 	margin: 2px 0;
+}
+
+.yui3-dd-proxy {
+	z-index: 1110 !important;
+}
+
+/* ---------- List group ---------- */
+
+.nav.list-group {
+	li > a {
+		&:focus, &:hover {
+			background-color: #E5F5FC;
+			color: #009AE5;
+		}
+	}
+
+	> .active {
+		border-width: 1px 0 0 0;
+
+		> a {
+			&, &:focus, &:hover {
+				background-color: #60BFEF;
+				border: 1px solid #60BFEF;
+				color: #FFF;
+			}
+		}
+	}
+
+	.list-group-item {
+		padding: 0;
+
+		&.nav-header {
+			background-color: #F3F3F3;
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+	}
 }
 
 /* ---------- Portal tool tips ---------- */
@@ -215,6 +252,10 @@
 
 /* ---------- Tabs ---------- */
 
+.lfr-nav.nav-tabs {
+	margin-bottom: 20px;
+}
+
 .tab-active strong {
 	font-weight: normal;
 }
@@ -281,6 +322,7 @@
 	font-weight: bold;
 
 	.category-portlets & {
+		background-color: #00A2EA;
 		color: #FFF;
 	}
 }
@@ -301,6 +343,13 @@
 	margin-right: 5px;
 	text-decoration: none;
 	vertical-align: middle;
+}
+
+.lfr-url-error {
+	display: inline-block;
+	white-space: normal;
+
+	@include word-wrap(break-all);
 }
 
 /* ---------- Menus ---------- */
@@ -392,6 +441,44 @@
 	text-shadow: -1px -1px #2C2F34;
 }
 
+/* ---------- Modals ---------- */
+
+.dialog-iframe-popup {
+	> #main-content, > #wrapper {
+		bottom: 0;
+		left: 0;
+		overflow: auto;
+		padding: 20px;
+		position: absolute;
+		right: 0;
+		top: 0;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+.modal {
+	display: block;
+	margin: 0;
+	overflow: hidden;
+	position: fixed;
+}
+
+.modal-body {
+	overflow: auto;
+
+	&.dialog-iframe-bd {
+		overflow: hidden;
+	}
+}
+
+.modal-hidden {
+	display: none;
+}
+
+.modal-open .modal {
+	overflow: hidden;
+}
+
 /* ---------- Loading mask ---------- */
 
 .loadingmask-content {
@@ -460,6 +547,23 @@
 	background-color: transparent;
 }
 
+/* ---------- Input mirror ---------- */
+
+.lfr-autocomplete-input-list .yui3-aclist-list {
+	margin: 0;
+}
+
+.liferay-autocomplete-input-mirror {
+	left: -9999px;
+	overflow-x: hidden;
+	overflow-y: auto;
+	position: absolute;
+	top: -9999px;
+	visibility: hidden;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
 /* ---------- Page customization ---------- */
 
 .dragging .portlet-column.customizable {
@@ -485,7 +589,7 @@
 	font-size: 1.5em;
 	margin: 1em;
 
-	@include opacity(0.9);
+	opacity: 0.9;
 
 	padding: 1em;
 	position: absolute;
@@ -547,6 +651,164 @@
 	padding: 0;
 }
 
+/* ---------- CKEditor menu ---------- */
+
+.cke_dialog .cke_dialog_ui_input_text {
+	height: auto;
+}
+
+.cke_editable_inline a {
+	cursor: pointer;
+}
+
+.cke_panel.cke_combopanel {
+	width: 220px;
+}
+
+.cke_panel_block {
+	.cke_panel_grouptitle {
+		font-size: 20px;
+		line-height: 20px;
+		margin-top: 0;
+	}
+
+	.cke_panel_list {
+		margin-left: 0;
+
+		.cke_panel_listItem {
+			line-height: initial;
+
+			a:hover {
+				text-decoration: none;
+			}
+		}
+	}
+}
+
+/* ---------- CKEditor table ---------- */
+
+.cke_show_border {
+	width: 500px;
+
+	td {
+		height: 15px;
+	}
+}
+
+/* ---------- HTML editor ---------- */
+
+.html-editor.portlet {
+	background: #FFF;
+	color: #000;
+	line-height: 1;
+	padding: 1em;
+}
+
+.html-editor.portlet-message-boards {
+	@include hyphens;
+
+	word-wrap: break-word;
+
+	blockquote {
+		background: #EEF0F2 url(../images/message_boards/quoteleft.png) no-repeat 5px 5px;
+		border: 1px solid #777;
+		padding: 5px 45px;
+
+		&:after {
+			background: url(../images/message_boards/quoteright.png) no-repeat 50%;
+			content: '';
+			display: block;
+			float: right;
+			height: 24px;
+			margin-right: -35px;
+			margin-top: -25px;
+			width: 31px;
+			z-index: 999;
+		}
+
+		cite {
+			display: block;
+			font-weight: bold;
+		}
+	}
+
+	pre {
+		background: #F9F9F9;
+		border: 1px solid #777;
+		padding: 0.5em;
+	}
+}
+
+/* ---------- Liferay source editor ---------- */
+
+.lfr-source-editor {
+	border: solid 0 transparent;
+	border-bottom-width: 2px;
+	padding-right: 30px;
+	position: relative;
+
+	.lfr-source-editor-toolbar {
+		padding: 0;
+		position: absolute;
+		right: 0;
+		text-align: center;
+		top: 0;
+		width: 30px;
+
+		li {
+			list-style-type: none;
+
+			.btn {
+				padding: 0 5px;
+			}
+		}
+	}
+}
+
+/* ---------- Alloy editor ---------- */
+
+.alloy-editor {
+	outline: 0;
+
+	a {
+		cursor: auto;
+	}
+}
+
+.alloy-editor-switch {
+	border: dashed 0 #DDD;
+	border-bottom-width: 1px;
+	position: relative;
+
+	&.show-source {
+		border-bottom-width: 2px;
+		border-style: solid;
+	}
+
+	.btn {
+		bottom: 0;
+		padding: 0 5px;
+		position: absolute;
+		right: 0;
+	}
+}
+
+.alloy-editor-container {
+	.lfr-source-editor {
+		display: none;
+	}
+
+	&.show-source {
+		.alloy-editor-placeholder {
+			display: none;
+		}
+
+		.lfr-source-editor {
+			display: block;
+		}
+	}
+}
+
 /* ---------- Inline editing ---------- */
 
 .lfr-editable {
@@ -599,24 +861,27 @@
 	.lfr-portlet-title-editable-content {
 		padding: 0;
 
-		.combobox-content {
-			.field-content .field-input-text {
-				display: block;
-				margin-bottom: 0;
-			}
+		.field-input {
+			margin-bottom: 0;
+		}
 
-			.field-label.textfield-label {
-				display: none;
-			}
+		.textfield-label {
+			display: none;
+		}
 
-			.toolbar-content {
-				margin-top: 0;
-				vertical-align: top;
+		.btn-toolbar-content {
+			display: inline-block;
+		}
 
-				.btn-group {
-					margin-top: 0;
-				}
-			}
+		.btn-group {
+			margin-top: 0;
+		}
+
+		.btn {
+			display: inline-block;
+			float: none;
+			margin-top: 0;
+			width: auto;
 		}
 	}
 }
@@ -633,6 +898,10 @@
 }
 
 .ie {
+	& input.cke_dialog_ui_input_text {
+		height: auto;
+	}
+
 	.proxy.not-intersecting .forbidden-action {
 		right: 2px;
 		top: 2px;
@@ -666,9 +935,8 @@
 	}
 }
 
-.ios.mobile {
-	.modal-content .dialog-iframe-bd {
-		overflow: auto;
-		-webkit-overflow-scrolling: touch;
-	}
+/* LPS-44925 */
+
+.modal-content .dialog-iframe-node {
+	border: 1px solid transparent;
 }

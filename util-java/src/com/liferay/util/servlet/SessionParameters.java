@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -54,8 +54,7 @@ public class SessionParameters {
 
 		if (newParameter == null) {
 			newParameter =
-				StringUtil.randomString() + StringPool.UNDERLINE +
-					parameter;
+				StringUtil.randomString() + StringPool.UNDERLINE + parameter;
 
 			parameters.put(parameter, newParameter);
 		}
@@ -78,8 +77,7 @@ public class SessionParameters {
 
 		if (newParameter == null) {
 			newParameter =
-				StringUtil.randomString() + StringPool.UNDERLINE +
-					parameter;
+				StringUtil.randomString() + StringPool.UNDERLINE + parameter;
 
 			parameters.put(parameter, newParameter);
 		}
@@ -94,13 +92,13 @@ public class SessionParameters {
 			parameters = (Map<String, String>)session.getAttribute(KEY);
 
 			if (parameters == null) {
-				parameters = new HashMap<String, String>();
+				parameters = new HashMap<>();
 
 				session.setAttribute(KEY, parameters);
 			}
 		}
 		catch (IllegalStateException ise) {
-			parameters = new HashMap<String, String>();
+			parameters = new HashMap<>();
 		}
 
 		return parameters;
@@ -115,13 +113,13 @@ public class SessionParameters {
 			parameters = (Map<String, String>)portletSession.getAttribute(KEY);
 
 			if (parameters == null) {
-				parameters = new LinkedHashMap<String, String>();
+				parameters = new LinkedHashMap<>();
 
 				portletSession.setAttribute(KEY, parameters);
 			}
 		}
 		catch (IllegalStateException ise) {
-			parameters = new LinkedHashMap<String, String>();
+			parameters = new LinkedHashMap<>();
 		}
 
 		return parameters;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -116,7 +116,7 @@ public class SessionFactoryImpl implements SessionFactory {
 
 	protected Map<String, Class<?>> getPreloadClassLoaderClasses() {
 		try {
-			Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
+			Map<String, Class<?>> classes = new HashMap<>();
 
 			for (String className : _PRELOAD_CLASS_NAMES) {
 				ClassLoader portalClassLoader =
@@ -152,7 +152,8 @@ public class SessionFactoryImpl implements SessionFactory {
 		PropsValues.
 			SPRING_HIBERNATE_SESSION_FACTORY_PRELOAD_CLASSLOADER_CLASSES;
 
-	private static Log _log = LogFactoryUtil.getLog(SessionFactoryImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SessionFactoryImpl.class);
 
 	private ClassLoader _sessionFactoryClassLoader;
 	private SessionFactoryImplementor _sessionFactoryImplementor;

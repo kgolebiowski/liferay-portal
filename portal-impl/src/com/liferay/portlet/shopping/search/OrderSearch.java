@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,7 +28,9 @@ import javax.portlet.PortletURL;
  */
 public class OrderSearch extends SearchContainer<ShoppingOrder> {
 
-	static List<String> headerNames = new ArrayList<String>();
+	public static final String EMPTY_RESULTS_MESSAGE = "no-orders-were-found";
+
+	public static List<String> headerNames = new ArrayList<>();
 
 	static {
 		headerNames.add("number");
@@ -36,8 +38,6 @@ public class OrderSearch extends SearchContainer<ShoppingOrder> {
 		headerNames.add("status");
 		headerNames.add("customer");
 	}
-
-	public static final String EMPTY_RESULTS_MESSAGE = "no-orders-were-found";
 
 	public OrderSearch(PortletRequest portletRequest, PortletURL iteratorURL) {
 		super(

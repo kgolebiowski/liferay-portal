@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -75,7 +75,7 @@ public class MulticastClientTool {
 	}
 
 	private Map<String, Object> _getArgsMap(String[] args) throws Exception {
-		Map<String, Object> argsMap = new HashMap<String, Object>();
+		Map<String, Object> argsMap = new HashMap<>();
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-g")) {

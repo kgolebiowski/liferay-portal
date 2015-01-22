@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.PortalLifecycleUtil;
 import com.liferay.portal.kernel.util.PropertiesUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.ClassLoaderUtil;
 
 import java.util.ArrayList;
@@ -56,9 +57,9 @@ public class HotDeployImpl implements HotDeploy {
 			_log.debug("Initializing hot deploy manager " + this.hashCode());
 		}
 
-		_dependentHotDeployEvents = new ArrayList<HotDeployEvent>();
-		_deployedServletContextNames = new HashSet<String>();
-		_hotDeployListeners = new ArrayList<HotDeployListener>();
+		_dependentHotDeployEvents = new ArrayList<>();
+		_deployedServletContextNames = new HashSet<>();
+		_hotDeployListeners = new ArrayList<>();
 	}
 
 	@Override
@@ -129,6 +130,24 @@ public class HotDeployImpl implements HotDeploy {
 	}
 
 	@Override
+	public synchronized boolean registerDependentPortalLifecycle(
+		String servletContextName, PortalLifecycle portalLifecycle) {
+
+		for (HotDeployEvent hotDeployEvent : _dependentHotDeployEvents) {
+			if (Validator.equals(
+					servletContextName,
+					hotDeployEvent.getServletContextName())) {
+
+				hotDeployEvent.addPortalLifecycle(portalLifecycle);
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	@Override
 	public synchronized void registerListener(
 		HotDeployListener hotDeployListener) {
 
@@ -162,7 +181,7 @@ public class HotDeployImpl implements HotDeploy {
 		_hotDeployListeners.clear();
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public void initPolicy(
 			String servletContextName, ClassLoader classLoader,
@@ -198,7 +217,10 @@ public class HotDeployImpl implements HotDeploy {
 				_log.info("Deploying " + servletContextName + " from queue");
 			}
 
-			for (HotDeployListener hotDeployListener : _hotDeployListeners) {
+			for (int i = 0; i < _hotDeployListeners.size(); i++) {
+				HotDeployListener hotDeployListener = _hotDeployListeners.get(
+					i);
+
 				PortletClassLoaderUtil.setServletContextName(
 					hotDeployEvent.getServletContextName());
 
@@ -222,14 +244,16 @@ public class HotDeployImpl implements HotDeploy {
 			try {
 				setContextClassLoader(ClassLoaderUtil.getPortalClassLoader());
 
-				List<HotDeployEvent> dependentEvents =
-					new ArrayList<HotDeployEvent>(_dependentHotDeployEvents);
+				List<HotDeployEvent> dependentEvents = new ArrayList<>(
+					_dependentHotDeployEvents);
 
 				for (HotDeployEvent dependentEvent : dependentEvents) {
 					setContextClassLoader(
 						dependentEvent.getContextClassLoader());
 
 					doFireDeployEvent(dependentEvent);
+
+					dependentEvent.flushInits();
 				}
 			}
 			finally {
@@ -278,7 +302,7 @@ public class HotDeployImpl implements HotDeploy {
 	protected String getRequiredServletContextNames(
 		HotDeployEvent hotDeployEvent) {
 
-		List<String> requiredServletContextNames = new ArrayList<String>();
+		List<String> requiredServletContextNames = new ArrayList<>();
 
 		for (String dependentServletContextName :
 				hotDeployEvent.getDependentServletContextNames()) {
@@ -299,9 +323,9 @@ public class HotDeployImpl implements HotDeploy {
 		ClassLoaderUtil.setContextClassLoader(contextClassLoader);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(HotDeployImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(HotDeployImpl.class);
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
 	private boolean _capturePrematureEvents = true;
 	private final List<HotDeployEvent> _dependentHotDeployEvents;
@@ -356,8 +380,8 @@ public class HotDeployImpl implements HotDeploy {
 				properties);
 		}
 
-		private ClassLoader _classLoader;
-		private ServletContext _servletContext;
+		private final ClassLoader _classLoader;
+		private final ServletContext _servletContext;
 
 	}
 

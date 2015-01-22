@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.LayoutConstants;
@@ -124,7 +123,7 @@ public abstract class BaseControlPanelEntry implements ControlPanelEntry {
 
 	protected boolean hasAccessPermissionExplicitlyGranted(
 			PermissionChecker permissionChecker, Group group, Portlet portlet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (permissionChecker.isCompanyAdmin()) {
 			return true;
@@ -159,9 +158,8 @@ public abstract class BaseControlPanelEntry implements ControlPanelEntry {
 
 		if (actions.contains(ActionKeys.ACCESS_IN_CONTROL_PANEL) &&
 			PortletPermissionUtil.contains(
-				permissionChecker, groupId, getDefaultPlid(group, category),
-				portlet.getPortletId(), ActionKeys.ACCESS_IN_CONTROL_PANEL,
-				true)) {
+				permissionChecker, groupId, 0, portlet.getRootPortletId(),
+				ActionKeys.ACCESS_IN_CONTROL_PANEL, true)) {
 
 			return true;
 		}

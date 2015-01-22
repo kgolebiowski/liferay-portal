@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.mobile.device.Device;
 import com.liferay.portal.kernel.mobile.device.UnknownDevice;
+import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.template.StringTemplateResource;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
@@ -41,6 +42,7 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.xml.Attribute;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
 import com.liferay.portal.kernel.xml.Element;
@@ -101,8 +103,31 @@ public class Transformer {
 
 		this(errorTemplatePropertyKey, restricted);
 
-		_transformerListenerClassNames = SetUtil.fromArray(
+		ClassLoader classLoader = PortalClassLoaderUtil.getClassLoader();
+
+		Set<String> transformerListenerClassNames = SetUtil.fromArray(
 			PropsUtil.getArray(transformerListenerPropertyKey));
+
+		for (String transformerListenerClassName :
+				transformerListenerClassNames) {
+
+			try {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Instantiating transformer listener " +
+							transformerListenerClassName);
+				}
+
+				TransformerListener transformerListener =
+					(TransformerListener)InstanceFactory.newInstance(
+						classLoader, transformerListenerClassName);
+
+				_transformerListeners.add(transformerListener);
+			}
+			catch (Exception e) {
+				_log.error(e, e);
+			}
+		}
 	}
 
 	public String transform(
@@ -138,19 +163,24 @@ public class Transformer {
 		try {
 			prepareTemplate(themeDisplay, template);
 
+			long classNameId = 0;
+
 			if (contextObjects != null) {
 				for (String key : contextObjects.keySet()) {
 					template.put(key, contextObjects.get(key));
 				}
+
+				classNameId = GetterUtil.getLong(
+					contextObjects.get(TemplateConstants.CLASS_NAME_ID));
 			}
 
 			template.put("company", getCompany(themeDisplay, companyId));
 			template.put("companyId", companyId);
 			template.put("device", getDevice(themeDisplay));
 
-			String templatesPath = getTemplatesPath(companyId, scopeGroupId);
+			String templatesPath = getTemplatesPath(
+				companyId, scopeGroupId, classNameId);
 
-			template.put("journalTemplatesPath", templatesPath);
 			template.put(
 				"permissionChecker",
 				PermissionThreadLocal.getPermissionChecker());
@@ -164,8 +194,9 @@ public class Transformer {
 			// Deprecated variables
 
 			template.put("groupId", scopeGroupId);
+			template.put("journalTemplatesPath", templatesPath);
 
-			mergeTemplate(template, unsyncStringWriter);
+			mergeTemplate(template, unsyncStringWriter, false);
 		}
 		catch (Exception e) {
 			throw new TransformException("Unhandled exception", e);
@@ -176,8 +207,33 @@ public class Transformer {
 
 	public String transform(
 			ThemeDisplay themeDisplay, Map<String, String> tokens,
-			String viewMode, String languageId, String xml, String script,
+			String viewMode, String languageId, Document document,
+			PortletRequestModel portletRequestModel, String script,
 			String langType)
+		throws Exception {
+
+		return doTransform(
+			themeDisplay, tokens, viewMode, languageId, document,
+			portletRequestModel, script, langType, false);
+	}
+
+	public String transform(
+			ThemeDisplay themeDisplay, Map<String, String> tokens,
+			String viewMode, String languageId, Document document,
+			PortletRequestModel portletRequestModel, String script,
+			String langType, boolean propagateException)
+		throws Exception {
+
+		return doTransform(
+			themeDisplay, tokens, viewMode, languageId, document,
+			portletRequestModel, script, langType, propagateException);
+	}
+
+	protected String doTransform(
+			ThemeDisplay themeDisplay, Map<String, String> tokens,
+			String viewMode, String languageId, Document document,
+			PortletRequestModel portletRequestModel, String script,
+			String langType, boolean propagateException)
 		throws Exception {
 
 		// Setup listeners
@@ -197,48 +253,23 @@ public class Transformer {
 		}
 
 		if (_logTransformBefore.isDebugEnabled()) {
-			_logTransformBefore.debug(xml);
+			_logTransformBefore.debug(document);
 		}
 
-		List<TransformerListener> transformerListeners =
-			new ArrayList<TransformerListener>();
-
-		for (String transformerListenersClassName :
-				_transformerListenerClassNames) {
-
-			TransformerListener transformerListener = null;
-
-			try {
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						"Instantiate listener " +
-							transformerListenersClassName);
-				}
-
-				ClassLoader classLoader =
-					PortalClassLoaderUtil.getClassLoader();
-
-				transformerListener =
-					(TransformerListener)InstanceFactory.newInstance(
-						classLoader, transformerListenersClassName);
-
-				transformerListeners.add(transformerListener);
-			}
-			catch (Exception e) {
-				_log.error(e, e);
-			}
+		for (TransformerListener transformerListener : _transformerListeners) {
 
 			// Modify XML
 
 			if (_logXmlBeforeListener.isDebugEnabled()) {
-				_logXmlBeforeListener.debug(xml);
+				_logXmlBeforeListener.debug(document);
 			}
 
 			if (transformerListener != null) {
-				xml = transformerListener.onXml(xml, languageId, tokens);
+				document = transformerListener.onXml(
+					document, languageId, tokens);
 
 				if (_logXmlAfterListener.isDebugEnabled()) {
-					_logXmlAfterListener.debug(xml);
+					_logXmlAfterListener.debug(document);
 				}
 			}
 
@@ -250,7 +281,7 @@ public class Transformer {
 
 			if (transformerListener != null) {
 				script = transformerListener.onScript(
-					script, xml, languageId, tokens);
+					script, document, languageId, tokens);
 
 				if (_logScriptAfterListener.isDebugEnabled()) {
 					_logScriptAfterListener.debug(script);
@@ -263,12 +294,14 @@ public class Transformer {
 		String output = null;
 
 		if (Validator.isNull(langType)) {
-			output = LocalizationUtil.getLocalization(xml, languageId);
+			output = LocalizationUtil.getLocalization(
+				document.asXML(), languageId);
 		}
 		else {
 			long companyId = 0;
 			long companyGroupId = 0;
 			long articleGroupId = 0;
+			long classNameId = 0;
 
 			if (tokens != null) {
 				companyId = GetterUtil.getLong(tokens.get("company_id"));
@@ -276,6 +309,8 @@ public class Transformer {
 					tokens.get("company_group_id"));
 				articleGroupId = GetterUtil.getLong(
 					tokens.get("article_group_id"));
+				classNameId = GetterUtil.getLong(
+					tokens.get(TemplateConstants.CLASS_NAME_ID));
 			}
 
 			long scopeGroupId = 0;
@@ -294,14 +329,12 @@ public class Transformer {
 				templateId, companyId, companyGroupId, articleGroupId);
 
 			Template template = getTemplate(
-				templateId, tokens, languageId, xml, script, langType);
+				templateId, tokens, languageId, document, script, langType);
 
 			UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter();
 
 			try {
-				if (Validator.isNotNull(xml)) {
-					Document document = SAXReaderUtil.read(xml);
-
+				if (document != null) {
 					Element rootElement = document.getRootElement();
 
 					List<TemplateNode> templateNodes = getTemplateNodes(
@@ -313,12 +346,29 @@ public class Transformer {
 						}
 					}
 
-					Element requestElement = rootElement.element("request");
+					if (portletRequestModel != null) {
+						template.put("request", portletRequestModel.toMap());
 
-					template.put(
-						"request", insertRequestVariables(requestElement));
+						if (langType.equals(TemplateConstants.LANG_TYPE_XSL)) {
+							Document requestDocument = SAXReaderUtil.read(
+								portletRequestModel.toXML());
 
-					template.put("xmlRequest", requestElement.asXML());
+							Element requestElement =
+								requestDocument.getRootElement();
+
+							template.put("xmlRequest", requestElement.asXML());
+						}
+					}
+					else {
+						Element requestElement = rootElement.element("request");
+
+						template.put(
+							"request", insertRequestVariables(requestElement));
+
+						if (langType.equals(TemplateConstants.LANG_TYPE_XSL)) {
+							template.put("xmlRequest", requestElement.asXML());
+						}
+					}
 				}
 
 				template.put("articleGroupId", articleGroupId);
@@ -327,9 +377,7 @@ public class Transformer {
 				template.put("device", getDevice(themeDisplay));
 
 				String templatesPath = getTemplatesPath(
-					companyId, articleGroupId);
-
-				template.put("journalTemplatesPath", templatesPath);
+					companyId, articleGroupId, classNameId);
 
 				Locale locale = LocaleUtil.fromLanguageId(languageId);
 
@@ -349,8 +397,9 @@ public class Transformer {
 				// Deprecated variables
 
 				template.put("groupId", articleGroupId);
+				template.put("journalTemplatesPath", templatesPath);
 
-				mergeTemplate(template, unsyncStringWriter);
+				mergeTemplate(template, unsyncStringWriter, propagateException);
 			}
 			catch (Exception e) {
 				if (e instanceof DocumentException) {
@@ -373,7 +422,7 @@ public class Transformer {
 
 		// Postprocess output
 
-		for (TransformerListener transformerListener : transformerListeners) {
+		for (TransformerListener transformerListener : _transformerListeners) {
 
 			// Modify output
 
@@ -433,7 +482,7 @@ public class Transformer {
 
 	protected Template getTemplate(
 			String templateId, Map<String, String> tokens, String languageId,
-			String xml, String script, String langType)
+			Document document, String script, String langType)
 		throws Exception {
 
 		TemplateResource templateResource = null;
@@ -443,7 +492,7 @@ public class Transformer {
 				tokens, languageId);
 
 			templateResource = new XSLTemplateResource(
-				templateId, script, xslURIResolver, xml);
+				templateId, script, xslURIResolver, document.asXML());
 		}
 		else {
 			templateResource = new StringTemplateResource(templateId, script);
@@ -495,10 +544,9 @@ public class Transformer {
 			ThemeDisplay themeDisplay, Element element)
 		throws Exception {
 
-		List<TemplateNode> templateNodes = new ArrayList<TemplateNode>();
+		List<TemplateNode> templateNodes = new ArrayList<>();
 
-		Map<String, TemplateNode> prototypeTemplateNodes =
-			new HashMap<String, TemplateNode>();
+		Map<String, TemplateNode> prototypeTemplateNodes = new HashMap<>();
 
 		List<Element> dynamicElementElements = element.elements(
 			"dynamic-element");
@@ -524,8 +572,17 @@ public class Transformer {
 			String type = dynamicElementElement.attributeValue(
 				"type", StringPool.BLANK);
 
+			Map<String, String> attributes = new HashMap<>();
+
+			if (dynamicContentElement != null) {
+				for (Attribute attribute : dynamicContentElement.attributes()) {
+					attributes.put(attribute.getName(), attribute.getValue());
+				}
+			}
+
 			TemplateNode templateNode = new TemplateNode(
-				themeDisplay, name, StringUtil.stripCDATA(data), type);
+				themeDisplay, name, StringUtil.stripCDATA(data), type,
+				attributes);
 
 			if (dynamicElementElement.element("dynamic-element") != null) {
 				templateNode.appendChildren(
@@ -560,20 +617,24 @@ public class Transformer {
 		return templateNodes;
 	}
 
-	protected String getTemplatesPath(long companyId, long groupId) {
-		StringBundler sb = new StringBundler(5);
+	protected String getTemplatesPath(
+		long companyId, long groupId, long classNameId) {
+
+		StringBundler sb = new StringBundler(7);
 
 		sb.append(TemplateConstants.TEMPLATE_SEPARATOR);
 		sb.append(StringPool.SLASH);
 		sb.append(companyId);
 		sb.append(StringPool.SLASH);
 		sb.append(groupId);
+		sb.append(StringPool.SLASH);
+		sb.append(classNameId);
 
 		return sb.toString();
 	}
 
 	protected Map<String, Object> insertRequestVariables(Element element) {
-		Map<String, Object> map = new HashMap<String, Object>();
+		Map<String, Object> map = new HashMap<>();
 
 		if (element == null) {
 			return map;
@@ -599,7 +660,7 @@ public class Transformer {
 					map.put(nameElement.getText(), valueElement.getText());
 				}
 				else {
-					List<String> values = new ArrayList<String>();
+					List<String> values = new ArrayList<>();
 
 					for (Element valueElement : valueElements) {
 						values.add(valueElement.getText());
@@ -624,7 +685,8 @@ public class Transformer {
 	}
 
 	protected void mergeTemplate(
-			Template template, UnsyncStringWriter unsyncStringWriter)
+			Template template, UnsyncStringWriter unsyncStringWriter,
+			boolean propagateException)
 		throws Exception {
 
 		VelocityTaglib velocityTaglib = (VelocityTaglib)template.get(
@@ -634,7 +696,12 @@ public class Transformer {
 			velocityTaglib.setTemplate(template);
 		}
 
-		template.processTemplate(unsyncStringWriter);
+		if (propagateException) {
+			template.doProcessTemplate(unsyncStringWriter);
+		}
+		else {
+			template.processTemplate(unsyncStringWriter);
+		}
 	}
 
 	protected void prepareTemplate(ThemeDisplay themeDisplay, Template template)
@@ -647,30 +714,30 @@ public class Transformer {
 		template.prepare(themeDisplay.getRequest());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(Transformer.class);
+	private static final Log _log = LogFactoryUtil.getLog(Transformer.class);
 
-	private static Log _logOutputAfterListener = LogFactoryUtil.getLog(
+	private static final Log _logOutputAfterListener = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".OutputAfterListener");
-	private static Log _logOutputBeforeListener = LogFactoryUtil.getLog(
+	private static final Log _logOutputBeforeListener = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".OutputBeforeListener");
-	private static Log _logScriptAfterListener = LogFactoryUtil.getLog(
+	private static final Log _logScriptAfterListener = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".ScriptAfterListener");
-	private static Log _logScriptBeforeListener = LogFactoryUtil.getLog(
+	private static final Log _logScriptBeforeListener = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".ScriptBeforeListener");
-	private static Log _logTokens = LogFactoryUtil.getLog(
+	private static final Log _logTokens = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".Tokens");
-	private static Log _logTransformBefore = LogFactoryUtil.getLog(
+	private static final Log _logTransformBefore = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".TransformBefore");
-	private static Log _logTransfromAfter = LogFactoryUtil.getLog(
+	private static final Log _logTransfromAfter = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".TransformAfter");
-	private static Log _logXmlAfterListener = LogFactoryUtil.getLog(
+	private static final Log _logXmlAfterListener = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".XmlAfterListener");
-	private static Log _logXmlBeforeListener = LogFactoryUtil.getLog(
+	private static final Log _logXmlBeforeListener = LogFactoryUtil.getLog(
 		Transformer.class.getName() + ".XmlBeforeListener");
 
-	private Map<String, String> _errorTemplateIds =
-		new HashMap<String, String>();
-	private boolean _restricted;
-	private Set<String> _transformerListenerClassNames = new HashSet<String>();
+	private final Map<String, String> _errorTemplateIds = new HashMap<>();
+	private final boolean _restricted;
+	private final Set<TransformerListener> _transformerListeners =
+		new HashSet<>();
 
 }

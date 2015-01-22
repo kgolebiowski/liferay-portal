@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -24,14 +24,15 @@ import java.io.Serializable;
 import java.util.Properties;
 
 import net.sf.ehcache.CacheException;
+import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
-import net.sf.ehcache.distribution.CacheReplicator;
+import net.sf.ehcache.event.CacheEventListener;
 
 /**
  * @author Shuyang Zhou
  */
-public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
+public class EhcachePortalCacheClusterReplicator implements CacheEventListener {
 
 	public EhcachePortalCacheClusterReplicator(Properties properties) {
 		if (properties != null) {
@@ -46,11 +47,13 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 			_replicateUpdatesViaCopy = GetterUtil.getBoolean(
 				properties.getProperty(_REPLICATE_UPDATES_VIA_COPY));
 		}
-	}
-
-	@Override
-	public boolean alive() {
-		return true;
+		else {
+			_replicatePuts = true;
+			_replicatePutsViaCopy = false;
+			_replicateRemovals = true;
+			_replicateUpdates = true;
+			_replicateUpdatesViaCopy = false;
+		}
 	}
 
 	@Override
@@ -60,16 +63,6 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 
 	@Override
 	public void dispose() {
-	}
-
-	@Override
-	public boolean isReplicateUpdatesViaCopy() {
-		return false;
-	}
-
-	@Override
-	public boolean notAlive() {
-		return false;
 	}
 
 	@Override
@@ -84,20 +77,22 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 	public void notifyElementPut(Ehcache ehcache, Element element)
 		throws CacheException {
 
-		if (!_replicatePuts) {
+		if (!_replicatePuts || !ClusterReplicationThreadLocal.isReplicate()) {
 			return;
 		}
 
+		CacheManager cacheManager = ehcache.getCacheManager();
 		Serializable key = (Serializable)element.getObjectKey();
 
 		PortalCacheClusterEvent portalCacheClusterEvent =
 			new PortalCacheClusterEvent(
-				ehcache.getName(), key, PortalCacheClusterEventType.PUT);
+				cacheManager.getName(), ehcache.getName(), key,
+				PortalCacheClusterEventType.PUT);
 
 		if (_replicatePutsViaCopy) {
-			Serializable value = (Serializable)element.getObjectValue();
-
-			portalCacheClusterEvent.setElementValue(value);
+			portalCacheClusterEvent.setElementValue(
+				(Serializable)element.getObjectValue());
+			portalCacheClusterEvent.setTimeToLive(element.getTimeToLive());
 		}
 
 		PortalCacheClusterLinkUtil.sendEvent(portalCacheClusterEvent);
@@ -107,15 +102,19 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 	public void notifyElementRemoved(Ehcache ehcache, Element element)
 		throws CacheException {
 
-		if (!_replicateRemovals) {
+		if (!_replicateRemovals ||
+			!ClusterReplicationThreadLocal.isReplicate()) {
+
 			return;
 		}
 
+		CacheManager cacheManager = ehcache.getCacheManager();
 		Serializable key = (Serializable)element.getObjectKey();
 
 		PortalCacheClusterEvent portalCacheClusterEvent =
 			new PortalCacheClusterEvent(
-				ehcache.getName(), key, PortalCacheClusterEventType.REMOVE);
+				cacheManager.getName(), ehcache.getName(), key,
+				PortalCacheClusterEventType.REMOVE);
 
 		PortalCacheClusterLinkUtil.sendEvent(portalCacheClusterEvent);
 	}
@@ -124,20 +123,25 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 	public void notifyElementUpdated(Ehcache ehcache, Element element)
 		throws CacheException {
 
-		if (!_replicateUpdates) {
+		if (!_replicateUpdates ||
+			!ClusterReplicationThreadLocal.isReplicate()) {
+
 			return;
 		}
 
 		Serializable key = (Serializable)element.getObjectKey();
 
+		CacheManager cacheManager = ehcache.getCacheManager();
+
 		PortalCacheClusterEvent portalCacheClusterEvent =
 			new PortalCacheClusterEvent(
-				ehcache.getName(), key, PortalCacheClusterEventType.UPDATE);
+				cacheManager.getName(), ehcache.getName(), key,
+				PortalCacheClusterEventType.UPDATE);
 
 		if (_replicateUpdatesViaCopy) {
-			Serializable value = (Serializable)element.getObjectValue();
-
-			portalCacheClusterEvent.setElementValue(value);
+			portalCacheClusterEvent.setElementValue(
+				(Serializable)element.getObjectValue());
+			portalCacheClusterEvent.setTimeToLive(element.getTimeToLive());
 		}
 
 		PortalCacheClusterLinkUtil.sendEvent(portalCacheClusterEvent);
@@ -145,13 +149,17 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 
 	@Override
 	public void notifyRemoveAll(Ehcache ehcache) {
-		if (!_replicateRemovals) {
+		if (!_replicateRemovals ||
+			!ClusterReplicationThreadLocal.isReplicate()) {
+
 			return;
 		}
 
+		CacheManager cacheManager = ehcache.getCacheManager();
+
 		PortalCacheClusterEvent portalCacheClusterEvent =
 			new PortalCacheClusterEvent(
-				ehcache.getName(), null,
+				cacheManager.getName(), ehcache.getName(), null,
 				PortalCacheClusterEventType.REMOVE_ALL);
 
 		PortalCacheClusterLinkUtil.sendEvent(portalCacheClusterEvent);
@@ -169,10 +177,10 @@ public class EhcachePortalCacheClusterReplicator implements CacheReplicator {
 	private static final String _REPLICATE_UPDATES_VIA_COPY =
 		"replicateUpdatesViaCopy";
 
-	private boolean _replicatePuts = true;
-	private boolean _replicatePutsViaCopy;
-	private boolean _replicateRemovals = true;
-	private boolean _replicateUpdates = true;
-	private boolean _replicateUpdatesViaCopy;
+	private final boolean _replicatePuts;
+	private final boolean _replicatePutsViaCopy;
+	private final boolean _replicateRemovals;
+	private final boolean _replicateUpdates;
+	private final boolean _replicateUpdatesViaCopy;
 
 }

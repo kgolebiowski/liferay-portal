@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -39,8 +39,12 @@ public interface ShoppingItem extends ShoppingItemModel, PersistedModel {
 	public java.lang.String[] getFieldsQuantitiesArray();
 
 	public java.util.List<com.liferay.portlet.shopping.model.ShoppingItemPrice> getItemPrices()
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException;
+		throws com.liferay.portal.kernel.exception.PortalException;
+
+	public java.lang.String getShoppingItemImageURL(
+		com.liferay.portal.theme.ThemeDisplay themeDisplay);
+
+	public boolean isInfiniteStock();
 
 	public void setFieldsQuantitiesArray(
 		java.lang.String[] fieldsQuantitiesArray);

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,11 +18,11 @@ import com.liferay.portal.kernel.dao.db.BaseDBProcess;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.util.UpgradeTable;
 import com.liferay.portal.kernel.upgrade.util.UpgradeTableFactoryUtil;
+import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.sql.Connection;
@@ -36,9 +36,6 @@ import java.sql.ResultSetMetaData;
  * @author Alexander Chow
  */
 public abstract class UpgradeProcess extends BaseDBProcess {
-
-	public UpgradeProcess() {
-	}
 
 	public int getThreshold() {
 
@@ -60,13 +57,13 @@ public abstract class UpgradeProcess extends BaseDBProcess {
 		return false;
 	}
 
-	public long increment() throws SystemException {
+	public long increment() {
 		DB db = DBFactoryUtil.getDB();
 
 		return db.increment();
 	}
 
-	public long increment(String name) throws SystemException {
+	public long increment(String name) {
 		DB db = DBFactoryUtil.getDB();
 
 		return db.increment(name);
@@ -115,7 +112,7 @@ public abstract class UpgradeProcess extends BaseDBProcess {
 			for (int i = 0; i < rsmd.getColumnCount(); i++) {
 				String curColumnName = rsmd.getColumnName(i + 1);
 
-				if (curColumnName.equals(columnName)) {
+				if (StringUtil.equalsIgnoreCase(curColumnName, columnName)) {
 					return true;
 				}
 			}
@@ -159,15 +156,25 @@ public abstract class UpgradeProcess extends BaseDBProcess {
 	}
 
 	public void upgrade() throws UpgradeException {
+		long start = System.currentTimeMillis();
+
 		try {
 			if (_log.isInfoEnabled()) {
-				_log.info("Upgrading " + getClass().getName());
+				_log.info("Upgrading " + ClassUtil.getClassName(this));
 			}
 
 			doUpgrade();
 		}
 		catch (Exception e) {
 			throw new UpgradeException(e);
+		}
+		finally {
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					"Completed upgrade process " +
+						ClassUtil.getClassName(this) + " in " +
+							(System.currentTimeMillis() - start) + "ms");
+			}
 		}
 	}
 
@@ -237,6 +244,6 @@ public abstract class UpgradeProcess extends BaseDBProcess {
 		upgradeTable.updateTable();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(UpgradeProcess.class);
+	private static final Log _log = LogFactoryUtil.getLog(UpgradeProcess.class);
 
 }

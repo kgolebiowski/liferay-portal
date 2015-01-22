@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -33,8 +33,8 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.service.CompanyLocalServiceUtil;
-import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
+import com.liferay.portal.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.service.PortletLocalServiceUtil;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
@@ -135,10 +135,14 @@ public class PortalOpenSearchImpl extends BaseOpenSearchImpl {
 					entryClassName);
 
 				if (indexer != null) {
-					String snippet = results.snippet(i);
+					String snippet = result.get(Field.SNIPPET);
 
 					Summary summary = indexer.getSummary(
-						result, themeDisplay.getLocale(), snippet, portletURL);
+						result, snippet, portletURL, null, null);
+
+					if (summary == null) {
+						continue;
+					}
 
 					title = summary.getTitle();
 					url = portletURL.toString();
@@ -174,14 +178,15 @@ public class PortalOpenSearchImpl extends BaseOpenSearchImpl {
 			ThemeDisplay themeDisplay, long groupId, Document result)
 		throws Exception {
 
-		String articleId = result.get(Field.ENTRY_CLASS_PK);
+		String articleId = result.get(Field.ARTICLE_ID);
 
 		JournalArticle article = JournalArticleServiceUtil.getArticle(
 			groupId, articleId);
 
 		if (Validator.isNotNull(article.getLayoutUuid())) {
 			String groupFriendlyURL = PortalUtil.getGroupFriendlyURL(
-				GroupLocalServiceUtil.getGroup(article.getGroupId()), false,
+				LayoutSetLocalServiceUtil.getLayoutSet(
+					article.getGroupId(), false),
 				themeDisplay);
 
 			return groupFriendlyURL.concat(
@@ -221,6 +226,7 @@ public class PortalOpenSearchImpl extends BaseOpenSearchImpl {
 		return sb.toString();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(PortalOpenSearchImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortalOpenSearchImpl.class);
 
 }

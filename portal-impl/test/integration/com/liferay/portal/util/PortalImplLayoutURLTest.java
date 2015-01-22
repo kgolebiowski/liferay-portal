@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,16 @@
 
 package com.liferay.portal.util;
 
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.theme.ThemeDisplay;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -27,19 +32,25 @@ import org.junit.Test;
  */
 public class PortalImplLayoutURLTest extends PortalImplBaseURLTestCase {
 
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
+
 	@Test
 	public void testFromControlPanel() throws Exception {
 		ThemeDisplay themeDisplay = initThemeDisplay(
-			company, group, layout, VIRTUAL_HOSTNAME);
+			company, group, publicLayout, VIRTUAL_HOSTNAME);
 
 		String virtualHostnameFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		themeDisplay = initThemeDisplay(
 			company, group, controlPanelLayout, VIRTUAL_HOSTNAME);
 
 		String controlPanelFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		Assert.assertEquals(
 			virtualHostnameFriendlyURL, controlPanelFriendlyURL);
@@ -48,12 +59,12 @@ public class PortalImplLayoutURLTest extends PortalImplBaseURLTestCase {
 	@Test
 	public void testNotPreserveParameters() throws Exception {
 		ThemeDisplay themeDisplay = initThemeDisplay(
-			company, group, layout, VIRTUAL_HOSTNAME);
+			company, group, publicLayout, VIRTUAL_HOSTNAME);
 
 		themeDisplay.setDoAsUserId("impersonated");
 
 		String virtualHostnameFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, false);
+			publicLayout, themeDisplay, false);
 
 		Assert.assertEquals(
 			StringPool.BLANK,
@@ -63,12 +74,12 @@ public class PortalImplLayoutURLTest extends PortalImplBaseURLTestCase {
 	@Test
 	public void testPreserveParameters() throws Exception {
 		ThemeDisplay themeDisplay = initThemeDisplay(
-			company, group, layout, VIRTUAL_HOSTNAME);
+			company, group, publicLayout, VIRTUAL_HOSTNAME);
 
 		themeDisplay.setDoAsUserId("impersonated");
 
 		String virtualHostnameFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		Assert.assertEquals(
 			"impersonated",
@@ -78,15 +89,15 @@ public class PortalImplLayoutURLTest extends PortalImplBaseURLTestCase {
 	@Test
 	public void testUsingLocalhost() throws Exception {
 		ThemeDisplay themeDisplay = initThemeDisplay(
-			company, group, layout, VIRTUAL_HOSTNAME);
+			company, group, publicLayout, VIRTUAL_HOSTNAME);
 
 		String virtualHostnameFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		themeDisplay.setServerName(LOCALHOST);
 
 		String localhostFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		Assert.assertEquals(localhostFriendlyURL, virtualHostnameFriendlyURL);
 	}
@@ -97,12 +108,12 @@ public class PortalImplLayoutURLTest extends PortalImplBaseURLTestCase {
 			company, group, controlPanelLayout, VIRTUAL_HOSTNAME);
 
 		String virtualHostnameFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		themeDisplay.setServerName(LOCALHOST);
 
 		String localhostFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		Assert.assertEquals(localhostFriendlyURL, virtualHostnameFriendlyURL);
 	}
@@ -110,18 +121,16 @@ public class PortalImplLayoutURLTest extends PortalImplBaseURLTestCase {
 	@Test
 	public void testUsingLocalhostFromControlPanelOnly() throws Exception {
 		ThemeDisplay themeDisplay = initThemeDisplay(
-			company, group, layout, VIRTUAL_HOSTNAME);
+			company, group, publicLayout, VIRTUAL_HOSTNAME);
 
 		String virtualHostnameFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		themeDisplay = initThemeDisplay(
-			company, group, controlPanelLayout, VIRTUAL_HOSTNAME);
-
-		themeDisplay.setServerName(LOCALHOST);
+			company, group, controlPanelLayout, VIRTUAL_HOSTNAME, LOCALHOST);
 
 		String controlPanelFriendlyURL = PortalUtil.getLayoutURL(
-			layout, themeDisplay, true);
+			publicLayout, themeDisplay, true);
 
 		Assert.assertEquals(
 			virtualHostnameFriendlyURL, controlPanelFriendlyURL);

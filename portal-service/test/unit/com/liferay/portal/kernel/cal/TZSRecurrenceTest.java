@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -226,9 +226,11 @@ public class TZSRecurrenceTest extends RecurrenceTestCase {
 		return getCalendar(2011, month, date, 5, 0);
 	}
 
-	private Duration _durationHour = getDuration(0, 0, 1, 0, 0);
-	private Calendar _insideDSTCalendar = getCalendar(2011, JULY, 3, 4, 0);
-	private Calendar _outsideDSTCalendar = getCalendar(2011, FEBRUARY, 7, 5, 0);
-	private TimeZone _timeZone = TimeZone.getTimeZone("America/New_York");
+	private final Duration _durationHour = getDuration(0, 0, 1, 0, 0);
+	private final Calendar _insideDSTCalendar = getCalendar(
+		2011, JULY, 3, 4, 0);
+	private final Calendar _outsideDSTCalendar = getCalendar(
+		2011, FEBRUARY, 7, 5, 0);
+	private final TimeZone _timeZone = TimeZone.getTimeZone("America/New_York");
 
 }

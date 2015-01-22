@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -63,10 +63,10 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 		StringBundler sb = new StringBundler(3);
 
 		sb.append(FIELD_NAMESPACE);
-		sb.append(StringPool.FORWARD_SLASH);
+		sb.append(StringPool.DOUBLE_UNDERLINE);
 		sb.append(
 			StringUtil.toLowerCase(ExpandoTableConstants.DEFAULT_TABLE_NAME));
-		sb.append(StringPool.FORWARD_SLASH);
+		sb.append(StringPool.DOUBLE_UNDERLINE);
 		sb.append(columnName);
 
 		return sb.toString();
@@ -75,7 +75,7 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 	protected void addAttribute(
 			Document document, ExpandoColumn expandoColumn,
 			List<ExpandoValue> expandoValues)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		String fieldName = encodeFieldName(expandoColumn.getName());
 
@@ -207,8 +207,7 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 	}
 
 	protected void doAddAttributes(
-			Document document, ExpandoBridge expandoBridge)
-		throws SystemException {
+		Document document, ExpandoBridge expandoBridge) {
 
 		List<ExpandoColumn> expandoColumns =
 			ExpandoColumnLocalServiceUtil.getDefaultTableColumns(
@@ -218,7 +217,7 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 			return;
 		}
 
-		List<ExpandoColumn> indexedColumns = new ArrayList<ExpandoColumn>();
+		List<ExpandoColumn> indexedColumns = new ArrayList<>();
 
 		for (ExpandoColumn expandoColumn : expandoColumns) {
 			UnicodeProperties properties =
@@ -255,7 +254,7 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 
 	protected static final String FIELD_NAMESPACE = "expando";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ExpandoBridgeIndexerImpl.class);
 
 }

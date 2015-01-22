@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,14 +14,12 @@
 
 package com.liferay.portal.kernel.cluster;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tina Tian
@@ -51,8 +49,8 @@ public class ClusterExecutorUtil {
 		clusterExecutor.destroy();
 	}
 
-	public static FutureClusterResponses execute(ClusterRequest clusterRequest)
-		throws SystemException {
+	public static FutureClusterResponses execute(
+		ClusterRequest clusterRequest) {
 
 		ClusterExecutor clusterExecutor = getClusterExecutor();
 
@@ -63,34 +61,17 @@ public class ClusterExecutorUtil {
 		return clusterExecutor.execute(clusterRequest);
 	}
 
-	public static void execute(
-			ClusterRequest clusterRequest,
-			ClusterResponseCallback clusterResponseCallback)
-		throws SystemException {
+	public static FutureClusterResponses execute(
+		ClusterRequest clusterRequest,
+		ClusterResponseCallback clusterResponseCallback) {
 
 		ClusterExecutor clusterExecutor = getClusterExecutor();
 
 		if (clusterExecutor == null) {
-			return;
+			return null;
 		}
 
-		clusterExecutor.execute(clusterRequest, clusterResponseCallback);
-	}
-
-	public static void execute(
-			ClusterRequest clusterRequest,
-			ClusterResponseCallback clusterResponseCallback, long timeout,
-			TimeUnit timeUnit)
-		throws SystemException {
-
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return;
-		}
-
-		clusterExecutor.execute(
-			clusterRequest, clusterResponseCallback, timeout, timeUnit);
+		return clusterExecutor.execute(clusterRequest, clusterResponseCallback);
 	}
 
 	public static ClusterExecutor getClusterExecutor() {
@@ -127,7 +108,7 @@ public class ClusterExecutorUtil {
 		return clusterExecutor.getClusterNodes();
 	}
 
-	public static ClusterNode getLocalClusterNode() throws SystemException {
+	public static ClusterNode getLocalClusterNode() {
 		ClusterExecutor clusterExecutor = getClusterExecutor();
 
 		if (clusterExecutor == null) {
@@ -205,7 +186,8 @@ public class ClusterExecutorUtil {
 		_clusterExecutor = clusterExecutor;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ClusterExecutorUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ClusterExecutorUtil.class);
 
 	private static ClusterExecutor _clusterExecutor;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -36,6 +36,11 @@ public class RestrictedTemplate implements Template {
 	}
 
 	@Override
+	public void doProcessTemplate(Writer writer) throws Exception {
+		_template.doProcessTemplate(writer);
+	}
+
+	@Override
 	public Object get(String key) {
 		return _template.get(key);
 	}
@@ -64,7 +69,7 @@ public class RestrictedTemplate implements Template {
 		_template.put(key, value);
 	}
 
-	private Set<String> _restrictedVariables;
-	private Template _template;
+	private final Set<String> _restrictedVariables;
+	private final Template _template;
 
 }

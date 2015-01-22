@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,46 +16,78 @@ package com.liferay.portlet.documentlibrary.service;
 
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.model.Group;
+import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileEntry;
 import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
-import com.liferay.portlet.documentlibrary.util.DLAppTestUtil;
+import com.liferay.portlet.documentlibrary.util.test.DLAppTestUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.testng.Assert;
 
 /**
  * @author Shinn Lok
+ * @author Sergio González
  */
-@ExecutionTestListeners(listeners = {MainServletExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class DLFileEntryLocalServiceTreeTest {
 
-	@After
-	public void tearDown() throws Exception {
-		for (int i = _fileEntries.size() - 1; i >= 0; i--) {
-			FileEntry fileEntry = _fileEntries.get(i);
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
-			DLAppLocalServiceUtil.deleteFileEntry(fileEntry.getFileEntryId());
-		}
+	@Before
+	public void setUp() throws Exception {
+		_group = GroupTestUtil.addGroup();
+	}
 
-		DLAppLocalServiceUtil.deleteFolder(_folder.getFolderId());
+	@Test
+	public void testFileEntryTreePathWhenMovingSubfolderWithFileEntry()
+		throws Exception {
+
+		Folder folderA = DLAppTestUtil.addFolder(
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Folder A");
+
+		Folder folderAA = DLAppTestUtil.addFolder(
+			_group.getGroupId(), folderA.getFolderId(), "Folder AA");
+
+		FileEntry fileEntry = DLAppTestUtil.addFileEntry(
+			_group.getGroupId(), folderAA.getFolderId(), "Entry.txt");
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		DLAppLocalServiceUtil.moveFolder(
+			TestPropsValues.getUserId(), folderAA.getFolderId(),
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, serviceContext);
+
+		DLFileEntry dlFileEntry = DLFileEntryLocalServiceUtil.getDLFileEntry(
+			fileEntry.getFileEntryId());
+
+		Assert.assertEquals(
+			dlFileEntry.buildTreePath(), dlFileEntry.getTreePath());
 	}
 
 	@Test
 	public void testRebuildTree() throws Exception {
-		createTree();
+		List<FileEntry> fileEntries = createTree();
 
-		for (FileEntry fileEntry : _fileEntries) {
+		for (FileEntry fileEntry : fileEntries) {
 			DLFileEntry dlFileEntry = DLFileEntryLocalServiceUtil.getFileEntry(
 				fileEntry.getFileEntryId());
 
@@ -66,7 +98,7 @@ public class DLFileEntryLocalServiceTreeTest {
 
 		DLFileEntryLocalServiceUtil.rebuildTree(TestPropsValues.getCompanyId());
 
-		for (FileEntry fileEntry : _fileEntries) {
+		for (FileEntry fileEntry : fileEntries) {
 			DLFileEntry dlFileEntry = DLFileEntryLocalServiceUtil.getFileEntry(
 				fileEntry.getFileEntryId());
 
@@ -75,24 +107,28 @@ public class DLFileEntryLocalServiceTreeTest {
 		}
 	}
 
-	protected void createTree() throws Exception {
+	protected List<FileEntry> createTree() throws Exception {
+		List<FileEntry> fileEntries = new ArrayList<>();
+
 		FileEntry fileEntryA = DLAppTestUtil.addFileEntry(
-			TestPropsValues.getGroupId(),
-			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Entry A.txt");
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Entry A.txt");
 
-		_fileEntries.add(fileEntryA);
+		fileEntries.add(fileEntryA);
 
-		_folder = DLAppTestUtil.addFolder(
-			TestPropsValues.getGroupId(),
-			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Folder A");
+		Folder folder = DLAppTestUtil.addFolder(
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Folder A");
 
 		FileEntry fileEntryAA = DLAppTestUtil.addFileEntry(
-			TestPropsValues.getGroupId(), _folder.getFolderId(), "Entry A.txt");
+			_group.getGroupId(), folder.getFolderId(), "Entry A.txt");
 
-		_fileEntries.add(fileEntryAA);
+		fileEntries.add(fileEntryAA);
+
+		return fileEntries;
 	}
 
-	private List<FileEntry> _fileEntries = new ArrayList<FileEntry>();
-	private Folder _folder;
+	@DeleteAfterTestRun
+	private Group _group;
 
 }

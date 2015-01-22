@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.dynamicdatamapping.storage;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.service.ServiceContext;
@@ -27,6 +26,12 @@ import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStorageLinkLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.storage.query.Condition;
+import com.liferay.portlet.dynamicdatamapping.util.DDMFormValuesToFieldsConverterUtil;
+import com.liferay.portlet.dynamicdatamapping.util.DDMFormValuesTransformer;
+import com.liferay.portlet.dynamicdatamapping.util.DocumentLibraryDDMFormFieldValueTransformer;
+import com.liferay.portlet.dynamicdatamapping.util.FieldsToDDMFormValuesConverterUtil;
+import com.liferay.portlet.dynamicdatamapping.util.HTMLSanitizerDDMFormFieldValueTransformer;
+import com.liferay.portlet.dynamicdatamapping.validator.DDMFormValuesValidatorUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -40,12 +45,36 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 
 	@Override
 	public long create(
+			long companyId, long ddmStructureId, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws StorageException {
+
+		try {
+			validateDDMFormValues(ddmFormValues);
+
+			transformDDMFormValues(ddmFormValues, serviceContext);
+
+			return doCreate(
+				companyId, ddmStructureId, ddmFormValues, serviceContext);
+		}
+		catch (StorageException se) {
+			throw se;
+		}
+		catch (Exception e) {
+			throw new StorageException(e);
+		}
+	}
+
+	@Override
+	public long create(
 			long companyId, long ddmStructureId, Fields fields,
 			ServiceContext serviceContext)
 		throws StorageException {
 
 		try {
 			validateDDMStructureFields(ddmStructureId, fields);
+
+			fields = transformFields(ddmStructureId, fields, serviceContext);
 
 			return doCreate(companyId, ddmStructureId, fields, serviceContext);
 		}
@@ -76,6 +105,21 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 
 		try {
 			doDeleteByDDMStructure(ddmStructureId);
+		}
+		catch (StorageException se) {
+			throw se;
+		}
+		catch (Exception e) {
+			throw new StorageException(e);
+		}
+	}
+
+	@Override
+	public DDMFormValues getDDMFormValues(long classPK)
+		throws StorageException {
+
+		try {
+			return doGetDDMFormValues(classPK);
 		}
 		catch (StorageException se) {
 			throw se;
@@ -123,7 +167,7 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 	@Override
 	public List<Fields> getFieldsList(
 			long ddmStructureId, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		try {
@@ -141,7 +185,7 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 	@Override
 	public List<Fields> getFieldsList(
 			long ddmStructureId, long[] classPKs, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		try {
@@ -159,7 +203,7 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 	@Override
 	public List<Fields> getFieldsList(
 			long ddmStructureId, long[] classPKs,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		return getFieldsList(ddmStructureId, classPKs, null, orderByComparator);
@@ -192,7 +236,7 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 	@Override
 	public List<Fields> query(
 			long ddmStructureId, List<String> fieldNames, Condition condition,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		try {
@@ -224,12 +268,39 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 
 	@Override
 	public void update(
+			long classPK, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws StorageException {
+
+		try {
+			validateDDMFormValues(ddmFormValues);
+
+			transformDDMFormValues(ddmFormValues, serviceContext);
+
+			doUpdate(classPK, ddmFormValues, serviceContext);
+		}
+		catch (StorageException se) {
+			throw se;
+		}
+		catch (Exception e) {
+			throw new StorageException(e);
+		}
+	}
+
+	@Override
+	public void update(
 			long classPK, Fields fields, boolean mergeFields,
 			ServiceContext serviceContext)
 		throws StorageException {
 
 		try {
-			validateClassFields(classPK, fields);
+			DDMStorageLink ddmStorageLink =
+				DDMStorageLinkLocalServiceUtil.getClassStorageLink(classPK);
+
+			validateDDMStructureFields(ddmStorageLink.getStructureId(), fields);
+
+			fields = transformFields(
+				ddmStorageLink.getStructureId(), fields, serviceContext);
 
 			doUpdate(classPK, fields, mergeFields, serviceContext);
 		}
@@ -249,6 +320,20 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 		update(classPK, fields, false, serviceContext);
 	}
 
+	protected long doCreate(
+			long companyId, long ddmStructureId, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws Exception {
+
+		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.getStructure(
+			ddmStructureId);
+
+		Fields fields = DDMFormValuesToFieldsConverterUtil.convert(
+			ddmStructure, ddmFormValues);
+
+		return doCreate(companyId, ddmStructureId, fields, serviceContext);
+	}
+
 	protected abstract long doCreate(
 			long companyId, long ddmStructureId, Fields fields,
 			ServiceContext serviceContext)
@@ -259,14 +344,25 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 	protected abstract void doDeleteByDDMStructure(long ddmStructureId)
 		throws Exception;
 
+	protected DDMFormValues doGetDDMFormValues(long classPK) throws Exception {
+		DDMStorageLink ddmStorageLink =
+			DDMStorageLinkLocalServiceUtil.getClassStorageLink(classPK);
+
+		DDMStructure ddmStructure = ddmStorageLink.getStructure();
+
+		Fields fields = getFields(classPK);
+
+		return FieldsToDDMFormValuesConverterUtil.convert(ddmStructure, fields);
+	}
+
 	protected abstract List<Fields> doGetFieldsListByClasses(
 			long ddmStructureId, long[] classPKs, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception;
 
 	protected abstract List<Fields> doGetFieldsListByDDMStructure(
 			long ddmStructureId, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception;
 
 	protected abstract Map<Long, Fields> doGetFieldsMapByClasses(
@@ -275,30 +371,77 @@ public abstract class BaseStorageAdapter implements StorageAdapter {
 
 	protected abstract List<Fields> doQuery(
 			long ddmStructureId, List<String> fieldNames, Condition condition,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception;
 
 	protected abstract int doQueryCount(
 			long ddmStructureId, Condition condition)
 		throws Exception;
 
+	protected void doUpdate(
+			long classPK, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws Exception {
+
+		DDMStorageLink ddmStorageLink =
+			DDMStorageLinkLocalServiceUtil.getClassStorageLink(classPK);
+
+		DDMStructure ddmStructure = ddmStorageLink.getStructure();
+
+		Fields fields = DDMFormValuesToFieldsConverterUtil.convert(
+			ddmStructure, ddmFormValues);
+
+		doUpdate(classPK, fields, false, serviceContext);
+	}
+
 	protected abstract void doUpdate(
 			long classPK, Fields fields, boolean mergeFields,
 			ServiceContext serviceContext)
 		throws Exception;
 
-	protected void validateClassFields(long classPK, Fields fields)
-		throws PortalException, SystemException {
+	protected void transformDDMFormValues(
+			DDMFormValues ddmFormValues, ServiceContext serviceContext)
+		throws PortalException {
 
-		DDMStorageLink ddmStorageLink =
-			DDMStorageLinkLocalServiceUtil.getClassStorageLink(classPK);
+		DDMFormValuesTransformer ddmFormValuesTransformer =
+			new DDMFormValuesTransformer(ddmFormValues);
 
-		validateDDMStructureFields(ddmStorageLink.getStructureId(), fields);
+		ddmFormValuesTransformer.addTransformer(
+			new DocumentLibraryDDMFormFieldValueTransformer());
+
+		ddmFormValuesTransformer.addTransformer(
+			new HTMLSanitizerDDMFormFieldValueTransformer(
+				serviceContext.getCompanyId(), serviceContext.getScopeGroupId(),
+				serviceContext.getUserId()));
+
+		ddmFormValuesTransformer.transform();
+	}
+
+	protected Fields transformFields(
+			long ddmStructureId, Fields fields, ServiceContext serviceContext)
+		throws PortalException {
+
+		DDMStructure ddmStructure =
+			DDMStructureLocalServiceUtil.getDDMStructure(ddmStructureId);
+
+		DDMFormValues ddmFormValues =
+			FieldsToDDMFormValuesConverterUtil.convert(ddmStructure, fields);
+
+		transformDDMFormValues(ddmFormValues, serviceContext);
+
+		return DDMFormValuesToFieldsConverterUtil.convert(
+			ddmStructure, ddmFormValues);
+	}
+
+	protected void validateDDMFormValues(DDMFormValues ddmFormValues)
+		throws PortalException {
+
+		DDMFormValuesValidatorUtil.validate(ddmFormValues);
 	}
 
 	protected void validateDDMStructureFields(
 			long ddmStructureId, Fields fields)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		DDMStructure ddmStructure =
 			DDMStructureLocalServiceUtil.getDDMStructure(ddmStructureId);

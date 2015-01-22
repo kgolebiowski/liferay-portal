@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,10 +14,11 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.NoSuchModelException;
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.trash.TrashHandler;
@@ -31,8 +32,10 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.CacheModel;
 import com.liferay.portal.model.ContainerModel;
 import com.liferay.portal.model.TrashedModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.impl.BaseModelImpl;
 import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 
 import com.liferay.portlet.documentlibrary.model.DLFileEntry;
@@ -67,6 +70,7 @@ import java.util.Map;
  * @generated
  */
 @JSON(strict = true)
+@ProviderType
 public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	implements DLFileEntryModel {
 	/*
@@ -90,6 +94,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 			{ "folderId", Types.BIGINT },
 			{ "treePath", Types.VARCHAR },
 			{ "name", Types.VARCHAR },
+			{ "fileName", Types.VARCHAR },
 			{ "extension", Types.VARCHAR },
 			{ "mimeType", Types.VARCHAR },
 			{ "title", Types.VARCHAR },
@@ -105,7 +110,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 			{ "custom2ImageId", Types.BIGINT },
 			{ "manualCheckInRequired", Types.BOOLEAN }
 		};
-	public static final String TABLE_SQL_CREATE = "create table DLFileEntry (uuid_ VARCHAR(75) null,fileEntryId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,repositoryId LONG,folderId LONG,treePath STRING null,name VARCHAR(255) null,extension VARCHAR(75) null,mimeType VARCHAR(75) null,title VARCHAR(255) null,description STRING null,extraSettings TEXT null,fileEntryTypeId LONG,version VARCHAR(75) null,size_ LONG,readCount INTEGER,smallImageId LONG,largeImageId LONG,custom1ImageId LONG,custom2ImageId LONG,manualCheckInRequired BOOLEAN)";
+	public static final String TABLE_SQL_CREATE = "create table DLFileEntry (uuid_ VARCHAR(75) null,fileEntryId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,repositoryId LONG,folderId LONG,treePath STRING null,name VARCHAR(255) null,fileName VARCHAR(255) null,extension VARCHAR(75) null,mimeType VARCHAR(75) null,title VARCHAR(255) null,description STRING null,extraSettings TEXT null,fileEntryTypeId LONG,version VARCHAR(75) null,size_ LONG,readCount INTEGER,smallImageId LONG,largeImageId LONG,custom1ImageId LONG,custom2ImageId LONG,manualCheckInRequired BOOLEAN)";
 	public static final String TABLE_SQL_DROP = "drop table DLFileEntry";
 	public static final String ORDER_BY_JPQL = " ORDER BY dlFileEntry.folderId ASC, dlFileEntry.name ASC";
 	public static final String ORDER_BY_SQL = " ORDER BY DLFileEntry.folderId ASC, DLFileEntry.name ASC";
@@ -121,15 +126,17 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portlet.documentlibrary.model.DLFileEntry"),
 			true);
-	public static long COMPANYID_COLUMN_BITMASK = 1L;
-	public static long FILEENTRYTYPEID_COLUMN_BITMASK = 2L;
-	public static long FOLDERID_COLUMN_BITMASK = 4L;
-	public static long GROUPID_COLUMN_BITMASK = 8L;
-	public static long MIMETYPE_COLUMN_BITMASK = 16L;
-	public static long NAME_COLUMN_BITMASK = 32L;
-	public static long TITLE_COLUMN_BITMASK = 64L;
-	public static long USERID_COLUMN_BITMASK = 128L;
-	public static long UUID_COLUMN_BITMASK = 256L;
+	public static final long COMPANYID_COLUMN_BITMASK = 1L;
+	public static final long FILEENTRYTYPEID_COLUMN_BITMASK = 2L;
+	public static final long FILENAME_COLUMN_BITMASK = 4L;
+	public static final long FOLDERID_COLUMN_BITMASK = 8L;
+	public static final long GROUPID_COLUMN_BITMASK = 16L;
+	public static final long MIMETYPE_COLUMN_BITMASK = 32L;
+	public static final long NAME_COLUMN_BITMASK = 64L;
+	public static final long REPOSITORYID_COLUMN_BITMASK = 128L;
+	public static final long TITLE_COLUMN_BITMASK = 256L;
+	public static final long USERID_COLUMN_BITMASK = 512L;
+	public static final long UUID_COLUMN_BITMASK = 1024L;
 
 	/**
 	 * Converts the soap model instance into a normal model instance.
@@ -158,6 +165,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		model.setFolderId(soapModel.getFolderId());
 		model.setTreePath(soapModel.getTreePath());
 		model.setName(soapModel.getName());
+		model.setFileName(soapModel.getFileName());
 		model.setExtension(soapModel.getExtension());
 		model.setMimeType(soapModel.getMimeType());
 		model.setTitle(soapModel.getTitle());
@@ -250,6 +258,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		attributes.put("folderId", getFolderId());
 		attributes.put("treePath", getTreePath());
 		attributes.put("name", getName());
+		attributes.put("fileName", getFileName());
 		attributes.put("extension", getExtension());
 		attributes.put("mimeType", getMimeType());
 		attributes.put("title", getTitle());
@@ -355,6 +364,12 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 		if (name != null) {
 			setName(name);
+		}
+
+		String fileName = (String)attributes.get("fileName");
+
+		if (fileName != null) {
+			setFileName(fileName);
 		}
 
 		String extension = (String)attributes.get("extension");
@@ -544,13 +559,19 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	public long getOriginalUserId() {
@@ -645,7 +666,19 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 	@Override
 	public void setRepositoryId(long repositoryId) {
+		_columnBitmask |= REPOSITORYID_COLUMN_BITMASK;
+
+		if (!_setOriginalRepositoryId) {
+			_setOriginalRepositoryId = true;
+
+			_originalRepositoryId = _repositoryId;
+		}
+
 		_repositoryId = repositoryId;
+	}
+
+	public long getOriginalRepositoryId() {
+		return _originalRepositoryId;
 	}
 
 	@JSON
@@ -711,6 +744,32 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 	public String getOriginalName() {
 		return GetterUtil.getString(_originalName);
+	}
+
+	@JSON
+	@Override
+	public String getFileName() {
+		if (_fileName == null) {
+			return StringPool.BLANK;
+		}
+		else {
+			return _fileName;
+		}
+	}
+
+	@Override
+	public void setFileName(String fileName) {
+		_columnBitmask |= FILENAME_COLUMN_BITMASK;
+
+		if (_originalFileName == null) {
+			_originalFileName = _fileName;
+		}
+
+		_fileName = fileName;
+	}
+
+	public String getOriginalFileName() {
+		return GetterUtil.getString(_originalFileName);
 	}
 
 	@JSON
@@ -946,7 +1005,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	}
 
 	@Override
-	public TrashEntry getTrashEntry() throws PortalException, SystemException {
+	public TrashEntry getTrashEntry() throws PortalException {
 		if (!isInTrash()) {
 			return null;
 		}
@@ -960,7 +1019,8 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 		TrashHandler trashHandler = getTrashHandler();
 
-		if (!Validator.isNull(trashHandler.getContainerModelClassName())) {
+		if (!Validator.isNull(trashHandler.getContainerModelClassName(
+						getPrimaryKey()))) {
 			ContainerModel containerModel = null;
 
 			try {
@@ -977,7 +1037,8 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 					return trashedModel.getTrashEntry();
 				}
 
-				trashHandler = TrashHandlerRegistryUtil.getTrashHandler(trashHandler.getContainerModelClassName());
+				trashHandler = TrashHandlerRegistryUtil.getTrashHandler(trashHandler.getContainerModelClassName(
+							containerModel.getContainerModelId()));
 
 				if (trashHandler == null) {
 					return null;
@@ -1015,7 +1076,8 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		TrashHandler trashHandler = getTrashHandler();
 
 		if ((trashHandler == null) ||
-				Validator.isNull(trashHandler.getContainerModelClassName())) {
+				Validator.isNull(trashHandler.getContainerModelClassName(
+						getPrimaryKey()))) {
 			return false;
 		}
 
@@ -1037,7 +1099,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	}
 
 	@Override
-	public boolean isInTrashExplicitly() throws SystemException {
+	public boolean isInTrashExplicitly() {
 		if (!isInTrash()) {
 			return false;
 		}
@@ -1050,6 +1112,22 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		}
 
 		return false;
+	}
+
+	@Override
+	public boolean isInTrashImplicitly() {
+		if (!isInTrash()) {
+			return false;
+		}
+
+		TrashEntry trashEntry = TrashEntryLocalServiceUtil.fetchEntry(getModelClassName(),
+				getTrashEntryClassPK());
+
+		if (trashEntry != null) {
+			return false;
+		}
+
+		return true;
 	}
 
 	public long getColumnBitmask() {
@@ -1097,6 +1175,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		dlFileEntryImpl.setFolderId(getFolderId());
 		dlFileEntryImpl.setTreePath(getTreePath());
 		dlFileEntryImpl.setName(getName());
+		dlFileEntryImpl.setFileName(getFileName());
 		dlFileEntryImpl.setExtension(getExtension());
 		dlFileEntryImpl.setMimeType(getMimeType());
 		dlFileEntryImpl.setTitle(getTitle());
@@ -1199,11 +1278,17 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 		dlFileEntryModelImpl._setOriginalUserId = false;
 
+		dlFileEntryModelImpl._originalRepositoryId = dlFileEntryModelImpl._repositoryId;
+
+		dlFileEntryModelImpl._setOriginalRepositoryId = false;
+
 		dlFileEntryModelImpl._originalFolderId = dlFileEntryModelImpl._folderId;
 
 		dlFileEntryModelImpl._setOriginalFolderId = false;
 
 		dlFileEntryModelImpl._originalName = dlFileEntryModelImpl._name;
+
+		dlFileEntryModelImpl._originalFileName = dlFileEntryModelImpl._fileName;
 
 		dlFileEntryModelImpl._originalMimeType = dlFileEntryModelImpl._mimeType;
 
@@ -1286,6 +1371,14 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 			dlFileEntryCacheModel.name = null;
 		}
 
+		dlFileEntryCacheModel.fileName = getFileName();
+
+		String fileName = dlFileEntryCacheModel.fileName;
+
+		if ((fileName != null) && (fileName.length() == 0)) {
+			dlFileEntryCacheModel.fileName = null;
+		}
+
 		dlFileEntryCacheModel.extension = getExtension();
 
 		String extension = dlFileEntryCacheModel.extension;
@@ -1355,7 +1448,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(57);
+		StringBundler sb = new StringBundler(59);
 
 		sb.append("{uuid=");
 		sb.append(getUuid());
@@ -1385,6 +1478,8 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		sb.append(getTreePath());
 		sb.append(", name=");
 		sb.append(getName());
+		sb.append(", fileName=");
+		sb.append(getFileName());
 		sb.append(", extension=");
 		sb.append(getExtension());
 		sb.append(", mimeType=");
@@ -1420,7 +1515,7 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 
 	@Override
 	public String toXmlString() {
-		StringBundler sb = new StringBundler(88);
+		StringBundler sb = new StringBundler(91);
 
 		sb.append("<model><model-name>");
 		sb.append("com.liferay.portlet.documentlibrary.model.DLFileEntry");
@@ -1481,6 +1576,10 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		sb.append(
 			"<column><column-name>name</column-name><column-value><![CDATA[");
 		sb.append(getName());
+		sb.append("]]></column-value></column>");
+		sb.append(
+			"<column><column-name>fileName</column-name><column-value><![CDATA[");
+		sb.append(getFileName());
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>extension</column-name><column-value><![CDATA[");
@@ -1544,8 +1643,8 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = DLFileEntry.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = DLFileEntry.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			DLFileEntry.class
 		};
 	private String _uuid;
@@ -1558,7 +1657,6 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	private long _originalCompanyId;
 	private boolean _setOriginalCompanyId;
 	private long _userId;
-	private String _userUuid;
 	private long _originalUserId;
 	private boolean _setOriginalUserId;
 	private String _userName;
@@ -1567,12 +1665,16 @@ public class DLFileEntryModelImpl extends BaseModelImpl<DLFileEntry>
 	private long _classNameId;
 	private long _classPK;
 	private long _repositoryId;
+	private long _originalRepositoryId;
+	private boolean _setOriginalRepositoryId;
 	private long _folderId;
 	private long _originalFolderId;
 	private boolean _setOriginalFolderId;
 	private String _treePath;
 	private String _name;
 	private String _originalName;
+	private String _fileName;
+	private String _originalFileName;
 	private String _extension;
 	private String _mimeType;
 	private String _originalMimeType;

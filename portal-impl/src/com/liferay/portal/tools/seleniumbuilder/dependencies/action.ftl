@@ -1,8 +1,10 @@
 package ${seleniumBuilderContext.getActionPackageName(actionName)};
 
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portalweb.portal.util.liferayselenium.LiferaySelenium;
-import com.liferay.portalweb2.util.block.action.BaseAction;
-import com.liferay.portalweb2.util.block.action.BaseLiferayAction;
+import com.liferay.portalweb.util.block.action.BaseAction;
+
+import ${seleniumBuilderContext.getActionClassName("BaseLiferay")};
 
 <#if seleniumBuilderContext.getActionRootElement(actionName)??>
 	<#assign rootElement = seleniumBuilderContext.getActionRootElement(actionName)>
@@ -55,7 +57,8 @@ public class ${actionSimpleClassName} extends
 	public ${seleniumBuilderContext.getActionSimpleClassName(actionName)}(LiferaySelenium liferaySelenium) {
 		super(liferaySelenium);
 
-		paths = ${seleniumBuilderContext.getPathSimpleClassName(actionName)}.getPaths();
+		pathDescriptions = ${seleniumBuilderContext.getPathSimpleClassName(actionName)}.getPathDescriptions();
+		pathLocators = ${seleniumBuilderContext.getPathSimpleClassName(actionName)}.getPathLocators();
 	}
 
 	<#if seleniumBuilderContext.getActionRootElement(actionName)??>
@@ -117,6 +120,10 @@ public class ${actionSimpleClassName} extends
 									<#assign caseLocatorKey1 = caseElement.attributeValue("locator-key1")>
 
 									locatorKey1.${caseComparator}("${caseLocatorKey1}")
+								<#elseif caseElement.attributeValue("value1")??>
+									<#assign caseValue1 = caseElement.attributeValue("value1")>
+
+									value1.${caseComparator}("${caseValue1}")
 								<#else>
 									false
 								</#if>
@@ -167,6 +174,43 @@ public class ${actionSimpleClassName} extends
 					<#include "function_element.ftl">
 				</#if>
 			}
+
+			<#if actionName = "BaseLiferay">
+				public void ${commandName}Description(
+					<#list 1..seleniumBuilderContext.getFunctionLocatorCount(functionName) as i>
+						String locator${i}, String locatorKey${i}, String value${i}
+
+						<#if i_has_next>
+							,
+						</#if>
+					</#list>
+
+					, Map<String,String> environmentScopeVariables) throws Exception {
+
+					<#list 1..seleniumBuilderContext.getFunctionLocatorCount(functionName) as i>
+						locator${i} = getLocator(locator${i}, locatorKey${i}, environmentScopeVariables);
+						value${i} = HtmlUtil.escape(value${i});
+					</#list>
+
+					<#if commandElement.element("default")??>
+						<#assign defaultElement = commandElement.element("default")>
+
+						<#if defaultElement.element("description")??>
+							<#assign descriptionElement = defaultElement.element("description")>
+
+							<#assign message = descriptionElement.attributeValue("message")>
+
+							String description = "${seleniumBuilderFileUtil.escapeJava(message)}";
+
+							<#list 1..seleniumBuilderContext.getFunctionLocatorCount(functionName) as i>
+								description = getDescription(description, "${i}", locator${i}, locatorKey${i}, value${i}, environmentScopeVariables);
+							</#list>
+
+							liferaySelenium.sendActionDescriptionLogger(description);
+						</#if>
+					</#if>
+				}
+			</#if>
 		</#list>
 	</#if>
 

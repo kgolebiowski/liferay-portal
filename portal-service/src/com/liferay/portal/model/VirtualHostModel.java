@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -168,19 +168,19 @@ public interface VirtualHostModel extends BaseModel<VirtualHost>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(VirtualHost virtualHost);
+	public int compareTo(com.liferay.portal.model.VirtualHost virtualHost);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<VirtualHost> toCacheModel();
+	public CacheModel<com.liferay.portal.model.VirtualHost> toCacheModel();
 
 	@Override
-	public VirtualHost toEscapedModel();
+	public com.liferay.portal.model.VirtualHost toEscapedModel();
 
 	@Override
-	public VirtualHost toUnescapedModel();
+	public com.liferay.portal.model.VirtualHost toUnescapedModel();
 
 	@Override
 	public String toString();

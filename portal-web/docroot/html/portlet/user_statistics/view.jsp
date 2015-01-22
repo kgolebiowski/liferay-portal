@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -71,17 +71,17 @@ if (!rankingNamesList.isEmpty()) {
 		resultRows.add(row);
 	}
 
-	String rankingNamesMessage = LanguageUtil.format(pageContext, rankingNames[0], StringPool.BLANK, false);
+	String rankingNamesMessage = LanguageUtil.format(request, rankingNames[0], StringPool.BLANK, false);
 
 	for (int i = 1; i < rankingNames.length; i++) {
-		rankingNamesMessage = LanguageUtil.format(pageContext, "x-and-y", new Object[] {rankingNamesMessage, rankingNames[i]});
+		rankingNamesMessage = LanguageUtil.format(request, "x-and-y", new Object[] {rankingNamesMessage, rankingNames[i]});
 	}
 	%>
 
 	<c:if test="<%= showHeaderText %>">
 		<div class="top-users">
 			<c:if test="<%= total > 0 %>">
-				<liferay-ui:message arguments="<%= total %>" key="top-users-out-of-x" translateArguments="<%= false %>" /> <%= LanguageUtil.format(pageContext, "ranking-is-based-on-x", rankingNamesMessage, false) %><br />
+				<liferay-ui:message arguments="<%= total %>" key="top-users-out-of-x" translateArguments="<%= false %>" /> <%= LanguageUtil.format(request, "ranking-is-based-on-x", rankingNamesMessage, false) %><br />
 			</c:if>
 		</div>
 	</c:if>
@@ -98,31 +98,22 @@ if (!rankingNamesList.isEmpty()) {
 		</div>
 	</c:if>
 
-	<aui:script use="aui-io-plugin-deprecated">
-		var searchTopUsers = A.one('#<portlet:namespace />searchTopUsers');
+	<aui:script sandbox="<%= true %>">
+		var searchTopUsers = $('#<portlet:namespace />searchTopUsers');
 
-		if (searchTopUsers) {
-			var parent = searchTopUsers.ancestor();
+		var parent = searchTopUsers.parent();
 
-			parent.plug(
-				A.Plugin.IO,
-				{
-					autoLoad: false
-				}
-			);
+		searchTopUsers.on(
+			'click',
+			'a',
+			function(event) {
+				event.preventDefault();
 
-			searchTopUsers.all('a').on(
-				'click',
-				function(event) {
-					event.preventDefault();
+				var uri = $(event.currentTarget).attr('href').replace(/p_p_state=normal/i, 'p_p_state=exclusive');
 
-					var uri = event.currentTarget.get('href').replace(/p_p_state=normal/i, 'p_p_state=exclusive');
-
-					parent.io.set('uri', uri);
-					parent.io.start();
-				}
-			);
-		}
+				parent.load(uri);
+			}
+		);
 	</aui:script>
 
 <%
@@ -131,7 +122,7 @@ else {
 %>
 
 	<div class="alert alert-info portlet-configuration">
-		<a href="<%= portletDisplay.getURLConfiguration() %>" onClick="<%= portletDisplay.getURLConfigurationJS() %>">
+		<a href="<%= HtmlUtil.escapeHREF(portletDisplay.getURLConfiguration()) %>" onClick="<%= portletDisplay.getURLConfigurationJS() %>">
 			<liferay-ui:message key="please-configure-this-portlet-and-select-at-least-one-ranking-criteria" />
 		</a>
 	</div>

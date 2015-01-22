@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,37 +14,42 @@
 
 package com.liferay.portal.kernel.resiliency.spi.agent.annotation;
 
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
-import com.liferay.portal.kernel.test.NewClassLoaderJUnitTestRunner;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-
-import java.lang.reflect.Field;
+import com.liferay.portal.kernel.test.NewEnv;
+import com.liferay.portal.kernel.test.NewEnvTestRule;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 
 import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(NewClassLoaderJUnitTestRunner.class)
 public class DistributedRegistryTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			CodeCoverageAssertor.INSTANCE, NewEnvTestRule.INSTANCE);
 
 	@Before
-	public void setUp() throws Exception {
-		_exactDirections = _getExactDirections();
-		_postfixDirections = _getPostfixDirections();
-		_prefixDirections = _getPrefixDirections();
+	public void setUp() {
+		_exactDirections = ReflectionTestUtil.getFieldValue(
+			DistributedRegistry.class, "_exactDirections");
+		_postfixDirections = ReflectionTestUtil.getFieldValue(
+			DistributedRegistry.class, "_postfixDirections");
+		_prefixDirections = ReflectionTestUtil.getFieldValue(
+			DistributedRegistry.class, "_prefixDirections");
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testClassRegisterAndUnregister() {
 		DistributedRegistry.registerDistributed(ChildClass.class);
@@ -95,6 +100,11 @@ public class DistributedRegistryTest {
 
 			Assert.assertSame(NullPointerException.class, throwable.getClass());
 		}
+	}
+
+	@Test
+	public void testConstructor() {
+		new DistributedRegistry();
 	}
 
 	@Test
@@ -192,6 +202,7 @@ public class DistributedRegistryTest {
 				"name" + postfix, Direction.REQUEST));
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testIndividualRegisterAndUnregister() {
 
@@ -278,33 +289,6 @@ public class DistributedRegistryTest {
 				"name3", null, MatchType.PREFIX));
 	}
 
-	private static Map<String, Direction> _getExactDirections()
-		throws Exception {
-
-		Field exactDirectionsField = ReflectionUtil.getDeclaredField(
-			DistributedRegistry.class, "_exactDirections");
-
-		return (Map<String, Direction>)exactDirectionsField.get(null);
-	}
-
-	private static Map<String, Direction> _getPostfixDirections()
-		throws Exception {
-
-		Field postfixDirectionsField = ReflectionUtil.getDeclaredField(
-			DistributedRegistry.class, "_postfixDirections");
-
-		return (Map<String, Direction>)postfixDirectionsField.get(null);
-	}
-
-	private static Map<String, Direction> _getPrefixDirections()
-		throws Exception {
-
-		Field prefixDirectionsField = ReflectionUtil.getDeclaredField(
-			DistributedRegistry.class, "_prefixDirections");
-
-		return (Map<String, Direction>)prefixDirectionsField.get(null);
-	}
-
 	private Map<String, Direction> _exactDirections;
 	private Map<String, Direction> _postfixDirections;
 	private Map<String, Direction> _prefixDirections;
@@ -350,9 +334,10 @@ public class DistributedRegistryTest {
 
 		@Distributed
 		public static String name9 = "name9";
+
 	}
 
-	private static interface ParentInterface {
+	private interface ParentInterface {
 
 		@Distributed(direction = Direction.REQUEST, matchType = MatchType.EXACT)
 		public static final String name1 = "name1";

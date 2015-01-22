@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -33,7 +33,7 @@ import javax.servlet.ServletContext;
 public class PortletConfigFactoryImpl implements PortletConfigFactory {
 
 	public PortletConfigFactoryImpl() {
-		_pool = new ConcurrentHashMap<String, Map<String, PortletConfig>>();
+		_pool = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class PortletConfigFactoryImpl implements PortletConfigFactory {
 			portlet.getRootPortletId());
 
 		if (portletConfigs == null) {
-			portletConfigs = new ConcurrentHashMap<String, PortletConfig>();
+			portletConfigs = new ConcurrentHashMap<>();
 
 			_pool.put(portlet.getRootPortletId(), portletConfigs);
 		}
@@ -90,6 +90,6 @@ public class PortletConfigFactoryImpl implements PortletConfigFactory {
 		return DoPrivilegedUtil.wrap(portletConfig);
 	}
 
-	private Map<String, Map<String, PortletConfig>> _pool;
+	private final Map<String, Map<String, PortletConfig>> _pool;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,9 +19,9 @@ import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.BaseIndexer;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
@@ -41,21 +41,26 @@ import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
+import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PortletKeys;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.dynamicdatamapping.StructureFieldException;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
+import com.liferay.portlet.dynamicdatamapping.storage.DDMFormValues;
 import com.liferay.portlet.dynamicdatamapping.storage.Fields;
 import com.liferay.portlet.dynamicdatamapping.util.DDMIndexerUtil;
 import com.liferay.portlet.dynamicdatamapping.util.DDMUtil;
+import com.liferay.portlet.dynamicdatamapping.util.FieldsToDDMFormValuesConverterUtil;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalArticleDisplay;
 import com.liferay.portlet.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portlet.journal.service.permission.JournalArticlePermission;
-import com.liferay.portlet.journal.service.persistence.JournalArticleActionableDynamicQuery;
 import com.liferay.portlet.trash.util.TrashUtil;
 
 import java.io.Serializable;
@@ -66,6 +71,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 
 /**
@@ -83,8 +90,15 @@ public class JournalArticleIndexer extends BaseIndexer {
 	public static final String PORTLET_ID = PortletKeys.JOURNAL;
 
 	public JournalArticleIndexer() {
+		setDefaultSelectedFieldNames(
+			Field.ARTICLE_ID, Field.COMPANY_ID, Field.DEFAULT_LANGUAGE_ID,
+			Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK, Field.GROUP_ID,
+			Field.VERSION, Field.UID);
+		setDefaultSelectedLocalizedFieldNames(
+			Field.CONTENT, Field.DESCRIPTION, Field.TITLE);
 		setFilterSearch(true);
 		setPermissionAware(true);
+		setSelectAllLocales(true);
 	}
 
 	@Override
@@ -108,6 +122,21 @@ public class JournalArticleIndexer extends BaseIndexer {
 	}
 
 	@Override
+	public boolean isVisible(long classPK, int status) throws Exception {
+		List<JournalArticle> articles =
+			JournalArticleLocalServiceUtil.getArticlesByResourcePrimKey(
+				classPK);
+
+		for (JournalArticle article : articles) {
+			if (isVisible(article.getStatus(), status)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	@Override
 	public void postProcessContextQuery(
 			BooleanQuery contextQuery, SearchContext searchContext)
 		throws Exception {
@@ -116,7 +145,8 @@ public class JournalArticleIndexer extends BaseIndexer {
 			Field.CLASS_NAME_ID);
 
 		if ((classNameId != null) && (classNameId.longValue() != 0)) {
-			contextQuery.addRequiredTerm("classNameId", classNameId.toString());
+			contextQuery.addRequiredTerm(
+				Field.CLASS_NAME_ID, classNameId.toString());
 		}
 
 		addStatus(contextQuery, searchContext);
@@ -132,7 +162,7 @@ public class JournalArticleIndexer extends BaseIndexer {
 			Validator.isNotNull(ddmStructureFieldValue)) {
 
 			String[] ddmStructureFieldNameParts = StringUtil.split(
-				ddmStructureFieldName, StringPool.SLASH);
+				ddmStructureFieldName, StringPool.DOUBLE_UNDERLINE);
 
 			DDMStructure structure = DDMStructureLocalServiceUtil.getStructure(
 				GetterUtil.getLong(ddmStructureFieldNameParts[1]));
@@ -190,6 +220,7 @@ public class JournalArticleIndexer extends BaseIndexer {
 			BooleanQuery searchQuery, SearchContext searchContext)
 		throws Exception {
 
+		addSearchTerm(searchQuery, searchContext, Field.ARTICLE_ID, false);
 		addSearchTerm(searchQuery, searchContext, Field.CLASS_PK, false);
 		addSearchLocalizedTerm(
 			searchQuery, searchContext, Field.CONTENT, false);
@@ -199,8 +230,6 @@ public class JournalArticleIndexer extends BaseIndexer {
 		addSearchLocalizedTerm(searchQuery, searchContext, Field.TITLE, false);
 		addSearchTerm(searchQuery, searchContext, Field.TYPE, false);
 		addSearchTerm(searchQuery, searchContext, Field.USER_NAME, false);
-
-		addSearchTerm(searchQuery, searchContext, "articleId", false);
 
 		LinkedHashMap<String, Object> params =
 			(LinkedHashMap<String, Object>)searchContext.getAttribute("params");
@@ -218,14 +247,10 @@ public class JournalArticleIndexer extends BaseIndexer {
 			Document document, JournalArticle article)
 		throws Exception {
 
-		if (Validator.isNull(article.getStructureId())) {
-			return;
-		}
-
 		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.fetchStructure(
 			article.getGroupId(),
 			PortalUtil.getClassNameId(JournalArticle.class),
-			article.getStructureId(), true);
+			article.getDDMStructureKey(), true);
 
 		if (ddmStructure == null) {
 			return;
@@ -233,18 +258,21 @@ public class JournalArticleIndexer extends BaseIndexer {
 
 		document.addKeyword(Field.CLASS_TYPE_ID, ddmStructure.getStructureId());
 
-		Fields fields = null;
+		DDMFormValues ddmFormValues = null;
 
 		try {
-			fields = JournalConverterUtil.getDDMFields(
-				ddmStructure, article.getContent());
+			Fields fields = JournalConverterUtil.getDDMFields(
+				ddmStructure, article.getDocument());
+
+			ddmFormValues = FieldsToDDMFormValuesConverterUtil.convert(
+				ddmStructure, fields);
 		}
 		catch (Exception e) {
 			return;
 		}
 
-		if (fields != null) {
-			DDMIndexerUtil.addAttributes(document, ddmStructure, fields);
+		if (ddmFormValues != null) {
+			DDMIndexerUtil.addAttributes(document, ddmStructure, ddmFormValues);
 		}
 	}
 
@@ -295,9 +323,32 @@ public class JournalArticleIndexer extends BaseIndexer {
 	protected void doDelete(Object obj) throws Exception {
 		JournalArticle article = (JournalArticle)obj;
 
-		deleteDocument(article.getCompanyId(), article.getId());
+		long classPK = article.getId();
 
-		reindexArticleVersions(article);
+		if (!PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS) {
+			classPK = article.getResourcePrimKey();
+		}
+
+		deleteDocument(article.getCompanyId(), classPK);
+
+		if (!article.isApproved()) {
+			return;
+		}
+
+		JournalArticle latestIndexableArticle =
+			JournalArticleLocalServiceUtil.fetchLatestIndexableArticle(
+				article.getResourcePrimKey());
+
+		if ((latestIndexableArticle == null) ||
+			(PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS &&
+			 (latestIndexableArticle.getVersion() > article.getVersion()))) {
+
+			return;
+		}
+
+		SearchEngineUtil.updateDocument(
+			getSearchEngineId(), article.getCompanyId(),
+			getDocument(latestIndexableArticle), isCommitImmediately());
 	}
 
 	@Override
@@ -306,20 +357,22 @@ public class JournalArticleIndexer extends BaseIndexer {
 
 		Document document = getBaseModelDocument(PORTLET_ID, article);
 
-		document.addUID(PORTLET_ID, article.getId());
+		long classPK = article.getId();
+
+		if (!PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS) {
+			classPK = article.getResourcePrimKey();
+		}
+
+		document.addUID(PORTLET_ID, classPK);
 
 		String articleDefaultLanguageId = LocalizationUtil.getDefaultLanguageId(
-			article.getContent());
+			article.getDocument());
 
-		Locale defaultLocale = LocaleUtil.getSiteDefault();
-
-		String defaultLanguageId = LocaleUtil.toLanguageId(defaultLocale);
-
-		String[] languageIds = getLanguageIds(
-			defaultLanguageId, article.getContent());
+		String[] languageIds = LocalizationUtil.getAvailableLanguageIds(
+			article.getDocument());
 
 		for (String languageId : languageIds) {
-			String content = extractContent(article, languageId);
+			String content = extractDDMContent(article, languageId);
 
 			String description = article.getDescription(languageId);
 
@@ -333,23 +386,18 @@ public class JournalArticleIndexer extends BaseIndexer {
 			}
 
 			document.addText(
-				Field.CONTENT.concat(StringPool.UNDERLINE).concat(languageId),
+				LocalizationUtil.getLocalizedName(Field.CONTENT, languageId),
 				content);
 			document.addText(
-				Field.DESCRIPTION.concat(StringPool.UNDERLINE).concat(
-					languageId), description);
+				LocalizationUtil.getLocalizedName(
+					Field.DESCRIPTION, languageId),
+				description);
 			document.addText(
-				Field.TITLE.concat(StringPool.UNDERLINE).concat(languageId),
+				LocalizationUtil.getLocalizedName(Field.TITLE, languageId),
 				title);
 		}
 
 		document.addKeyword(Field.FOLDER_ID, article.getFolderId());
-		document.addKeyword(Field.LAYOUT_UUID, article.getLayoutUuid());
-		document.addKeyword(
-			Field.TREE_PATH,
-			StringUtil.split(article.getTreePath(), CharPool.SLASH));
-		document.addKeyword(Field.TYPE, article.getType());
-		document.addKeyword(Field.VERSION, article.getVersion());
 
 		String articleId = article.getArticleId();
 
@@ -357,23 +405,18 @@ public class JournalArticleIndexer extends BaseIndexer {
 			articleId = TrashUtil.getOriginalTitle(articleId);
 		}
 
-		document.addKeyword("articleId", articleId);
-		document.addKeyword("ddmStructureKey", article.getStructureId());
-		document.addKeyword("ddmTemplateKey", article.getTemplateId());
+		document.addKeyword(Field.ARTICLE_ID, articleId);
+
+		document.addKeyword(Field.LAYOUT_UUID, article.getLayoutUuid());
+		document.addKeyword(
+			Field.TREE_PATH,
+			StringUtil.split(article.getTreePath(), CharPool.SLASH));
+		document.addKeyword(Field.VERSION, article.getVersion());
+
+		document.addKeyword("ddmStructureKey", article.getDDMStructureKey());
+		document.addKeyword("ddmTemplateKey", article.getDDMTemplateKey());
 		document.addDate("displayDate", article.getDisplayDate());
-
-		JournalArticle latestIndexableArticle =
-			JournalArticleLocalServiceUtil.fetchLatestIndexableArticle(
-				article.getResourcePrimKey());
-
-		if ((latestIndexableArticle != null) &&
-			(article.getId() == latestIndexableArticle.getId())) {
-
-			document.addKeyword("head", true);
-		}
-		else {
-			document.addKeyword("head", false);
-		}
+		document.addKeyword("head", isHead(article));
 
 		addDDMStructureAttributes(document, article);
 
@@ -401,34 +444,30 @@ public class JournalArticleIndexer extends BaseIndexer {
 
 	@Override
 	protected Summary doGetSummary(
-		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		Document document, Locale locale, String snippet, PortletURL portletURL,
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		Locale snippetLocale = getSnippetLocale(document, locale);
 
-		if (snippetLocale == null) {
+		String localizedTitleName = DocumentImpl.getLocalizedName(
+			locale, Field.TITLE);
+
+		if ((snippetLocale == null) ||
+			(document.getField(localizedTitleName) == null)) {
+
 			snippetLocale = LocaleUtil.fromLanguageId(
 				document.get("defaultLanguageId"));
 		}
 
-		String prefix = Field.SNIPPET + StringPool.UNDERLINE;
-
 		String title = document.get(
-			snippetLocale, prefix + Field.TITLE, Field.TITLE);
+			snippetLocale, Field.SNIPPET + StringPool.UNDERLINE + Field.TITLE,
+			Field.TITLE);
 
-		String content = StringPool.BLANK;
+		String content = getDDMContentSummary(
+			document, snippetLocale, portletRequest, portletResponse);
 
-		String ddmStructureKey = document.get("ddmStructureKey");
-
-		if (Validator.isNotNull(ddmStructureKey)) {
-			content = getDDMContentSummary(document, snippetLocale);
-		}
-		else {
-			content = getBasicContentSummary(document, snippetLocale);
-		}
-
+		String articleId = document.get(Field.ARTICLE_ID);
 		String groupId = document.get(Field.GROUP_ID);
-		String articleId = document.get("articleId");
 		String version = document.get(Field.VERSION);
 
 		portletURL.setParameter("struts_action", "/journal/edit_article");
@@ -439,32 +478,64 @@ public class JournalArticleIndexer extends BaseIndexer {
 		return new Summary(snippetLocale, title, content, portletURL);
 	}
 
-	@Override
-	protected void doReindex(Object obj) throws Exception {
-		JournalArticle article = (JournalArticle)obj;
+	protected void doReindex(JournalArticle article, boolean allVersions)
+		throws Exception {
 
-		if (!article.isIndexable() ||
-			(PortalUtil.getClassNameId(DDMStructure.class) ==
-				article.getClassNameId())) {
+		if (PortalUtil.getClassNameId(DDMStructure.class) ==
+				article.getClassNameId()) {
 
 			Document document = getDocument(article);
 
 			SearchEngineUtil.deleteDocument(
 				getSearchEngineId(), article.getCompanyId(),
-				document.get(Field.UID));
+				document.get(Field.UID), isCommitImmediately());
 
 			return;
 		}
 
-		reindexArticleVersions(article);
+		if (!PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS) {
+			int status = article.getStatus();
+
+			if (!article.isIndexable() ||
+				((status != WorkflowConstants.STATUS_APPROVED) &&
+				 (status != WorkflowConstants.STATUS_IN_TRASH))) {
+
+				deleteDocument(
+					article.getCompanyId(), article.getResourcePrimKey());
+			}
+		}
+
+		if (allVersions) {
+			reindexArticleVersions(article);
+		}
+		else {
+			SearchEngineUtil.updateDocument(
+				getSearchEngineId(), article.getCompanyId(),
+				getDocument(article), isCommitImmediately());
+		}
+	}
+
+	@Override
+	protected void doReindex(Object obj) throws Exception {
+		JournalArticle article = (JournalArticle)obj;
+
+		doReindex(article, true);
 	}
 
 	@Override
 	protected void doReindex(String className, long classPK) throws Exception {
-		JournalArticle article = JournalArticleLocalServiceUtil.getArticle(
-			classPK);
+		JournalArticle article =
+			JournalArticleLocalServiceUtil.fetchJournalArticle(classPK);
 
-		doReindex(article);
+		if (article == null) {
+			article =
+				JournalArticleLocalServiceUtil.fetchLatestIndexableArticle(
+					classPK);
+		}
+
+		if (article != null) {
+			doReindex(article);
+		}
 	}
 
 	@Override
@@ -481,93 +552,87 @@ public class JournalArticleIndexer extends BaseIndexer {
 		String[] ddmStructureKeys = new String[ddmStructureIds.size()];
 
 		for (int i = 0; i < ddmStructureIds.size(); i++) {
-			long structureId = ddmStructureIds.get(i);
+			long ddmStructureId = ddmStructureIds.get(i);
 
 			DDMStructure ddmStructure =
-				DDMStructureLocalServiceUtil.getDDMStructure(structureId);
+				DDMStructureLocalServiceUtil.getDDMStructure(ddmStructureId);
 
 			ddmStructureKeys[i] = ddmStructure.getStructureKey();
 		}
 
 		List<JournalArticle> articles =
-			JournalArticleLocalServiceUtil.getStructureArticles(
-				ddmStructureKeys);
+			JournalArticleLocalServiceUtil.
+				getIndexableArticlesByDDMStructureKey(ddmStructureKeys);
 
 		for (JournalArticle article : articles) {
-			doReindex(article);
+			doReindex(article, false);
 		}
-	}
-
-	protected String extractBasicContent(
-		JournalArticle article, String languageId) {
-
-		String content = article.getContentByLocale(languageId);
-
-		content = StringUtil.replace(content, "<![CDATA[", StringPool.BLANK);
-		content = StringUtil.replace(content, "]]>", StringPool.BLANK);
-		content = StringUtil.replace(content, "&amp;", "&");
-		content = StringUtil.replace(content, "&lt;", "<");
-		content = StringUtil.replace(content, "&gt;", ">");
-
-		content = HtmlUtil.extractText(content);
-
-		return content;
-	}
-
-	protected String extractContent(JournalArticle article, String languageId)
-		throws Exception {
-
-		if (Validator.isNotNull(article.getStructureId())) {
-			return extractDDMContent(article, languageId);
-		}
-
-		return extractBasicContent(article, languageId);
 	}
 
 	protected String extractDDMContent(
 			JournalArticle article, String languageId)
 		throws Exception {
 
-		if (Validator.isNull(article.getStructureId())) {
-			return StringPool.BLANK;
-		}
-
 		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.fetchStructure(
 			article.getGroupId(),
 			PortalUtil.getClassNameId(JournalArticle.class),
-			article.getStructureId(), true);
+			article.getDDMStructureKey(), true);
 
 		if (ddmStructure == null) {
 			return StringPool.BLANK;
 		}
 
-		Fields fields = null;
+		DDMFormValues ddmFormValues = null;
 
 		try {
-			fields = JournalConverterUtil.getDDMFields(
-				ddmStructure, article.getContent());
+			Fields fields = JournalConverterUtil.getDDMFields(
+				ddmStructure, article.getDocument());
+
+			ddmFormValues = FieldsToDDMFormValuesConverterUtil.convert(
+				ddmStructure, fields);
 		}
 		catch (Exception e) {
 			return StringPool.BLANK;
 		}
 
-		if (fields == null) {
+		if (ddmFormValues == null) {
 			return StringPool.BLANK;
 		}
 
 		return DDMIndexerUtil.extractAttributes(
-			ddmStructure, fields, LocaleUtil.fromLanguageId(languageId));
+			ddmStructure, ddmFormValues, LocaleUtil.fromLanguageId(languageId));
 	}
 
 	protected Collection<Document> getArticleVersions(JournalArticle article)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		Collection<Document> documents = new ArrayList<Document>();
+		Collection<Document> documents = new ArrayList<>();
 
-		List<JournalArticle> articles =
-			JournalArticleLocalServiceUtil.
-				getIndexableArticlesByResourcePrimKey(
-					article.getResourcePrimKey());
+		List<JournalArticle> articles = null;
+
+		if (PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS) {
+			articles =
+				JournalArticleLocalServiceUtil.
+					getIndexableArticlesByResourcePrimKey(
+						article.getResourcePrimKey());
+		}
+		else {
+			articles = new ArrayList<>();
+
+			JournalArticle latestIndexableArticle =
+				JournalArticleLocalServiceUtil.fetchLatestArticle(
+					article.getResourcePrimKey(),
+					new int[] {
+						WorkflowConstants.STATUS_APPROVED,
+						WorkflowConstants.STATUS_IN_TRASH
+					});
+
+			if ((latestIndexableArticle != null) &&
+				latestIndexableArticle.isIndexable()) {
+
+				articles.add(latestIndexableArticle);
+			}
+		}
 
 		for (JournalArticle curArticle : articles) {
 			Document document = getDocument(curArticle);
@@ -578,54 +643,37 @@ public class JournalArticleIndexer extends BaseIndexer {
 		return documents;
 	}
 
-	protected String getBasicContentSummary(
-		Document document, Locale snippetLocale) {
-
-		String prefix = Field.SNIPPET + StringPool.UNDERLINE;
-
-		String content = document.get(
-			snippetLocale, prefix + Field.DESCRIPTION, prefix + Field.CONTENT);
-
-		if (Validator.isBlank(content)) {
-			content = document.get(
-				snippetLocale, Field.DESCRIPTION, Field.CONTENT);
-		}
-
-		if (content.length() > 200) {
-			content = StringUtil.shorten(content, 200);
-		}
-
-		return content;
-	}
-
 	protected String getDDMContentSummary(
-		Document document, Locale snippetLocale) {
+		Document document, Locale snippetLocale, PortletRequest portletRequest,
+		PortletResponse portletResponse) {
 
 		String content = StringPool.BLANK;
 
+		if ((portletRequest == null) || (portletResponse == null)) {
+			return content;
+		}
+
 		try {
+			String articleId = document.get(Field.ARTICLE_ID);
 			long groupId = GetterUtil.getLong(document.get(Field.GROUP_ID));
-			String articleId = document.get("articleId");
 			double version = GetterUtil.getDouble(document.get(Field.VERSION));
-
-			JournalArticle article =
-				JournalArticleLocalServiceUtil.fetchArticle(
-					groupId, articleId, version);
-
-			if (article == null) {
-				return content;
-			}
+			PortletRequestModel portletRequestModel = new PortletRequestModel(
+				portletRequest, portletResponse);
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)portletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
 
 			JournalArticleDisplay articleDisplay =
-				JournalArticleLocalServiceUtil.getArticleDisplay(
-					article, null, Constants.VIEW,
-					LocaleUtil.toLanguageId(snippetLocale), 1, null, null);
+				JournalContentUtil.getDisplay(
+					groupId, articleId, version, null, Constants.VIEW,
+					LocaleUtil.toLanguageId(snippetLocale), 1,
+					portletRequestModel, themeDisplay);
 
 			content = HtmlUtil.escape(articleDisplay.getDescription());
 			content = HtmlUtil.replaceNewLine(content);
 
 			if (Validator.isNull(content)) {
-				content = HtmlUtil.stripHtml(articleDisplay.getContent());
+				content = HtmlUtil.extractText(articleDisplay.getContent());
 			}
 		}
 		catch (Exception e) {
@@ -637,64 +685,90 @@ public class JournalArticleIndexer extends BaseIndexer {
 		return content;
 	}
 
-	protected String[] getLanguageIds(
-		String defaultLanguageId, String content) {
-
-		String[] languageIds = LocalizationUtil.getAvailableLanguageIds(
-			content);
-
-		if (languageIds.length == 0) {
-			languageIds = new String[] {defaultLanguageId};
-		}
-
-		return languageIds;
-	}
-
 	@Override
 	protected String getPortletId(SearchContext searchContext) {
 		return PORTLET_ID;
 	}
 
-	protected void reindexArticles(long companyId)
-		throws PortalException, SystemException {
+	protected boolean isHead(JournalArticle article) {
+		if (!PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS) {
+			return true;
+		}
 
-		ActionableDynamicQuery actionableDynamicQuery =
-			new JournalArticleActionableDynamicQuery() {
+		JournalArticle latestArticle =
+			JournalArticleLocalServiceUtil.fetchLatestArticle(
+				article.getResourcePrimKey(),
+				new int[] {
+					WorkflowConstants.STATUS_APPROVED,
+					WorkflowConstants.STATUS_IN_TRASH});
 
-			@Override
-			protected void addCriteria(DynamicQuery dynamicQuery) {
-				Property indexableProperty = PropertyFactoryUtil.forName(
-					"indexable");
+		if ((latestArticle != null) && !latestArticle.isIndexable()) {
+			return false;
+		}
+		else if ((latestArticle != null) &&
+				 (article.getId() == latestArticle.getId())) {
 
-				dynamicQuery.add(indexableProperty.eq(true));
-			}
+			return true;
+		}
 
-			@Override
-			protected void performAction(Object object) throws PortalException {
-				JournalArticle article = (JournalArticle)object;
+		return false;
+	}
 
-				Document document = getDocument(article);
+	protected void reindexArticles(long companyId) throws PortalException {
+		final ActionableDynamicQuery actionableDynamicQuery =
+			JournalArticleLocalServiceUtil.getActionableDynamicQuery();
 
-				addDocument(document);
-			}
+		actionableDynamicQuery.setAddCriteriaMethod(
+			new ActionableDynamicQuery.AddCriteriaMethod() {
 
-		};
+				@Override
+				public void addCriteria(DynamicQuery dynamicQuery) {
+					if (PropsValues.JOURNAL_ARTICLE_INDEX_ALL_VERSIONS) {
+						return;
+					}
 
+					Property statusProperty = PropertyFactoryUtil.forName(
+						"status");
+
+					Integer[] statuses = {
+						WorkflowConstants.STATUS_APPROVED,
+						WorkflowConstants.STATUS_IN_TRASH
+					};
+
+					dynamicQuery.add(statusProperty.in(statuses));
+				}
+
+			});
 		actionableDynamicQuery.setCompanyId(companyId);
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod() {
+
+				@Override
+				public void performAction(Object object)
+					throws PortalException {
+
+					JournalArticle article = (JournalArticle)object;
+
+					Document document = getDocument(article);
+
+					actionableDynamicQuery.addDocument(document);
+				}
+
+			});
 		actionableDynamicQuery.setSearchEngineId(getSearchEngineId());
 
 		actionableDynamicQuery.performActions();
 	}
 
 	protected void reindexArticleVersions(JournalArticle article)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		SearchEngineUtil.updateDocuments(
 			getSearchEngineId(), article.getCompanyId(),
-			getArticleVersions(article));
+			getArticleVersions(article), isCommitImmediately());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		JournalArticleIndexer.class);
 
 }

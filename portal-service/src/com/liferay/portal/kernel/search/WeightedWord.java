@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,8 +20,8 @@ package com.liferay.portal.kernel.search;
 public class WeightedWord implements Comparable<WeightedWord> {
 
 	public WeightedWord(String word, float weight) {
-		_weight = weight;
 		_word = word;
+		_weight = weight;
 	}
 
 	@Override
@@ -49,6 +49,6 @@ public class WeightedWord implements Comparable<WeightedWord> {
 	}
 
 	private float _weight;
-	private String _word;
+	private final String _word;
 
 }

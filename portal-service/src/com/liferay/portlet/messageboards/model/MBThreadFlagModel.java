@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portlet.messageboards.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.CacheModel;
 import com.liferay.portal.model.StagedGroupedModel;
@@ -148,10 +147,9 @@ public interface MBThreadFlagModel extends BaseModel<MBThreadFlag>,
 	 * Returns the user uuid of this message boards thread flag.
 	 *
 	 * @return the user uuid of this message boards thread flag
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this message boards thread flag.
@@ -261,19 +259,20 @@ public interface MBThreadFlagModel extends BaseModel<MBThreadFlag>,
 	public Object clone();
 
 	@Override
-	public int compareTo(MBThreadFlag mbThreadFlag);
+	public int compareTo(
+		com.liferay.portlet.messageboards.model.MBThreadFlag mbThreadFlag);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<MBThreadFlag> toCacheModel();
+	public CacheModel<com.liferay.portlet.messageboards.model.MBThreadFlag> toCacheModel();
 
 	@Override
-	public MBThreadFlag toEscapedModel();
+	public com.liferay.portlet.messageboards.model.MBThreadFlag toEscapedModel();
 
 	@Override
-	public MBThreadFlag toUnescapedModel();
+	public com.liferay.portlet.messageboards.model.MBThreadFlag toUnescapedModel();
 
 	@Override
 	public String toString();

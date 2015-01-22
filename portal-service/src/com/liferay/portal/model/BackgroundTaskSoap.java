@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,14 @@
 
 package com.liferay.portal.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.BackgroundTaskServiceSoap}.
@@ -27,6 +30,7 @@ import java.util.List;
  * @see com.liferay.portal.service.http.BackgroundTaskServiceSoap
  * @generated
  */
+@ProviderType
 public class BackgroundTaskSoap implements Serializable {
 	public static BackgroundTaskSoap toSoapModel(BackgroundTask model) {
 		BackgroundTaskSoap soapModel = new BackgroundTaskSoap();
@@ -42,7 +46,7 @@ public class BackgroundTaskSoap implements Serializable {
 		soapModel.setName(model.getName());
 		soapModel.setServletContextNames(model.getServletContextNames());
 		soapModel.setTaskExecutorClassName(model.getTaskExecutorClassName());
-		soapModel.setTaskContext(model.getTaskContext());
+		soapModel.setTaskContextMap(model.getTaskContextMap());
 		soapModel.setCompleted(model.getCompleted());
 		soapModel.setCompletionDate(model.getCompletionDate());
 		soapModel.setStatus(model.getStatus());
@@ -187,12 +191,12 @@ public class BackgroundTaskSoap implements Serializable {
 		_taskExecutorClassName = taskExecutorClassName;
 	}
 
-	public String getTaskContext() {
-		return _taskContext;
+	public Map<String, Serializable> getTaskContextMap() {
+		return _taskContextMap;
 	}
 
-	public void setTaskContext(String taskContext) {
-		_taskContext = taskContext;
+	public void setTaskContextMap(Map<String, Serializable> taskContextMap) {
+		_taskContextMap = taskContextMap;
 	}
 
 	public boolean getCompleted() {
@@ -242,7 +246,7 @@ public class BackgroundTaskSoap implements Serializable {
 	private String _name;
 	private String _servletContextNames;
 	private String _taskExecutorClassName;
-	private String _taskContext;
+	private Map<String, Serializable> _taskContextMap;
 	private boolean _completed;
 	private Date _completionDate;
 	private int _status;

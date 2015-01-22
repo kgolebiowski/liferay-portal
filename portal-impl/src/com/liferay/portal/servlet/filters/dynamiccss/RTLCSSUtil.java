@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,8 +16,14 @@ package com.liferay.portal.servlet.filters.dynamiccss;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.regex.PatternFactory;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.ClassLoaderUtil;
+import com.liferay.portal.util.PropsValues;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -28,7 +34,9 @@ import org.mozilla.javascript.ScriptableObject;
  */
 public class RTLCSSUtil {
 
-	public static String getRtlCss(String css) throws Exception {
+	public static String getRtlCss(String fileName, String css)
+		throws Exception {
+
 		Context context = Context.enter();
 
 		String rtlCss = css;
@@ -44,6 +52,11 @@ public class RTLCSSUtil {
 				context, scope, scope, new Object[] {css});
 
 			rtlCss = (String)Context.jsToJava(result, String.class);
+		}
+		catch (Exception e) {
+			_log.error(
+				"Unable to generate RTL version for " + fileName +
+					StringPool.COMMA_AND_SPACE + e.getMessage());
 		}
 		finally {
 			Context.exit();
@@ -64,8 +77,22 @@ public class RTLCSSUtil {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(RTLCSSUtil.class);
+	public static boolean isExcludedPath(String filePath) {
+		for (Pattern pattern : _patterns) {
+			Matcher matcher = pattern.matcher(filePath);
+
+			if (matcher.matches()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(RTLCSSUtil.class);
 
 	private static String _jsScript;
+	private static final Pattern[] _patterns = PatternFactory.compile(
+		PropsValues.RTL_CSS_EXCLUDED_PATHS_REGEXP);
 
 }

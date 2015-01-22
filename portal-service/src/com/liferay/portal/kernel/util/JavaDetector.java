@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -111,6 +111,10 @@ public class JavaDetector {
 		return _instance._openJDK;
 	}
 
+	public static boolean isOracle() {
+		return _instance._oracle;
+	}
+
 	protected JavaDetector() {
 		_javaClassPath = System.getProperty("java.class.path");
 		_javaClassVersion = GetterUtil.getDouble(
@@ -126,12 +130,28 @@ public class JavaDetector {
 		_64bit = Validator.equals(
 			"64", System.getProperty("sun.arch.data.model"));
 
+		boolean oracle = false;
+
 		if (_javaVendor != null) {
 			_ibm = _javaVendor.startsWith("IBM");
+
+			if (_javaVendor.startsWith("Oracle") ||
+				_javaVendor.startsWith("Sun")) {
+
+				oracle = true;
+			}
 		}
+		else {
+			_ibm = false;
+		}
+
+		_oracle = oracle;
 
 		if (_javaRuntimeName != null) {
 			_openJDK = _javaRuntimeName.contains("OpenJDK");
+		}
+		else {
+			_openJDK = false;
 		}
 
 		if (_log.isDebugEnabled()) {
@@ -147,20 +167,21 @@ public class JavaDetector {
 
 	private static final String _JAVA_VERSION_JDK_7 = "1.7.";
 
-	private static Log _log = LogFactoryUtil.getLog(JavaDetector.class);
+	private static final Log _log = LogFactoryUtil.getLog(JavaDetector.class);
 
-	private static JavaDetector _instance = new JavaDetector();
+	private static final JavaDetector _instance = new JavaDetector();
 
-	private boolean _64bit;
-	private boolean _ibm;
-	private String _javaClassPath;
-	private double _javaClassVersion;
-	private String _javaRuntimeName;
-	private String _javaRuntimeVersion;
-	private double _javaSpecificationVersion;
-	private String _javaVendor;
-	private String _javaVersion;
-	private String _javaVmVersion;
-	private boolean _openJDK;
+	private final boolean _64bit;
+	private final boolean _ibm;
+	private final String _javaClassPath;
+	private final double _javaClassVersion;
+	private final String _javaRuntimeName;
+	private final String _javaRuntimeVersion;
+	private final double _javaSpecificationVersion;
+	private final String _javaVendor;
+	private final String _javaVersion;
+	private final String _javaVmVersion;
+	private final boolean _openJDK;
+	private final boolean _oracle;
 
 }

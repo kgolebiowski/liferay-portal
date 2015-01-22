@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -153,19 +153,19 @@ public interface OrgGroupRoleModel extends BaseModel<OrgGroupRole>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(OrgGroupRole orgGroupRole);
+	public int compareTo(com.liferay.portal.model.OrgGroupRole orgGroupRole);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<OrgGroupRole> toCacheModel();
+	public CacheModel<com.liferay.portal.model.OrgGroupRole> toCacheModel();
 
 	@Override
-	public OrgGroupRole toEscapedModel();
+	public com.liferay.portal.model.OrgGroupRole toEscapedModel();
 
 	@Override
-	public OrgGroupRole toUnescapedModel();
+	public com.liferay.portal.model.OrgGroupRole toUnescapedModel();
 
 	@Override
 	public String toString();

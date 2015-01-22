@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,8 +16,8 @@ package com.liferay.portalweb.portal;
 
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.InitUtil;
-import com.liferay.portalweb.portal.util.SeleniumUtil;
 import com.liferay.portalweb.portal.util.liferayselenium.LiferaySelenium;
+import com.liferay.portalweb.util.SeleniumUtil;
 
 import junit.framework.TestSuite;
 
@@ -27,7 +27,7 @@ import junit.framework.TestSuite;
 public class NamedTestSuite extends TestSuite {
 
 	public NamedTestSuite() {
-		InitUtil.initWithSpring();
+		InitUtil.initWithSpring(false);
 
 		LiferaySelenium liferaySelenium = SeleniumUtil.getSelenium();
 

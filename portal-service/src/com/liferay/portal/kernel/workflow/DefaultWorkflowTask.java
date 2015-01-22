@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -196,7 +196,7 @@ public class DefaultWorkflowTask implements Serializable, WorkflowTask {
 		Collection<WorkflowTaskAssignee> workflowTaskAssignees) {
 
 		if (_workflowTaskAssignees == null) {
-			_workflowTaskAssignees = new ArrayList<WorkflowTaskAssignee>();
+			_workflowTaskAssignees = new ArrayList<>();
 		}
 
 		_workflowTaskAssignees.addAll(workflowTaskAssignees);

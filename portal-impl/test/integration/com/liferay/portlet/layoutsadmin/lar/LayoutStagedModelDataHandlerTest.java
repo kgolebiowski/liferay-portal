@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,8 +15,7 @@
 package com.liferay.portlet.layoutsadmin.lar;
 
 import com.liferay.portal.kernel.lar.StagedModelDataHandlerUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.lar.BaseStagedModelDataHandlerTestCase;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
@@ -26,56 +25,55 @@ import com.liferay.portal.service.LayoutFriendlyURLLocalServiceUtil;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextThreadLocal;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.service.persistence.PersistenceExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
-import com.liferay.portal.util.LayoutTestUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalFolderConstants;
-import com.liferay.portlet.journal.util.JournalTestUtil;
+import com.liferay.portlet.journal.util.test.JournalTestUtil;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Mate Thurzo
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		PersistenceExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class LayoutStagedModelDataHandlerTest
 	extends BaseStagedModelDataHandlerTestCase {
 
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
+
 	@Test
-	@Transactional
 	public void testTypeArticle() throws Exception {
 		initExport();
 
 		Map<String, List<StagedModel>> dependentStagedModelsMap =
-			new HashMap<String, List<StagedModel>>();
+			new HashMap<>();
 
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			stagingGroup.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			ServiceTestUtil.randomString(), ServiceTestUtil.randomString());
+			RandomTestUtil.randomString(), RandomTestUtil.randomString());
 
 		addDependentStagedModel(
 			dependentStagedModelsMap, JournalArticle.class, journalArticle);
 
 		Layout layout = LayoutTestUtil.addTypeArticleLayout(
-			stagingGroup.getGroupId(), ServiceTestUtil.randomString(),
-			journalArticle.getArticleId());
+			stagingGroup.getGroupId(), journalArticle.getArticleId());
 
 		addDependentLayoutFriendlyURLs(dependentStagedModelsMap, layout);
 
@@ -93,15 +91,13 @@ public class LayoutStagedModelDataHandlerTest
 	}
 
 	@Test
-	@Transactional
 	public void testTypeLinkToLayout() throws Exception {
 		initExport();
 
 		Map<String, List<StagedModel>> dependentStagedModelsMap =
-			new HashMap<String, List<StagedModel>>();
+			new HashMap<>();
 
-		Layout linkedLayout = LayoutTestUtil.addLayout(
-			stagingGroup.getGroupId(), ServiceTestUtil.randomString());
+		Layout linkedLayout = LayoutTestUtil.addLayout(stagingGroup);
 
 		List<LayoutFriendlyURL> linkedLayoutFriendlyURLs =
 			LayoutFriendlyURLLocalServiceUtil.getLayoutFriendlyURLs(
@@ -113,8 +109,7 @@ public class LayoutStagedModelDataHandlerTest
 		addDependentLayoutFriendlyURLs(dependentStagedModelsMap, linkedLayout);
 
 		Layout layout = LayoutTestUtil.addTypeLinkToLayoutLayout(
-			stagingGroup.getGroupId(), ServiceTestUtil.randomString(),
-			linkedLayout.getLayoutId());
+			stagingGroup.getGroupId(), linkedLayout.getLayoutId());
 
 		List<LayoutFriendlyURL> layoutFriendlyURLs =
 			LayoutFriendlyURLLocalServiceUtil.getLayoutFriendlyURLs(
@@ -174,10 +169,9 @@ public class LayoutStagedModelDataHandlerTest
 		throws Exception {
 
 		Map<String, List<StagedModel>> dependentStagedModelsMap =
-			new HashMap<String, List<StagedModel>>();
+			new HashMap<>();
 
-		Layout parentLayout = LayoutTestUtil.addLayout(
-			group.getGroupId(), ServiceTestUtil.randomString());
+		Layout parentLayout = LayoutTestUtil.addLayout(group);
 
 		addDependentStagedModel(
 			dependentStagedModelsMap, Layout.class, parentLayout);
@@ -198,9 +192,7 @@ public class LayoutStagedModelDataHandlerTest
 
 		Layout parentLayout = (Layout)dependentStagedModels.get(0);
 
-		Layout layout = LayoutTestUtil.addLayout(
-			group.getGroupId(), ServiceTestUtil.randomString(),
-			parentLayout.getPlid());
+		Layout layout = LayoutTestUtil.addLayout(group, parentLayout.getPlid());
 
 		addDependentLayoutFriendlyURLs(dependentStagedModelsMap, layout);
 
@@ -227,11 +219,17 @@ public class LayoutStagedModelDataHandlerTest
 	protected void initExport() throws Exception {
 		super.initExport();
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext();
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext();
 
 		serviceContext.setAttribute("exportLAR", Boolean.TRUE);
 
 		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+	}
+
+	@Override
+	protected boolean isCommentableStagedModel() {
+		return true;
 	}
 
 	@Override

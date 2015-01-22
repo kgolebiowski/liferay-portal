@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -101,7 +101,7 @@ public class FooService {
 	}
 
 	public static List<FooData> getFooDatas() {
-		List<FooData> fooDataList = new ArrayList<FooData>();
+		List<FooData> fooDataList = new ArrayList<>();
 
 		fooDataList.add(getFooData(1));
 		fooDataList.add(getFooData(2));
@@ -132,6 +132,18 @@ public class FooService {
 
 	public static String hello() {
 		return "world";
+	}
+
+	public static String hello(int i1) {
+		return "hello:" + i1;
+	}
+
+	public static String hello(int i1, int i2, int i3) {
+		return "hello:" + i1 + ":" + i2 + ":" + i3;
+	}
+
+	public static String hello(int i1, int i2, String s) {
+		return "hello:" + i1 + ":" + i2 + ">" + s;
 	}
 
 	public static String helloWorld(Integer userId, String worldName) {

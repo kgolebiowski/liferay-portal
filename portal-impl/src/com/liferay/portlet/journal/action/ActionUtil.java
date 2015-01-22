@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,25 +14,34 @@
 
 package com.liferay.portlet.journal.action;
 
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.UnicodeFormatter;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.model.Image;
+import com.liferay.portal.kernel.xml.Document;
+import com.liferay.portal.kernel.xml.Element;
+import com.liferay.portal.kernel.xml.Node;
+import com.liferay.portal.kernel.xml.SAXReaderUtil;
+import com.liferay.portal.kernel.xml.XPath;
 import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.ImageLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextFactory;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.portlet.documentlibrary.service.DLAppLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.NoSuchStructureException;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
@@ -179,7 +188,8 @@ public class ActionUtil {
 		long classNameId = ParamUtil.getLong(request, "classNameId");
 		long classPK = ParamUtil.getLong(request, "classPK");
 		String articleId = ParamUtil.getString(request, "articleId");
-		String structureId = ParamUtil.getString(request, "structureId");
+		String ddmStructureKey = ParamUtil.getString(
+			request, "ddmStructureKey");
 		int status = ParamUtil.getInteger(
 			request, "status", WorkflowConstants.STATUS_ANY);
 
@@ -201,13 +211,13 @@ public class ActionUtil {
 			article = JournalArticleServiceUtil.getLatestArticle(
 				groupId, className, classPK);
 		}
-		else if (Validator.isNotNull(structureId)) {
+		else {
 			DDMStructure ddmStructure = null;
 
 			try {
 				ddmStructure = DDMStructureServiceUtil.getStructure(
 					groupId, PortalUtil.getClassNameId(JournalArticle.class),
-					structureId, true);
+					ddmStructureKey, true);
 			}
 			catch (NoSuchStructureException nsse1) {
 				return;
@@ -251,7 +261,7 @@ public class ActionUtil {
 		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		List<JournalArticle> articles = new ArrayList<JournalArticle>();
+		List<JournalArticle> articles = new ArrayList<>();
 
 		String[] articleIds = StringUtil.split(
 			ParamUtil.getString(request, "articleIds"));
@@ -280,20 +290,22 @@ public class ActionUtil {
 	}
 
 	public static Object[] getContentAndImages(
-			DDMStructure ddmStructure, long id, Locale locale,
-			Locale defaultLocale, boolean inherited,
-			ServiceContext serviceContext)
+			DDMStructure ddmStructure, ServiceContext serviceContext)
 		throws Exception {
 
 		Fields fields = DDMUtil.getFields(
 			ddmStructure.getStructureId(), serviceContext);
 
-		Map<String, byte[]> images = getImages(
-			fields, id, locale, defaultLocale, inherited);
+		String content = JournalConverterUtil.getContent(ddmStructure, fields);
 
-		return new Object[] {
-			JournalConverterUtil.getContent(ddmStructure, fields), images
-		};
+		String defaultLanguageId = LocalizationUtil.getDefaultLanguageId(
+			content, LocaleUtil.getSiteDefault());
+
+		Locale locale = LanguageUtil.getLocale(defaultLanguageId);
+
+		Map<String, byte[]> images = getImages(content, fields, locale);
+
+		return new Object[] {content, images};
 	}
 
 	public static void getFeed(HttpServletRequest request) throws Exception {
@@ -351,7 +363,7 @@ public class ActionUtil {
 		long[] folderIds = StringUtil.split(
 			ParamUtil.getString(request, "folderIds"), 0L);
 
-		List<JournalFolder> folders = new ArrayList<JournalFolder>();
+		List<JournalFolder> folders = new ArrayList<>();
 
 		for (long folderId : folderIds) {
 			try {
@@ -381,14 +393,11 @@ public class ActionUtil {
 
 		long groupId = ParamUtil.getLong(request, "groupId");
 		long classNameId = ParamUtil.getLong(request, "classNameId");
-		String structureId = ParamUtil.getString(request, "structureId");
+		String ddmStructureKey = ParamUtil.getString(
+			request, "ddmStructureKey");
 
-		DDMStructure ddmStructure = null;
-
-		if (Validator.isNotNull(structureId)) {
-			ddmStructure = DDMStructureServiceUtil.getStructure(
-				groupId, classNameId, structureId);
-		}
+		DDMStructure ddmStructure = DDMStructureServiceUtil.getStructure(
+			groupId, classNameId, ddmStructureKey);
 
 		request.setAttribute(WebKeys.JOURNAL_STRUCTURE, ddmStructure);
 	}
@@ -411,14 +420,14 @@ public class ActionUtil {
 		throws Exception {
 
 		long groupId = ParamUtil.getLong(request, "groupId");
-		String templateId = ParamUtil.getString(request, "templateId");
+		String ddmTemplateKey = ParamUtil.getString(request, "ddmTemplateKey");
 
 		DDMTemplate ddmTemplate = null;
 
-		if (Validator.isNotNull(templateId)) {
+		if (Validator.isNotNull(ddmTemplateKey)) {
 			ddmTemplate = DDMTemplateServiceUtil.getTemplate(
 				groupId, PortalUtil.getClassNameId(DDMStructure.class),
-				templateId, true);
+				ddmTemplateKey, true);
 		}
 
 		request.setAttribute(WebKeys.JOURNAL_TEMPLATE, ddmTemplate);
@@ -438,12 +447,34 @@ public class ActionUtil {
 		JournalUtil.addRecentDDMTemplate(portletRequest, ddmTemplate);
 	}
 
-	protected static Map<String, byte[]> getImages(
-			Fields fields, long id, Locale locale, Locale defaultLocale,
-			boolean inherited)
+	protected static String getElementInstanceId(
+			String content, String fieldName, int index)
 		throws Exception {
 
-		Map<String, byte[]> images = new HashMap<String, byte[]>();
+		Document document = SAXReaderUtil.read(content);
+
+		String xPathExpression =
+			"//dynamic-element[@name = " +
+				HtmlUtil.escapeXPathAttribute(fieldName) + "]";
+
+		XPath xPath = SAXReaderUtil.createXPath(xPathExpression);
+
+		List<Node> nodes = xPath.selectNodes(document);
+
+		if (index > nodes.size()) {
+			return StringPool.BLANK;
+		}
+
+		Element dynamicElementElement = (Element)nodes.get(index);
+
+		return dynamicElementElement.attributeValue("instance-id");
+	}
+
+	protected static Map<String, byte[]> getImages(
+			String content, Fields fields, Locale locale)
+		throws Exception {
+
+		Map<String, byte[]> images = new HashMap<>();
 
 		for (Field field : fields) {
 			String dataType = field.getDataType();
@@ -455,14 +486,9 @@ public class ActionUtil {
 			List<Serializable> values = field.getValues(locale);
 
 			for (int i = 0; i < values.size(); i++) {
-				String content = (String)values.get(i);
-
-				if (content.equals("update") && !inherited) {
-					continue;
-				}
-
 				StringBundler sb = new StringBundler(6);
 
+				sb.append(getElementInstanceId(content, field.getName(), i));
 				sb.append(StringPool.UNDERLINE);
 				sb.append(field.getName());
 				sb.append(StringPool.UNDERLINE);
@@ -470,32 +496,21 @@ public class ActionUtil {
 				sb.append(StringPool.UNDERLINE);
 				sb.append(LanguageUtil.getLanguageId(locale));
 
-				if (inherited) {
-					JournalArticle article =
-						JournalArticleLocalServiceUtil.fetchJournalArticle(id);
+				JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
+					(String)values.get(i));
 
-					if (article != null) {
-						String elName =
-							field.getName() + StringPool.UNDERLINE + i;
+				String uuid = jsonObject.getString("uuid");
+				long groupId = jsonObject.getLong("groupId");
 
-						String elLanguageId =
-							StringPool.UNDERLINE +
-							LocaleUtil.toLanguageId(defaultLocale);
+				if (Validator.isNotNull(uuid) && (groupId > 0)) {
+					FileEntry fileEntry =
+						DLAppLocalServiceUtil.getFileEntryByUuidAndGroupId(
+							uuid, groupId);
 
-						long articleImageId = article.getArticleImageId(
-							StringPool.BLANK, elName, elLanguageId);
+					byte[] bytes = FileUtil.getBytes(
+						fileEntry.getContentStream());
 
-						Image image = ImageLocalServiceUtil.fetchImage(
-							articleImageId);
-
-						if (image != null) {
-							images.put(sb.toString(), image.getTextObj());
-						}
-					}
-				}
-				else {
-					images.put(
-						sb.toString(), UnicodeFormatter.hexToBytes(content));
+					images.put(sb.toString(), bytes);
 				}
 			}
 		}

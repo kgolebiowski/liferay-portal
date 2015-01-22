@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,12 @@ package com.liferay.portal.dao.orm.hibernate.region;
 
 import com.liferay.portal.cache.ehcache.CacheManagerUtil;
 import com.liferay.portal.cache.ehcache.EhcacheConfigurationUtil;
+import com.liferay.portal.cache.ehcache.EhcachePortalCache;
 import com.liferay.portal.cache.ehcache.ModifiableEhcacheWrapper;
+import com.liferay.portal.kernel.cache.CacheManagerListener;
+import com.liferay.portal.kernel.cache.PortalCache;
+import com.liferay.portal.kernel.cache.PortalCacheManager;
+import com.liferay.portal.kernel.cache.PortalCacheProvider;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -25,12 +30,16 @@ import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.io.Serializable;
+
 import java.lang.reflect.Field;
 
 import java.net.URL;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -123,10 +132,6 @@ public class LiferayEhcacheRegionFactory extends EhCacheRegionFactory {
 		return timestampsRegion;
 	}
 
-	public CacheManager getCacheManager() {
-		return manager;
-	}
-
 	public void reconfigureCaches(URL cacheConfigFile) {
 		if (manager == null) {
 			return;
@@ -215,10 +220,20 @@ public class LiferayEhcacheRegionFactory extends EhCacheRegionFactory {
 
 			_mBeanRegisteringPortalLifecycle.registerPortalLifecycle(
 				PortalLifecycle.METHOD_INIT);
+
+			PortalCacheProvider.registerPortalCacheManager(
+				new HibernatePortalCacheManager(manager));
 		}
 		catch (net.sf.ehcache.CacheException ce) {
 			throw new CacheException(ce);
 		}
+	}
+
+	@Override
+	public void stop() {
+		PortalCacheProvider.unregisterPortalCacheManager(manager.getName());
+
+		super.stop();
 	}
 
 	protected void configureCache(String regionName) {
@@ -288,10 +303,112 @@ public class LiferayEhcacheRegionFactory extends EhCacheRegionFactory {
 	private static final String _DEFAULT_CLUSTERED_EHCACHE_CONFIG_FILE =
 		"/ehcache/hibernate-clustered.xml";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayEhcacheRegionFactory.class);
 
 	private MBeanRegisteringPortalLifecycle _mBeanRegisteringPortalLifecycle;
 	private boolean _usingDefault;
+
+	private class HibernatePortalCacheManager
+		implements PortalCacheManager<Serializable, Serializable> {
+
+		public HibernatePortalCacheManager(CacheManager cacheManager) {
+			_cacheManager = cacheManager;
+		}
+
+		@Override
+		public void clearAll() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void destroy() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public PortalCache<Serializable, Serializable> getCache(String name) {
+			PortalCache<Serializable, Serializable> portalCache =
+				_portalCaches.get(name);
+
+			if (portalCache != null) {
+				return portalCache;
+			}
+
+			synchronized (_cacheManager) {
+				portalCache = _portalCaches.get(name);
+
+				if (portalCache == null) {
+					if (!_cacheManager.cacheExists(name)) {
+						return null;
+					}
+
+					Cache cache = _cacheManager.getCache(name);
+
+					portalCache = new EhcachePortalCache<>(this, cache);
+
+					_portalCaches.put(name, portalCache);
+				}
+			}
+
+			return portalCache;
+		}
+
+		@Override
+		public PortalCache<Serializable, Serializable> getCache(
+			String name, boolean blocking) {
+
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Set<CacheManagerListener> getCacheManagerListeners() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public String getName() {
+			return _cacheManager.getName();
+		}
+
+		@Override
+		public boolean isClusterAware() {
+			return true;
+		}
+
+		@Override
+		public void reconfigureCaches(URL configurationURL) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean registerCacheManagerListener(
+			CacheManagerListener cacheManagerListener) {
+
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void removeCache(String name) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean unregisterCacheManagerListener(
+			CacheManagerListener cacheManagerListener) {
+
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void unregisterCacheManagerListeners() {
+			throw new UnsupportedOperationException();
+		}
+
+		private final CacheManager _cacheManager;
+		private final Map<String, PortalCache<Serializable, Serializable>>
+			_portalCaches = new HashMap<>();
+
+	}
 
 }

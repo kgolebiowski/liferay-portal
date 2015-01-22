@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,7 +25,7 @@ import javax.servlet.http.HttpSession;
 
 /**
  * <p>
- * See http://issues.liferay.com/browse/LEP-1466.
+ * See https://issues.liferay.com/browse/LEP-1466.
  * </p>
  *
  * @author Rudy Hilado
@@ -43,7 +43,7 @@ public class PortletSessionTracker {
 		Map<String, HttpSession> sessions = _sessions.get(sessionId);
 
 		if (sessions == null) {
-			sessions = new ConcurrentHashMap<String, HttpSession>();
+			sessions = new ConcurrentHashMap<>();
 
 			Map<String, HttpSession> previousSessions = _sessions.putIfAbsent(
 				sessionId, sessions);
@@ -85,7 +85,7 @@ public class PortletSessionTracker {
 		}
 	}
 
-	private static ConcurrentMap<String, Map<String, HttpSession>> _sessions =
-		new ConcurrentHashMap<String, Map<String, HttpSession>>();
+	private static final ConcurrentMap<String, Map<String, HttpSession>>
+		_sessions = new ConcurrentHashMap<>();
 
 }

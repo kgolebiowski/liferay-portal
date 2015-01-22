@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -29,6 +29,8 @@ public interface Constants {
 
 	public static final String ADD_TEMP = "add_temp";
 
+	public static final String ADD_WEBDAV = "add_webdav";
+
 	public static final String APPROVE = "approve";
 
 	public static final String ASSIGN = "assign";
@@ -36,6 +38,8 @@ public interface Constants {
 	public static final String CANCEL = "cancel";
 
 	public static final String CANCEL_CHECKOUT = "cancel_checkout";
+
+	public static final String CHANGE_PARENT = "change_parent";
 
 	public static final String CHECK = "check";
 
@@ -93,11 +97,17 @@ public interface Constants {
 
 	public static final String PUBLISH = "publish";
 
+	public static final String PUBLISH_TO_LIVE = "publish_to_live";
+
+	public static final String PUBLISH_TO_REMOTE = "publish_to_remote";
+
 	public static final String READ = "read";
 
 	public static final String REDO = "redo";
 
 	public static final String REJECT = "reject";
+
+	public static final String RELAUNCH = "relaunch";
 
 	public static final String REMOVE = "remove";
 
@@ -141,6 +151,8 @@ public interface Constants {
 	public static final String UPDATE_AND_CHECKIN = "update_and_checkin";
 
 	public static final String UPDATE_CONTENT = "update_content";
+
+	public static final String UPDATE_WEBDAV = "update_webdav";
 
 	public static final String VALIDATE = "validate";
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -107,7 +107,7 @@ public class LiferaySerializer extends AbstractSerializer {
 		String fieldName = null;
 
 		try {
-			Set<String> processedFieldNames = new HashSet<String>();
+			Set<String> processedFieldNames = new HashSet<>();
 
 			while (javaClass != null) {
 				Field[] declaredFields = javaClass.getDeclaredFields();
@@ -125,11 +125,9 @@ public class LiferaySerializer extends AbstractSerializer {
 
 					int modifiers = field.getModifiers();
 
-					// Only marshall fields that are not final, static, or
-					// transient
+					// Only marshall fields that are not static or transient
 
-					if (((modifiers & Modifier.FINAL) == Modifier.FINAL) ||
-						((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
+					if (((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
 						((modifiers & Modifier.TRANSIENT) ==
 							Modifier.TRANSIENT)) {
 
@@ -192,9 +190,7 @@ public class LiferaySerializer extends AbstractSerializer {
 		}
 
 		try {
-			Class<?> javaClass = Class.forName(javaClassName);
-
-			Serializable.class.isAssignableFrom(javaClass);
+			Class.forName(javaClassName);
 		}
 		catch (Exception e) {
 			throw new UnmarshallException(
@@ -297,7 +293,7 @@ public class LiferaySerializer extends AbstractSerializer {
 		String fieldName = null;
 
 		try {
-			Set<String> processedFieldNames = new HashSet<String>();
+			Set<String> processedFieldNames = new HashSet<>();
 
 			while (javaClass != null) {
 				Field[] fields = javaClass.getDeclaredFields();
@@ -315,11 +311,9 @@ public class LiferaySerializer extends AbstractSerializer {
 
 					int modifiers = field.getModifiers();
 
-					// Only unmarshall fields that are not final, static, or
-					// transient
+					// Only unmarshall fields that are not static or transient
 
-					if (((modifiers & Modifier.FINAL) == Modifier.FINAL) ||
-						((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
+					if (((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
 						((modifiers & Modifier.TRANSIENT) ==
 							Modifier.TRANSIENT)) {
 
@@ -370,6 +364,7 @@ public class LiferaySerializer extends AbstractSerializer {
 	private static final Class<?>[] _SERIALIZABLE_CLASSES =
 		{Serializable.class};
 
-	private static Log _log = LogFactoryUtil.getLog(LiferaySerializer.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LiferaySerializer.class);
 
 }

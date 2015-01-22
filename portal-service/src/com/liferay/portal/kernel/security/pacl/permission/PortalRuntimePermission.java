@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -137,7 +137,7 @@ public class PortalRuntimePermission extends BasicPermission {
 		return _subject;
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public void checkDynamicQuery(Class<?> implClass);
 
@@ -203,9 +203,9 @@ public class PortalRuntimePermission extends BasicPermission {
 		_subject = nameParts[2];
 	}
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
-	private String _property;
+	private final String _property;
 	private String _servletContextName;
 	private String _shortName;
 	private String _subject;

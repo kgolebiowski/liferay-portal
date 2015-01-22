@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -37,7 +37,7 @@ public class EncryptedServletRequest extends HttpServletRequestWrapper {
 	public EncryptedServletRequest(HttpServletRequest request, Key key) {
 		super(request);
 
-		_params = new HashMap<String, String[]>();
+		_params = new HashMap<>();
 		_key = key;
 
 		Map<String, String[]> parameters = request.getParameterMap();
@@ -83,7 +83,7 @@ public class EncryptedServletRequest extends HttpServletRequestWrapper {
 		return _params.get(name);
 	}
 
-	private Key _key;
-	private Map<String, String[]> _params;
+	private final Key _key;
+	private final Map<String, String[]> _params;
 
 }

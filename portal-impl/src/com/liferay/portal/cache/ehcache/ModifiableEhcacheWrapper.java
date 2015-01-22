@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.ehcache.CacheException;
@@ -307,6 +308,12 @@ public class ModifiableEhcacheWrapper implements Ehcache {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
+	public Set<Attribute> getSearchAttributes() throws CacheException {
+		return _ehcache.getSearchAttributes();
+	}
+
+	@Override
 	public int getSize() throws CacheException, IllegalStateException {
 		return _ehcache.getSize();
 	}
@@ -509,7 +516,6 @@ public class ModifiableEhcacheWrapper implements Ehcache {
 
 	@Override
 	public void registerCacheExtension(CacheExtension cacheExtension) {
-
 		_ehcache.registerCacheExtension(cacheExtension);
 	}
 
@@ -520,7 +526,6 @@ public class ModifiableEhcacheWrapper implements Ehcache {
 
 	@Override
 	public void registerCacheWriter(CacheWriter cacheWriter) {
-
 		_ehcache.registerCacheWriter(cacheWriter);
 	}
 
@@ -782,6 +787,6 @@ public class ModifiableEhcacheWrapper implements Ehcache {
 	}
 
 	private Ehcache _ehcache;
-	private AtomicInteger _referenceCounter = new AtomicInteger(0);
+	private final AtomicInteger _referenceCounter = new AtomicInteger(0);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -152,12 +152,10 @@ public class Java2WsddTask {
 
 		Element serviceElement = rootElement.element("service");
 
-		Map<String, Element> arrayMappingElements =
-			new TreeMap<String, Element>();
-		Map<String, Element> typeMappingElements =
-			new TreeMap<String, Element>();
-		Map<String, Element> operationElements = new TreeMap<String, Element>();
-		Map<String, Element> parameterElements = new TreeMap<String, Element>();
+		Map<String, Element> arrayMappingElements = new TreeMap<>();
+		Map<String, Element> typeMappingElements = new TreeMap<>();
+		Map<String, Element> operationElements = new TreeMap<>();
+		Map<String, Element> parameterElements = new TreeMap<>();
 
 		for (Element element : serviceElement.elements()) {
 			String elementName = element.getName();

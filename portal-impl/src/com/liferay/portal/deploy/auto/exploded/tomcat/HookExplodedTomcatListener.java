@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -65,9 +65,9 @@ public class HookExplodedTomcatListener extends BaseExplodedTomcatListener {
 		return AutoDeployer.CODE_DEFAULT;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		HookExplodedTomcatListener.class);
 
-	private ExplodedTomcatDeployer _deployer;
+	private final ExplodedTomcatDeployer _deployer;
 
 }

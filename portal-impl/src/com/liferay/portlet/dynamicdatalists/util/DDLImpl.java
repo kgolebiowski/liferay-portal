@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -47,11 +47,12 @@ import com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordLocalServiceUtil;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordServiceUtil;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordSetLocalServiceUtil;
+import com.liferay.portlet.dynamicdatamapping.model.DDMFormField;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
+import com.liferay.portlet.dynamicdatamapping.model.LocalizedValue;
 import com.liferay.portlet.dynamicdatamapping.service.DDMTemplateLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.storage.Field;
-import com.liferay.portlet.dynamicdatamapping.storage.FieldConstants;
 import com.liferay.portlet.dynamicdatamapping.storage.Fields;
 import com.liferay.portlet.dynamicdatamapping.storage.StorageEngineUtil;
 import com.liferay.portlet.dynamicdatamapping.util.DDMImpl;
@@ -172,7 +173,7 @@ public class DDLImpl implements DDL {
 
 	@Override
 	public List<DDLRecord> getRecords(Hits hits) throws Exception {
-		List<DDLRecord> records = new ArrayList<DDLRecord>();
+		List<DDLRecord> records = new ArrayList<>();
 
 		List<com.liferay.portal.kernel.search.Document> documents =
 			hits.toList();
@@ -217,44 +218,37 @@ public class DDLImpl implements DDL {
 
 		DDMStructure ddmStructure = recordSet.getDDMStructure();
 
-		Map<String, Map<String, String>> fieldsMap =
-			ddmStructure.getFieldsMap();
+		Locale locale = LocaleUtil.fromLanguageId(
+			ddmStructure.getDefaultLanguageId());
 
-		for (Map<String, String> fields : fieldsMap.values()) {
-			String name = fields.get(FieldConstants.NAME);
+		List<DDMFormField> ddmFormFields = ddmStructure.getDDMFormFields(false);
 
-			if (ddmStructure.isFieldPrivate(name)) {
-				continue;
-			}
+		for (DDMFormField ddmFormField : ddmFormFields) {
+			String name = ddmFormField.getName();
 
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-			String dataType = fields.get(FieldConstants.DATA_TYPE);
+			String dataType = ddmFormField.getDataType();
 
 			jsonObject.put("dataType", dataType);
 
-			boolean editable = GetterUtil.getBoolean(
-				fields.get(FieldConstants.EDITABLE), true);
+			boolean readOnly = ddmFormField.isReadOnly();
 
-			jsonObject.put("editable", editable);
+			jsonObject.put("editable", !readOnly);
 
-			String label = fields.get(FieldConstants.LABEL);
+			LocalizedValue label = ddmFormField.getLabel();
 
-			jsonObject.put("label", label);
+			jsonObject.put("label", label.getString(locale));
 
 			jsonObject.put("name", name);
 
-			boolean required = GetterUtil.getBoolean(
-				fields.get(FieldConstants.REQUIRED));
+			boolean required = ddmFormField.isRequired();
 
 			jsonObject.put("required", required);
 
-			boolean sortable = GetterUtil.getBoolean(
-				fields.get(FieldConstants.SORTABLE), true);
+			jsonObject.put("sortable", true);
 
-			jsonObject.put("sortable", sortable);
-
-			String type = fields.get(FieldConstants.TYPE);
+			String type = ddmFormField.getType();
 
 			jsonObject.put("type", type);
 
@@ -310,7 +304,7 @@ public class DDLImpl implements DDL {
 			RenderResponse renderResponse)
 		throws Exception {
 
-		Map<String, Object> contextObjects = new HashMap<String, Object>();
+		Map<String, Object> contextObjects = new HashMap<>();
 
 		contextObjects.put(
 			DDLConstants.RESERVED_DDM_STRUCTURE_ID,
@@ -337,6 +331,9 @@ public class DDLImpl implements DDL {
 
 		DDMTemplate ddmTemplate = DDMTemplateLocalServiceUtil.getTemplate(
 			ddmTemplateId);
+
+		contextObjects.put(
+			TemplateConstants.CLASS_NAME_ID, ddmTemplate.getClassNameId());
 
 		return _transformer.transform(
 			themeDisplay, contextObjects, ddmTemplate.getScript(),
@@ -458,9 +455,9 @@ public class DDLImpl implements DDL {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(DDLImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(DDLImpl.class);
 
-	private Transformer _transformer = new Transformer(
+	private final Transformer _transformer = new Transformer(
 		PropsKeys.DYNAMIC_DATA_LISTS_ERROR_TEMPLATE, true);
 
 }

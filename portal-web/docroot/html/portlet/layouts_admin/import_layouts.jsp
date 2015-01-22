@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,10 +18,22 @@
 
 <%
 long groupId = ParamUtil.getLong(request, "groupId");
+boolean privateLayout = ParamUtil.getBoolean(request, "privateLayout");
 boolean validate = ParamUtil.getBoolean(request, "validate", true);
 
-String[] tempFileEntryNames = LayoutServiceUtil.getTempFileEntryNames(groupId, ExportImportHelper.TEMP_FOLDER_NAME);
+String[] tempFileNames = LayoutServiceUtil.getTempFileNames(groupId, ExportImportHelper.TEMP_FOLDER_NAME);
 %>
+
+<portlet:renderURL var="backURL">
+	<portlet:param name="struts_action" value="/layouts_admin/edit_layout_set" />
+	<portlet:param name="tabs1" value='<%= privateLayout ? "my-dashboard" : "my-profile" %>' />
+	<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
+</portlet:renderURL>
+
+<liferay-ui:header
+	backURL="<%= backURL %>"
+	title='<%= privateLayout ? LanguageUtil.get(request, "import-private-pages") : LanguageUtil.get(request, "import-public-pages") %>'
+/>
 
 <liferay-ui:tabs
 	names="new-import-process,current-and-previous"
@@ -42,7 +54,7 @@ String[] tempFileEntryNames = LayoutServiceUtil.getTempFileEntryNames(groupId, E
 			</div>
 
 			<c:choose>
-				<c:when test="<%= (tempFileEntryNames.length > 0) && !validate %>">
+				<c:when test="<%= (tempFileNames.length > 0) && !validate %>">
 					<liferay-util:include page="/html/portlet/layouts_admin/import_layouts_resources.jsp" />
 				</c:when>
 				<c:otherwise>

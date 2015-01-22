@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,41 +15,51 @@
 package com.liferay.portlet.social.service;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.User;
+import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.util.TestPropsValues;
-import com.liferay.portal.util.UserTestUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.util.comparator.UserScreenNameComparator;
+import com.liferay.portal.util.test.TestPropsValues;
+import com.liferay.portal.util.test.UserTestUtil;
 import com.liferay.portlet.social.model.SocialRelationConstants;
 
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Brian Wing Shun Chan
  */
-@ExecutionTestListeners(listeners = {EnvironmentExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class SocialRelationLocalServiceTest {
 
-	@Before
-	public void setUp() throws Exception {
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
+
+	@BeforeClass
+	public static void setUpClass() throws Exception {
+
+		// Users
+
 		for (String screenNamePrefix : new String[] {"dlc", "fra"}) {
 			for (int i = 1; i <= 9; i++) {
 				UserTestUtil.addUser(screenNamePrefix + i, false, null);
 			}
 		}
-	}
 
-	@Test
-	public void testAddRelationWithBiType() throws Exception {
+		// Bi type
+
 		User dlc1User = UserLocalServiceUtil.getUserByScreenName(
 			TestPropsValues.getCompanyId(), "dlc1");
 
@@ -136,10 +146,9 @@ public class SocialRelationLocalServiceTest {
 		SocialRelationLocalServiceUtil.addRelation(
 			dlc1User.getUserId(), dlc2User.getUserId(),
 			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER);
-	}
 
-	@Test
-	public void testAddRelationWithUniType() throws Exception {
+		// Uni type
+
 		User fra1User = UserLocalServiceUtil.getUserByScreenName(
 			TestPropsValues.getCompanyId(), "fra1");
 
@@ -225,6 +234,64 @@ public class SocialRelationLocalServiceTest {
 	}
 
 	@Test
+	public void testGetMultipleGroups() throws Exception {
+		User dlc3User = UserLocalServiceUtil.getUserByScreenName(
+			TestPropsValues.getCompanyId(), "dlc3");
+
+		GroupLocalServiceUtil.addUserGroup(
+			dlc3User.getUserId(), TestPropsValues.getGroupId());
+
+		User dlc4User = UserLocalServiceUtil.getUserByScreenName(
+			TestPropsValues.getCompanyId(), "dlc4");
+
+		GroupLocalServiceUtil.addUserGroup(
+			dlc4User.getUserId(), TestPropsValues.getGroupId());
+
+		long[] groupIds = dlc4User.getGroupIds();
+
+		for (long groupId : dlc3User.getGroupIds()) {
+			ArrayUtil.remove(groupIds, groupId);
+		}
+
+		List<User> users = UserLocalServiceUtil.searchSocial(
+			TestPropsValues.getCompanyId(), groupIds, "dlc", QueryUtil.ALL_POS,
+			QueryUtil.ALL_POS);
+
+		Assert.assertEquals(2, users.size());
+	}
+
+	@Test
+	public void testGetMultipleRelations() throws Exception {
+		User dlc2User = UserLocalServiceUtil.getUserByScreenName(
+			TestPropsValues.getCompanyId(), "dlc2");
+
+		User dlc3User = UserLocalServiceUtil.getUserByScreenName(
+			TestPropsValues.getCompanyId(), "dlc3");
+
+		GroupLocalServiceUtil.addUserGroup(
+			dlc3User.getUserId(), TestPropsValues.getGroupId());
+
+		User dlc4User = UserLocalServiceUtil.getUserByScreenName(
+			TestPropsValues.getCompanyId(), "dlc4");
+
+		GroupLocalServiceUtil.addUserGroup(
+			dlc4User.getUserId(), TestPropsValues.getGroupId());
+
+		int[] socialRelationTypes = {
+			SocialRelationConstants.TYPE_BI_FRIEND,
+			SocialRelationConstants.TYPE_BI_COWORKER
+		};
+
+		// Does dlc2 should have 1 coworker and 4 friends?
+
+		List<User> users = UserLocalServiceUtil.searchSocial(
+			dlc2User.getUserId(), socialRelationTypes, "dlc", QueryUtil.ALL_POS,
+			QueryUtil.ALL_POS);
+
+		Assert.assertEquals(5, users.size());
+	}
+
+	@Test
 	public void testGetMutualRelations() throws Exception {
 		User dlc1User = UserLocalServiceUtil.getUserByScreenName(
 			TestPropsValues.getCompanyId(), "dlc1");
@@ -306,7 +373,8 @@ public class SocialRelationLocalServiceTest {
 		// Does dlc1 have 8 relations?
 
 		List<User> users = UserLocalServiceUtil.getSocialUsers(
-			dlc1User.getUserId(), QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			dlc1User.getUserId(), SocialRelationConstants.TYPE_UNI_ENEMY,
+			StringPool.NOT_EQUAL, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(8, users.size());
@@ -336,7 +404,7 @@ public class SocialRelationLocalServiceTest {
 
 		List<User> users = UserLocalServiceUtil.getSocialUsers(
 			dlc1User.getUserId(), SocialRelationConstants.TYPE_BI_FRIEND,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			StringPool.EQUAL, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(7, users.size());
@@ -353,7 +421,7 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			dlc1User.getUserId(), SocialRelationConstants.TYPE_BI_COWORKER,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			StringPool.EQUAL,  QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(1, users.size());
@@ -364,8 +432,9 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			dlc1User.getUserId(),
-			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER, QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS, new UserScreenNameComparator(true));
+			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER, StringPool.EQUAL,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(1, users.size());
 
@@ -375,8 +444,9 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			dlc2User.getUserId(),
-			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER, QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS, new UserScreenNameComparator(true));
+			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER, StringPool.EQUAL,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(1, users.size());
 
@@ -386,8 +456,9 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			dlc3User.getUserId(),
-			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER, QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS, new UserScreenNameComparator(true));
+			SocialRelationConstants.TYPE_BI_ROMANTIC_PARTNER, StringPool.EQUAL,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(0, users.size());
 	}
@@ -410,7 +481,7 @@ public class SocialRelationLocalServiceTest {
 
 		List<User> users = UserLocalServiceUtil.getSocialUsers(
 			fra1User.getUserId(), SocialRelationConstants.TYPE_UNI_PARENT,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			StringPool.EQUAL, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(8, users.size());
@@ -428,7 +499,7 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			fra2User.getUserId(), SocialRelationConstants.TYPE_UNI_PARENT,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			StringPool.EQUAL, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(0, users.size());
@@ -437,7 +508,7 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			fra3User.getUserId(), SocialRelationConstants.TYPE_UNI_CHILD,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			StringPool.EQUAL, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(2, users.size());
@@ -449,7 +520,7 @@ public class SocialRelationLocalServiceTest {
 
 		users = UserLocalServiceUtil.getSocialUsers(
 			fra6User.getUserId(), SocialRelationConstants.TYPE_UNI_CHILD,
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			StringPool.EQUAL, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new UserScreenNameComparator(true));
 
 		Assert.assertEquals(0, users.size());

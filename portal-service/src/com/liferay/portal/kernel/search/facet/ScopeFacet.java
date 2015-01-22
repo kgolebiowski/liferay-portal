@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -51,7 +51,7 @@ public class ScopeFacet extends MultiValueFacet {
 
 	protected long[] addScopeGroup(long groupId) {
 		try {
-			List<Long> groupIds = new ArrayList<Long>();
+			List<Long> groupIds = new ArrayList<>();
 
 			groupIds.add(groupId);
 
@@ -191,6 +191,6 @@ public class ScopeFacet extends MultiValueFacet {
 			searchContext, facetQuery, BooleanClauseOccur.MUST.getName());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ScopeFacet.class);
+	private static final Log _log = LogFactoryUtil.getLog(ScopeFacet.class);
 
 }

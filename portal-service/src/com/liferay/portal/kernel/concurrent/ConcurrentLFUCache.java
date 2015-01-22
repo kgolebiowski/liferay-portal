@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -173,8 +173,8 @@ public class ConcurrentLFUCache<K, V> {
 	}
 
 	private void _cleanUp() {
-		List<Entry<K, ValueWrapper>> valueWrappers =
-			new ArrayList<Entry<K, ValueWrapper>>(_cache.entrySet());
+		List<Entry<K, ValueWrapper>> valueWrappers = new ArrayList<>(
+			_cache.entrySet());
 
 		Collections.sort(valueWrappers, _entryComparator);
 
@@ -199,7 +199,7 @@ public class ConcurrentLFUCache<K, V> {
 		}
 	}
 
-	private Map<K, ValueWrapper> _cache = new HashMap<K, ValueWrapper>();
+	private final Map<K, ValueWrapper> _cache = new HashMap<>();
 	private final EntryComparator _entryComparator = new EntryComparator();
 	private final AtomicLong _evictCount = new AtomicLong();
 	private final int _expectedSize;

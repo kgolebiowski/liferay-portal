@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,8 +15,8 @@
 package com.liferay.portlet.service.persistence;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.GroupConstants;
@@ -29,19 +29,18 @@ import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.ResourceActionLocalServiceUtil;
 import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
 import com.liferay.portal.service.ResourceTypePermissionLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
 import com.liferay.portal.service.persistence.GroupFinderUtil;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.LayoutTestUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.ResourcePermissionTestUtil;
-import com.liferay.portal.util.ResourceTypePermissionTestUtil;
-import com.liferay.portal.util.TestPropsValues;
 import com.liferay.portal.util.comparator.GroupNameComparator;
-import com.liferay.portlet.bookmarks.model.BookmarksFolder;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.ResourcePermissionTestUtil;
+import com.liferay.portal.util.test.ResourceTypePermissionTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -50,21 +49,22 @@ import java.util.List;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Alberto Chaparro
  * @author László Csontos
  */
-@ExecutionTestListeners(
-	listeners = {
-		EnvironmentExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-@Transactional
 public class GroupFinderTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -81,14 +81,18 @@ public class GroupFinderTest {
 			StringUtil.valueOf(_group.getGroupId()),
 			ResourceConstants.SCOPE_GROUP);
 
-		_bookmarkFolderResourceAction =
-			ResourceActionLocalServiceUtil.getResourceAction(
-				BookmarksFolder.class.getName(), ActionKeys.VIEW);
+		_modelResourceAction = getModelResourceAction();
 
 		_resourceTypePermission =
 			ResourceTypePermissionTestUtil.addResourceTypePermission(
-				_bookmarkFolderResourceAction.getBitwiseValue(),
-				_group.getGroupId(), _bookmarkFolderResourceAction.getName());
+				_modelResourceAction.getBitwiseValue(), _group.getGroupId(),
+				_modelResourceAction.getName());
+
+		ResourcePermissionTestUtil.addResourcePermission(
+			_modelResourceAction.getBitwiseValue(),
+			_modelResourceAction.getName(),
+			StringUtil.valueOf(_group.getGroupId()),
+			_resourceTypePermission.getRoleId(), ResourceConstants.SCOPE_GROUP);
 	}
 
 	@AfterClass
@@ -126,7 +130,7 @@ public class GroupFinderTest {
 		throws Exception {
 
 		List<Group> groups = findByC_C_N_D(
-			_bookmarkFolderResourceAction.getActionId(),
+			_modelResourceAction.getActionId(),
 			_resourceTypePermission.getName(),
 			_resourceTypePermission.getRoleId());
 
@@ -143,8 +147,7 @@ public class GroupFinderTest {
 
 	@Test
 	public void testFindByCompanyId() throws Exception {
-		LinkedHashMap<String, Object> groupParams =
-			new LinkedHashMap<String, Object>();
+		LinkedHashMap<String, Object> groupParams = new LinkedHashMap<>();
 
 		groupParams.put("inherit", Boolean.TRUE);
 		groupParams.put("site", Boolean.TRUE);
@@ -164,25 +167,19 @@ public class GroupFinderTest {
 
 		int initialGroupCount = groups.size();
 
-		GroupTestUtil.addGroup(ServiceTestUtil.randomString());
+		GroupTestUtil.addGroup();
 
-		Group parentGroup = GroupTestUtil.addGroup(
-			ServiceTestUtil.randomString());
+		Group parentGroup = GroupTestUtil.addGroup();
 
-		LayoutTestUtil.addLayout(
-			parentGroup.getGroupId(), ServiceTestUtil.randomString(), false);
+		LayoutTestUtil.addLayout(parentGroup, false);
 
-		Group childGroup1 = GroupTestUtil.addGroup(
-			parentGroup.getGroupId(), ServiceTestUtil.randomString());
+		Group childGroup1 = GroupTestUtil.addGroup(parentGroup.getGroupId());
 
-		LayoutTestUtil.addLayout(
-			childGroup1.getGroupId(), ServiceTestUtil.randomString(), false);
+		LayoutTestUtil.addLayout(childGroup1, false);
 
-		Group childGroup2 = GroupTestUtil.addGroup(
-			parentGroup.getGroupId(), ServiceTestUtil.randomString());
+		Group childGroup2 = GroupTestUtil.addGroup(parentGroup.getGroupId());
 
-		LayoutTestUtil.addLayout(
-			childGroup2.getGroupId(), ServiceTestUtil.randomString(), true);
+		LayoutTestUtil.addLayout(childGroup2, true);
 
 		groups = findByLayouts(GroupConstants.DEFAULT_PARENT_GROUP_ID);
 
@@ -197,21 +194,36 @@ public class GroupFinderTest {
 		Assert.assertTrue(groups.isEmpty());
 	}
 
-	protected void addLayout(long groupId) throws Exception {
-		LayoutTestUtil.addLayout(
-			groupId, ServiceTestUtil.randomString(), false);
+	protected static ResourceAction getModelResourceAction()
+		throws PortalException {
 
-		LayoutTestUtil.addLayout(groupId, ServiceTestUtil.randomString(), true);
+		String name = RandomTestUtil.randomString() + "Model";
+
+		List<String> actionIds = new ArrayList<>();
+
+		actionIds.add(ActionKeys.UPDATE);
+		actionIds.add(ActionKeys.VIEW);
+
+		ResourceActionLocalServiceUtil.checkResourceActions(
+			name, actionIds, true);
+
+		return ResourceActionLocalServiceUtil.getResourceAction(
+			name, ActionKeys.VIEW);
+	}
+
+	protected void addLayout(long groupId) throws Exception {
+		LayoutTestUtil.addLayout(groupId, false);
+
+		LayoutTestUtil.addLayout(groupId, true);
 	}
 
 	protected List<Group> findByC_C_N_D(
 			String actionId, String name, long roleId)
 		throws Exception {
 
-		LinkedHashMap<String, Object> groupParams =
-			new LinkedHashMap<String, Object>();
+		LinkedHashMap<String, Object> groupParams = new LinkedHashMap<>();
 
-		List<Object> rolePermissions = new ArrayList<Object>();
+		List<Object> rolePermissions = new ArrayList<>();
 
 		rolePermissions.add(name);
 		rolePermissions.add(new Integer(ResourceConstants.SCOPE_GROUP));
@@ -231,12 +243,14 @@ public class GroupFinderTest {
 
 	protected List<Group> findByLayouts(long parentGroupId) throws Exception {
 		return GroupFinderUtil.findByLayouts(
-			TestPropsValues.getCompanyId(), parentGroupId, true, -1, -1);
+			TestPropsValues.getCompanyId(), parentGroupId, true,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new GroupNameComparator(true));
 	}
 
 	private static ResourceAction _arbitraryResourceAction;
-	private static ResourceAction _bookmarkFolderResourceAction;
 	private static Group _group;
+	private static ResourceAction _modelResourceAction;
 	private static ResourcePermission _resourcePermission;
 	private static ResourceTypePermission _resourceTypePermission;
 

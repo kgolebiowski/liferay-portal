@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.shopping.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.List;
  * @see com.liferay.portlet.shopping.service.http.ShoppingCouponServiceSoap
  * @generated
  */
+@ProviderType
 public class ShoppingCouponSoap implements Serializable {
 	public static ShoppingCouponSoap toSoapModel(ShoppingCoupon model) {
 		ShoppingCouponSoap soapModel = new ShoppingCouponSoap();

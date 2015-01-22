@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.javadoc.JavadocManagerUtil;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceActionsManagerUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
@@ -55,6 +56,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.ServletContext;
+
 import org.jamwiki.Environment;
 
 /**
@@ -69,8 +72,7 @@ public class GlobalStartupAction extends SimpleAction {
 			return _autoDeployListeners;
 		}
 
-		List<AutoDeployListener> autoDeployListeners =
-			new ArrayList<AutoDeployListener>();
+		List<AutoDeployListener> autoDeployListeners = new ArrayList<>();
 
 		String[] autoDeployListenerClassNames = PropsUtil.getArray(
 			PropsKeys.AUTO_DEPLOY_LISTENERS);
@@ -104,8 +106,7 @@ public class GlobalStartupAction extends SimpleAction {
 			return _hotDeployListeners;
 		}
 
-		List<HotDeployListener> hotDeployListeners =
-			new ArrayList<HotDeployListener>();
+		List<HotDeployListener> hotDeployListeners = new ArrayList<>();
 
 		String[] hotDeployListenerClassNames = PropsUtil.getArray(
 			PropsKeys.HOT_DEPLOY_LISTENERS);
@@ -133,8 +134,7 @@ public class GlobalStartupAction extends SimpleAction {
 	}
 
 	public static List<SandboxDeployListener> getSandboxDeployListeners() {
-		List<SandboxDeployListener> sandboxDeployListeners =
-			new ArrayList<SandboxDeployListener>();
+		List<SandboxDeployListener> sandboxDeployListeners = new ArrayList<>();
 
 		String[] sandboxDeployListenerClassNames = PropsUtil.getArray(
 			PropsKeys.SANDBOX_DEPLOY_LISTENERS);
@@ -311,8 +311,10 @@ public class GlobalStartupAction extends SimpleAction {
 
 		// JSON web service
 
-		JSONWebServiceActionsManagerUtil.registerServletContext(
-			PortalContextLoaderListener.getPortalServletContextPath());
+		ServletContext servletContext = ServletContextPool.get(
+			PortalContextLoaderListener.getPortalServletContextName());
+
+		JSONWebServiceActionsManagerUtil.registerServletContext(servletContext);
 
 		// Plugins
 
@@ -346,7 +348,8 @@ public class GlobalStartupAction extends SimpleAction {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(GlobalStartupAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		GlobalStartupAction.class);
 
 	private static List<AutoDeployListener> _autoDeployListeners;
 	private static List<HotDeployListener> _hotDeployListeners;

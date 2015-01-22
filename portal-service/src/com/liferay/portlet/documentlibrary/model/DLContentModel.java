@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -213,19 +213,20 @@ public interface DLContentModel extends BaseModel<DLContent> {
 	public Object clone();
 
 	@Override
-	public int compareTo(DLContent dlContent);
+	public int compareTo(
+		com.liferay.portlet.documentlibrary.model.DLContent dlContent);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<DLContent> toCacheModel();
+	public CacheModel<com.liferay.portlet.documentlibrary.model.DLContent> toCacheModel();
 
 	@Override
-	public DLContent toEscapedModel();
+	public com.liferay.portlet.documentlibrary.model.DLContent toEscapedModel();
 
 	@Override
-	public DLContent toUnescapedModel();
+	public com.liferay.portlet.documentlibrary.model.DLContent toUnescapedModel();
 
 	@Override
 	public String toString();

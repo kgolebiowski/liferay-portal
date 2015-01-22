@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -36,7 +36,7 @@ public class SQLQueryTableNamesUtil {
 
 		String lowerCaseSQL = StringUtil.toLowerCase(sql);
 
-		Set<String> tableNameSet = new HashSet<String>();
+		Set<String> tableNameSet = new HashSet<>();
 
 		// Find table name from the "from" clause
 
@@ -108,7 +108,7 @@ public class SQLQueryTableNamesUtil {
 		return new int[] {start, end};
 	}
 
-	private static PortalCache<String, String[]> _portalCache =
+	private static final PortalCache<String, String[]> _portalCache =
 		SingleVMPoolUtil.getCache(SQLQueryTableNamesUtil.class.getName());
 
 }

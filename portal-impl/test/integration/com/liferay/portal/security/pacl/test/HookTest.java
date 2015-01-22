@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,29 +14,29 @@
 
 package com.liferay.portal.security.pacl.test;
 
-import com.liferay.portal.kernel.format.PhoneNumberFormatUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.security.pacl.PACLExecutionTestListener;
-import com.liferay.portal.security.pacl.PACLIntegrationJUnitTestRunner;
 import com.liferay.portal.security.pacl.test.hook.action.FailureStrutsAction;
 import com.liferay.portal.security.pacl.test.hook.action.SuccessStrutsAction;
 import com.liferay.portal.security.pacl.test.hook.indexer.OrganizationIndexerPostProcessor;
 import com.liferay.portal.security.pacl.test.hook.indexer.UserIndexerPostProcessor;
+import com.liferay.portal.test.PACLTestRule;
 import com.liferay.portlet.blogs.service.BlogsEntryLocalServiceUtil;
 import com.liferay.portlet.blogs.service.BlogsStatsUserLocalServiceUtil;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Raymond Augé
  */
-@ExecutionTestListeners(listeners = {PACLExecutionTestListener.class})
-@RunWith(PACLIntegrationJUnitTestRunner.class)
 public class HookTest {
+
+	@ClassRule
+	@Rule
+	public static final PACLTestRule paclTestRule = new PACLTestRule();
 
 	@Test
 	public void testIndexer1() throws Exception {
@@ -85,15 +85,8 @@ public class HookTest {
 	}
 
 	@Test
-	public void testPortalProperties1() throws Exception {
+	public void testPortalProperties() throws Exception {
 		Assert.assertFalse(LanguageUtil.isBetaLocale(LocaleUtil.US));
-	}
-
-	@Test
-	public void testPortalProperties2() throws Exception {
-		String phoneNumber = PhoneNumberFormatUtil.format("123");
-
-		Assert.assertTrue(phoneNumber.startsWith("(TEST"));
 	}
 
 	@Test

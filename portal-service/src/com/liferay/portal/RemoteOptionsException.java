@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -73,6 +73,6 @@ public class RemoteOptionsException extends PortalException {
 	private long _remoteGroupId;
 	private String _remotePathContext;
 	private int _remotePort;
-	private int _type;
+	private final int _type;
 
 }

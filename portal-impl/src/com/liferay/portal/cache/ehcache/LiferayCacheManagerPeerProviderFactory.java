@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -110,11 +110,12 @@ public class LiferayCacheManagerPeerProviderFactory
 			cacheManager, portalProperties);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayCacheManagerPeerProviderFactory.class);
 
-	private static HtmlImpl _htmlUtil = new HtmlImpl();
+	private static final HtmlImpl _htmlUtil = new HtmlImpl();
 
-	private CacheManagerPeerProviderFactory _cacheManagerPeerProviderFactory;
+	private final CacheManagerPeerProviderFactory
+		_cacheManagerPeerProviderFactory;
 
 }

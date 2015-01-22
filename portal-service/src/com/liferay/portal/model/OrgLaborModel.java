@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -348,19 +348,19 @@ public interface OrgLaborModel extends BaseModel<OrgLabor>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(OrgLabor orgLabor);
+	public int compareTo(com.liferay.portal.model.OrgLabor orgLabor);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<OrgLabor> toCacheModel();
+	public CacheModel<com.liferay.portal.model.OrgLabor> toCacheModel();
 
 	@Override
-	public OrgLabor toEscapedModel();
+	public com.liferay.portal.model.OrgLabor toEscapedModel();
 
 	@Override
-	public OrgLabor toUnescapedModel();
+	public com.liferay.portal.model.OrgLabor toUnescapedModel();
 
 	@Override
 	public String toString();

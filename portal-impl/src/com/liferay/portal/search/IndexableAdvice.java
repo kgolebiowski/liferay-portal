@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -99,21 +99,21 @@ public class IndexableAdvice
 		return _nullIndexable;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(IndexableAdvice.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		IndexableAdvice.class);
 
-	private static Indexable _nullIndexable =
-		new Indexable() {
+	private static final Indexable _nullIndexable = new Indexable() {
 
-			@Override
-			public Class<? extends Annotation> annotationType() {
-				return Indexable.class;
-			}
+		@Override
+		public Class<? extends Annotation> annotationType() {
+			return Indexable.class;
+		}
 
-			@Override
-			public IndexableType type() {
-				return null;
-			}
+		@Override
+		public IndexableType type() {
+			return null;
+		}
 
-		};
+	};
 
 }

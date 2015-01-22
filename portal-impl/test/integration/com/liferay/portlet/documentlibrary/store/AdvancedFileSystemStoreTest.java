@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,23 +14,34 @@
 
 package com.liferay.portlet.documentlibrary.store;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.test.RandomTestUtil;
 import com.liferay.portlet.documentlibrary.NoSuchDirectoryException;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Vilmos Papp
  */
-@ExecutionTestListeners(listeners = {EnvironmentExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class AdvancedFileSystemStoreTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
+
+	@Before
+	public void setUp() {
+		_store = new AdvancedFileSystemStore();
+	}
 
 	@Test
 	public void testUpdateFileWithMoveFiles() throws Exception {
@@ -38,7 +49,7 @@ public class AdvancedFileSystemStoreTest {
 
 		long companyId = (Long)data[0];
 		long repositoryId = (Long)data[1];
-		long newRepositoryId = ServiceTestUtil.nextLong();
+		long newRepositoryId = RandomTestUtil.nextLong();
 
 		try {
 			String[] fileNames = _store.getFileNames(companyId, repositoryId);
@@ -73,8 +84,8 @@ public class AdvancedFileSystemStoreTest {
 	}
 
 	protected Object[] initStoreData() throws Exception {
-		long companyId = ServiceTestUtil.nextLong();
-		long repositoryId = ServiceTestUtil.nextLong();
+		long companyId = RandomTestUtil.nextLong();
+		long repositoryId = RandomTestUtil.nextLong();
 
 		for (int i = 0; i < _FILE_COUNT; i++) {
 			String fileName = String.valueOf(i) + _FILE_NAME_EXTENSION;
@@ -93,12 +104,12 @@ public class AdvancedFileSystemStoreTest {
 
 	private static final String _FILE_NAME_EXTENSION = ".txt";
 
-	private static Store _store = new AdvancedFileSystemStore();
-
 	static {
 		for (int i = 0; i < _DATA_SIZE; i++) {
 			_FILE_DATA[i] = (byte)i;
 		}
 	}
+
+	private Store _store;
 
 }

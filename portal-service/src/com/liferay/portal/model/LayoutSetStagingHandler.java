@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portal.model;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -121,7 +120,7 @@ public class LayoutSetStagingHandler
 	}
 
 	private LayoutSetBranch _getLayoutSetBranch(LayoutSet layoutSet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
@@ -133,22 +132,20 @@ public class LayoutSetStagingHandler
 		long layoutSetBranchId = ParamUtil.getLong(
 			serviceContext, "layoutSetBranchId");
 
-		LayoutSetBranch layoutSetBranch = null;
+		if (layoutSetBranchId > 0) {
+			return LayoutSetBranchLocalServiceUtil.getLayoutSetBranch(
+				layoutSetBranchId);
+		}
 
 		if (serviceContext.isSignedIn()) {
-			layoutSetBranch =
-				LayoutSetBranchLocalServiceUtil.getUserLayoutSetBranch(
-					serviceContext.getUserId(), layoutSet.getGroupId(),
-					layoutSet.isPrivateLayout(), layoutSet.getLayoutSetId(),
-					layoutSetBranchId);
-		}
-		else if (layoutSetBranchId > 0) {
-			layoutSetBranch =
-				LayoutSetBranchLocalServiceUtil.getLayoutSetBranch(
-					layoutSetBranchId);
+			return LayoutSetBranchLocalServiceUtil.getUserLayoutSetBranch(
+				serviceContext.getUserId(), layoutSet.getGroupId(),
+				layoutSet.isPrivateLayout(), layoutSet.getLayoutSetId(),
+				layoutSetBranchId);
 		}
 
-		return layoutSetBranch;
+		return LayoutSetBranchLocalServiceUtil.getMasterLayoutSetBranch(
+			layoutSet.getGroupId(), layoutSet.isPrivateLayout());
 	}
 
 	private Object _toEscapedModel() {
@@ -157,11 +154,11 @@ public class LayoutSetStagingHandler
 			new LayoutSetStagingHandler(_layoutSet.toEscapedModel()));
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutSetStagingHandler.class);
 
-	private static Set<String> _layoutSetBranchMethodNames =
-		new HashSet<String>();
+	private static final Set<String> _layoutSetBranchMethodNames =
+		new HashSet<>();
 
 	static {
 		_layoutSetBranchMethodNames.add("getColorScheme");
@@ -200,7 +197,7 @@ public class LayoutSetStagingHandler
 		_layoutSetBranchMethodNames.add("setWapThemeId");
 	}
 
-	private LayoutSet _layoutSet;
+	private final LayoutSet _layoutSet;
 	private LayoutSetBranch _layoutSetBranch;
 
 }

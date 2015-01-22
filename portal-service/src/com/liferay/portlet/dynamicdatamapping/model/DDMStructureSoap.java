@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.dynamicdatamapping.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.List;
  * @see com.liferay.portlet.dynamicdatamapping.service.http.DDMStructureServiceSoap
  * @generated
  */
+@ProviderType
 public class DDMStructureSoap implements Serializable {
 	public static DDMStructureSoap toSoapModel(DDMStructure model) {
 		DDMStructureSoap soapModel = new DDMStructureSoap();
@@ -42,9 +45,10 @@ public class DDMStructureSoap implements Serializable {
 		soapModel.setParentStructureId(model.getParentStructureId());
 		soapModel.setClassNameId(model.getClassNameId());
 		soapModel.setStructureKey(model.getStructureKey());
+		soapModel.setVersion(model.getVersion());
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
-		soapModel.setXsd(model.getXsd());
+		soapModel.setDefinition(model.getDefinition());
 		soapModel.setStorageType(model.getStorageType());
 		soapModel.setType(model.getType());
 
@@ -187,6 +191,14 @@ public class DDMStructureSoap implements Serializable {
 		_structureKey = structureKey;
 	}
 
+	public String getVersion() {
+		return _version;
+	}
+
+	public void setVersion(String version) {
+		_version = version;
+	}
+
 	public String getName() {
 		return _name;
 	}
@@ -203,12 +215,12 @@ public class DDMStructureSoap implements Serializable {
 		_description = description;
 	}
 
-	public String getXsd() {
-		return _xsd;
+	public String getDefinition() {
+		return _definition;
 	}
 
-	public void setXsd(String xsd) {
-		_xsd = xsd;
+	public void setDefinition(String definition) {
+		_definition = definition;
 	}
 
 	public String getStorageType() {
@@ -238,9 +250,10 @@ public class DDMStructureSoap implements Serializable {
 	private long _parentStructureId;
 	private long _classNameId;
 	private String _structureKey;
+	private String _version;
 	private String _name;
 	private String _description;
-	private String _xsd;
+	private String _definition;
 	private String _storageType;
 	private int _type;
 }

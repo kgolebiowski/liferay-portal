@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -34,8 +34,6 @@ String targetPortletId = StringPool.BLANK;
 if (!showListed) {
 	targetPortletId = PrefsParamUtil.getString(portletPreferences, request, "targetPortletId", StringPool.BLANK);
 }
-
-String type = PrefsParamUtil.getString(portletPreferences, request, "type", StringPool.BLANK);
 %>
 
 <%@ include file="/html/portlet/journal_content_search/init-ext.jsp" %>

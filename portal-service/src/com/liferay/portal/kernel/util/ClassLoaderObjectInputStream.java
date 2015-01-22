@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -43,6 +43,6 @@ public class ClassLoaderObjectInputStream extends ObjectInputStream {
 		return ClassResolverUtil.resolve(name, _classLoader);
 	}
 
-	private ClassLoader _classLoader;
+	private final ClassLoader _classLoader;
 
 }

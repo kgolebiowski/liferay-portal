@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -34,8 +34,6 @@ import java.util.Set;
 public class SerialDestination extends BaseAsyncDestination {
 
 	public SerialDestination() {
-		super();
-
 		setWorkersCoreSize(_WORKERS_CORE_SIZE);
 		setWorkersMaxSize(_WORKERS_MAX_SIZE);
 	}
@@ -87,6 +85,7 @@ public class SerialDestination extends BaseAsyncDestination {
 
 	private static final int _WORKERS_MAX_SIZE = 1;
 
-	private static Log _log = LogFactoryUtil.getLog(SerialDestination.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SerialDestination.class);
 
 }

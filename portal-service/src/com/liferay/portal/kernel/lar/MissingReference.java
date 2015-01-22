@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -67,6 +67,10 @@ public class MissingReference implements Serializable {
 		return _displayName;
 	}
 
+	public long getGroupId() {
+		return _groupId;
+	}
+
 	public String getReferrerClassName() {
 		return _referrerClassName;
 	}
@@ -83,11 +87,16 @@ public class MissingReference implements Serializable {
 		return _type;
 	}
 
-	private String _className;
-	private String _classPK;
-	private String _displayName;
-	private String _referrerClassName;
-	private Map<String, String> _referrers = new HashMap<String, String>();
-	private String _type;
+	public void setGroupId(long groupId) {
+		_groupId = groupId;
+	}
+
+	private final String _className;
+	private final String _classPK;
+	private final String _displayName;
+	private long _groupId;
+	private final String _referrerClassName;
+	private final Map<String, String> _referrers = new HashMap<>();
+	private final String _type;
 
 }

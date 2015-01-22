@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,13 +14,14 @@
 
 package com.liferay.portal.tools.sourceformatter;
 
-import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Tuple;
-import com.liferay.portal.kernel.util.UniqueList;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Hugo Huijser
@@ -34,8 +35,8 @@ public class SourceFormatter {
 
 			sourceFormatter.format();
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (Throwable t) {
+			t.printStackTrace();
 		}
 	}
 
@@ -48,11 +49,12 @@ public class SourceFormatter {
 		_throwException = throwException;
 		_printErrors = printErrors;
 		_autoFix = autoFix;
-
-		_setVersion();
 	}
 
-	public void format() throws Exception {
+	public void format() throws Throwable {
+		final AtomicReference<Throwable> exceptionReference1 =
+			new AtomicReference<Throwable>();
+
 		Thread thread1 = new Thread () {
 
 			@Override
@@ -66,7 +68,7 @@ public class SourceFormatter {
 					sourceProcessors.add(
 						FTLSourceProcessor.class.newInstance());
 					sourceProcessors.add(
-						JavaSourceProcessor.class.newInstance());
+						JSPSourceProcessor.class.newInstance());
 					sourceProcessors.add(JSSourceProcessor.class.newInstance());
 					sourceProcessors.add(
 						PropertiesSourceProcessor.class.newInstance());
@@ -75,41 +77,44 @@ public class SourceFormatter {
 						SQLSourceProcessor.class.newInstance());
 					sourceProcessors.add(
 						TLDSourceProcessor.class.newInstance());
-					sourceProcessors.add(
-						XMLSourceProcessor.class.newInstance());
 
 					for (SourceProcessor sourceProcessor : sourceProcessors) {
-						sourceProcessor.format(
-							_useProperties, _printErrors, _autoFix,
-							_mainReleaseVersion);
-
-						_errorMessages.addAll(
-							sourceProcessor.getErrorMessages());
+						_runSourceProcessor(sourceProcessor);
 					}
 				}
-				catch (Exception e) {
-					e.printStackTrace();
+				catch (Throwable t) {
+					t.printStackTrace();
+
+					exceptionReference1.set(t);
 				}
 			}
 
 		};
+
+		final AtomicReference<Throwable> exceptionReference2 =
+			new AtomicReference<Throwable>();
 
 		Thread thread2 = new Thread () {
 
 			@Override
 			public void run() {
 				try {
-					SourceProcessor sourceProcessor =
-						JSPSourceProcessor.class.newInstance();
+					List<SourceProcessor> sourceProcessors =
+						new ArrayList<SourceProcessor>();
 
-					sourceProcessor.format(
-						_useProperties, _printErrors, _autoFix,
-						_mainReleaseVersion);
+					sourceProcessors.add(
+						JavaSourceProcessor.class.newInstance());
+					sourceProcessors.add(
+						XMLSourceProcessor.class.newInstance());
 
-					_errorMessages.addAll(sourceProcessor.getErrorMessages());
+					for (SourceProcessor sourceProcessor : sourceProcessors) {
+						_runSourceProcessor(sourceProcessor);
+					}
 				}
-				catch (Exception e) {
-					e.printStackTrace();
+				catch (Throwable t) {
+					t.printStackTrace();
+
+					exceptionReference2.set(t);
 				}
 			}
 
@@ -121,8 +126,28 @@ public class SourceFormatter {
 		thread1.join();
 		thread2.join();
 
-		if (_throwException && !_errorMessages.isEmpty()) {
-			throw new Exception(StringUtil.merge(_errorMessages, "\n"));
+		Throwable throwable1 = exceptionReference1.get();
+		Throwable throwable2 = exceptionReference2.get();
+
+		if (throwable1 != null) {
+			if (throwable2 != null) {
+				throwable1.addSuppressed(throwable2);
+			}
+
+			throw throwable1;
+		}
+		else if (throwable2 != null) {
+			throw throwable2;
+		}
+
+		if (_throwException) {
+			if (!_errorMessages.isEmpty()) {
+				throw new Exception(StringUtil.merge(_errorMessages, "\n"));
+			}
+
+			if (_firstSourceMismatchException != null) {
+				throw _firstSourceMismatchException;
+			}
 		}
 	}
 
@@ -132,48 +157,44 @@ public class SourceFormatter {
 		if (fileName.endsWith(".testjava")) {
 			sourceProcessor = JavaSourceProcessor.class.newInstance();
 		}
+		else if (fileName.endsWith(".testsql")) {
+			sourceProcessor = SQLSourceProcessor.class.newInstance();
+		}
+		else if (fileName.endsWith(".testtld")) {
+			sourceProcessor = TLDSourceProcessor.class.newInstance();
+		}
+		else if (fileName.endsWith(".testxml")) {
+			sourceProcessor = XMLSourceProcessor.class.newInstance();
+		}
 
 		if (sourceProcessor == null) {
 			return null;
 		}
 
 		String newContent = sourceProcessor.format(
-			fileName, _useProperties, _printErrors, _autoFix,
-			_mainReleaseVersion);
+			fileName, _useProperties, _printErrors, _autoFix);
 
 		return new Tuple(newContent, sourceProcessor.getErrorMessages());
 	}
 
-	public String getMainReleaseVersion() {
-		return _mainReleaseVersion;
-	}
+	private void _runSourceProcessor(SourceProcessor sourceProcessor)
+		throws Exception {
 
-	private void _setVersion() throws Exception {
-		String releaseInfoVersion = ReleaseInfo.getVersion();
+		sourceProcessor.format(_useProperties, _printErrors, _autoFix);
 
-		if (releaseInfoVersion.startsWith("6.1")) {
-			_mainReleaseVersion =
-				BaseSourceProcessor.MAIN_RELEASE_VERSION_6_1_0;
-		}
-		else if (releaseInfoVersion.startsWith("6.2")) {
-			_mainReleaseVersion =
-				BaseSourceProcessor.MAIN_RELEASE_VERSION_6_2_0;
-		}
-		else if (releaseInfoVersion.startsWith("7.0")) {
-			_mainReleaseVersion =
-				BaseSourceProcessor.MAIN_RELEASE_VERSION_7_0_0;
-		}
-		else {
-			throw new Exception(
-				"Invalid release information: " + ReleaseInfo.getVersion());
+		_errorMessages.addAll(sourceProcessor.getErrorMessages());
+
+		if (_firstSourceMismatchException == null) {
+			_firstSourceMismatchException =
+				sourceProcessor.getFirstSourceMismatchException();
 		}
 	}
 
-	private boolean _autoFix;
-	private List<String> _errorMessages = new UniqueList<String>();
-	private String _mainReleaseVersion;
-	private boolean _printErrors;
-	private boolean _throwException;
-	private boolean _useProperties;
+	private final boolean _autoFix;
+	private final Set<String> _errorMessages = new LinkedHashSet<String>();
+	private SourceMismatchException _firstSourceMismatchException;
+	private final boolean _printErrors;
+	private final boolean _throwException;
+	private final boolean _useProperties;
 
 }

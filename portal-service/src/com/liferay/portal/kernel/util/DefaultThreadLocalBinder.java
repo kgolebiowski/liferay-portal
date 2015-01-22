@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -115,8 +115,7 @@ public class DefaultThreadLocalBinder implements ThreadLocalBinder {
 
 	@Override
 	public void record() {
-		Map<ThreadLocal<?>, Object> threadLocalValues =
-			new HashMap<ThreadLocal<?>, Object>();
+		Map<ThreadLocal<?>, Object> threadLocalValues = new HashMap<>();
 
 		for (ThreadLocal<?> threadLocal : _threadLocals) {
 			Object value = threadLocal.get();
@@ -135,24 +134,24 @@ public class DefaultThreadLocalBinder implements ThreadLocalBinder {
 		_threadLocalSources = threadLocalSources;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DefaultThreadLocalBinder.class);
 
-	private static ThreadLocal<Map<ThreadLocal<?>, ?>> _threadLocalValues =
-		new AutoResetThreadLocal<Map<ThreadLocal<?>, ?>>(
+	private static final ThreadLocal<Map<ThreadLocal<?>, ?>>
+		_threadLocalValues = new AutoResetThreadLocal<Map<ThreadLocal<?>, ?>>(
 			DefaultThreadLocalBinder.class + "._threadLocalValueMap") {
 
-			@Override
-			protected Map<ThreadLocal<?>, ?> copy(
-				Map<ThreadLocal<?>, ?> threadLocalValueMap) {
+				@Override
+				protected Map<ThreadLocal<?>, ?> copy(
+					Map<ThreadLocal<?>, ?> threadLocalValueMap) {
 
-				return threadLocalValueMap;
-			}
+					return threadLocalValueMap;
+				}
 
-		};
+			};
 
 	private ClassLoader _classLoader;
-	private Set<ThreadLocal<?>> _threadLocals = new HashSet<ThreadLocal<?>>();
+	private final Set<ThreadLocal<?>> _threadLocals = new HashSet<>();
 	private Map<String, String> _threadLocalSources;
 
 }

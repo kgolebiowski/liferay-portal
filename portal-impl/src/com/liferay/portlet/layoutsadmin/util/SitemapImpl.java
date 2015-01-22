@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.layoutsadmin.util;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.DateUtil;
@@ -32,8 +31,8 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.LayoutConstants;
-import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
+import com.liferay.portal.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsValues;
@@ -69,14 +68,14 @@ public class SitemapImpl implements Sitemap {
 	@Override
 	public String getSitemap(
 			long groupId, boolean privateLayout, ThemeDisplay themeDisplay)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Document document = SAXReaderUtil.createDocument();
 
 		document.setXMLEncoding(StringPool.UTF8);
 
 		Element rootElement = document.addElement(
-			"urlset", "http://www.google.com/schemas/sitemap/0.9");
+			"urlset", "http://www.sitemaps.org/schemas/sitemap/0.9");
 
 		rootElement.addAttribute("xmlns:xhtml", "http://www.w3.org/1999/xhtml");
 
@@ -187,9 +186,9 @@ public class SitemapImpl implements Sitemap {
 
 	protected Map<Locale, String> getAlternateURLs(
 			String canonicalURL, ThemeDisplay themeDisplay, Layout layout)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		Map<Locale, String> alternateURLs = new HashMap<Locale, String>();
+		Map<Locale, String> alternateURLs = new HashMap<>();
 
 		Locale[] availableLocales = LanguageUtil.getAvailableLocales(
 			layout.getGroupId());
@@ -206,7 +205,7 @@ public class SitemapImpl implements Sitemap {
 
 	protected void visitArticles(
 			Element element, Layout layout, ThemeDisplay themeDisplay)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		List<JournalArticle> journalArticles =
 			JournalArticleServiceUtil.getArticlesByLayoutUuid(
@@ -216,7 +215,7 @@ public class SitemapImpl implements Sitemap {
 			return;
 		}
 
-		Set<String> processedArticleIds = new HashSet<String>();
+		Set<String> processedArticleIds = new HashSet<>();
 
 		for (JournalArticle journalArticle : journalArticles) {
 			if (processedArticleIds.contains(
@@ -230,8 +229,9 @@ public class SitemapImpl implements Sitemap {
 			String portalURL = PortalUtil.getPortalURL(layout, themeDisplay);
 
 			String groupFriendlyURL = PortalUtil.getGroupFriendlyURL(
-				GroupLocalServiceUtil.getGroup(journalArticle.getGroupId()),
-				false, themeDisplay);
+				LayoutSetLocalServiceUtil.getLayoutSet(
+					journalArticle.getGroupId(), false),
+				themeDisplay);
 
 			StringBundler sb = new StringBundler(4);
 
@@ -275,7 +275,7 @@ public class SitemapImpl implements Sitemap {
 
 	protected void visitLayout(
 			Element element, Layout layout, ThemeDisplay themeDisplay)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		UnicodeProperties typeSettingsProperties =
 			layout.getTypeSettingsProperties();
@@ -322,7 +322,7 @@ public class SitemapImpl implements Sitemap {
 
 	protected void visitLayouts(
 			Element element, List<Layout> layouts, ThemeDisplay themeDisplay)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		for (Layout layout : layouts) {
 			visitLayout(element, layout, themeDisplay);

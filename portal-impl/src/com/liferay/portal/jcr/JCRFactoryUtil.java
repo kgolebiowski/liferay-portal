@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -75,7 +75,9 @@ public class JCRFactoryUtil {
 			new Class<?>[] {Map.class, Session.class},
 			jcrSessionInvocationHandler);
 
-		FinalizeManager.register(sessionProxy, jcrSessionInvocationHandler);
+		FinalizeManager.register(
+			sessionProxy, jcrSessionInvocationHandler,
+			FinalizeManager.PHANTOM_REFERENCE_FACTORY);
 
 		session = (Session)sessionProxy;
 
@@ -112,7 +114,7 @@ public class JCRFactoryUtil {
 	}
 
 	private static JCRFactory _jcrFactory;
-	private static ThreadLocal<Map<String, Session>> _sessions =
+	private static final ThreadLocal<Map<String, Session>> _sessions =
 		new AutoResetThreadLocal<Map<String, Session>>(
 			JCRFactoryUtil.class + "._sessions",
 			new HashMap<String, Session>());

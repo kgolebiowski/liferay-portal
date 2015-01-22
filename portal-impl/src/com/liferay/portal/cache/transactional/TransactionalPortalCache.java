@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -35,6 +35,10 @@ public class TransactionalPortalCache<K extends Serializable, V>
 		V result = null;
 
 		if (TransactionalPortalCacheHelper.isEnabled()) {
+			if (key == null) {
+				throw new NullPointerException("Key is null");
+			}
+
 			result = TransactionalPortalCacheHelper.get(portalCache, key);
 
 			if (result == NULL_HOLDER) {
@@ -51,37 +55,41 @@ public class TransactionalPortalCache<K extends Serializable, V>
 
 	@Override
 	public void put(K key, V value) {
-		doPut(key, value, false, -1);
+		put(key, value, DEFAULT_TIME_TO_LIVE);
 	}
 
 	@Override
 	public void put(K key, V value, int timeToLive) {
-		if (timeToLive < 0) {
-			throw new IllegalArgumentException("Time to live is negative");
+		if (TransactionalPortalCacheHelper.isEnabled()) {
+			if (key == null) {
+				throw new NullPointerException("Key is null");
+			}
+
+			if (value == null) {
+				throw new NullPointerException("Value is null");
+			}
+
+			if (timeToLive < 0) {
+				throw new IllegalArgumentException("Time to live is negative");
+			}
+
+			TransactionalPortalCacheHelper.put(
+				portalCache, key, value, timeToLive);
 		}
-
-		doPut(key, value, false, timeToLive);
-	}
-
-	@Override
-	public void putQuiet(K key, V value) {
-		doPut(key, value, true, -1);
-	}
-
-	@Override
-	public void putQuiet(K key, V value, int timeToLive) {
-		if (timeToLive < 0) {
-			throw new IllegalArgumentException("Time to live is negative");
+		else {
+			portalCache.put(key, value, timeToLive);
 		}
-
-		doPut(key, value, true, timeToLive);
 	}
 
 	@Override
 	public void remove(K key) {
 		if (TransactionalPortalCacheHelper.isEnabled()) {
+			if (key == null) {
+				throw new NullPointerException("Key is null");
+			}
+
 			TransactionalPortalCacheHelper.put(
-				portalCache, key, (V)NULL_HOLDER, false, -1);
+				portalCache, key, (V)NULL_HOLDER, DEFAULT_TIME_TO_LIVE);
 		}
 		else {
 			portalCache.remove(key);
@@ -95,37 +103,6 @@ public class TransactionalPortalCache<K extends Serializable, V>
 		}
 		else {
 			portalCache.removeAll();
-		}
-	}
-
-	protected void doPut(K key, V value, boolean quiet, int timeToLive) {
-		if (TransactionalPortalCacheHelper.isEnabled()) {
-			if (value == null) {
-				TransactionalPortalCacheHelper.put(
-					portalCache, key, (V)NULL_HOLDER, quiet, timeToLive);
-			}
-			else {
-				TransactionalPortalCacheHelper.put(
-					portalCache, key, value, quiet, timeToLive);
-			}
-		}
-		else {
-			if (quiet) {
-				if (timeToLive >= 0) {
-					portalCache.putQuiet(key, value, timeToLive);
-				}
-				else {
-					portalCache.putQuiet(key, value);
-				}
-			}
-			else {
-				if (timeToLive >= 0) {
-					portalCache.put(key, value, timeToLive);
-				}
-				else {
-					portalCache.put(key, value);
-				}
-			}
 		}
 	}
 

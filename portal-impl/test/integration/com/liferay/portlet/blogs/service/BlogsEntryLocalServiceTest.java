@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,66 +16,64 @@ package com.liferay.portlet.blogs.service;
 
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Organization;
 import com.liferay.portal.model.User;
 import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.SubscriptionLocalServiceUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationExecutionTestListener;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.OrganizationTestUtil;
-import com.liferay.portal.util.TestPropsValues;
-import com.liferay.portal.util.UserTestUtil;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.OrganizationTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
+import com.liferay.portal.util.test.UserTestUtil;
+import com.liferay.portlet.asset.model.AssetEntry;
+import com.liferay.portlet.asset.service.AssetEntryLocalServiceUtil;
 import com.liferay.portlet.blogs.model.BlogsEntry;
-import com.liferay.portlet.blogs.util.BlogsTestUtil;
+import com.liferay.portlet.blogs.util.test.BlogsTestUtil;
 import com.liferay.portlet.messageboards.service.MBMessageLocalServiceUtil;
 
 import java.util.Date;
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Cristina González
  * @author Manuel de la Peña
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		SynchronousDestinationExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 @Sync
 public class BlogsEntryLocalServiceTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
-		_statusAnyQueryDefinition = new QueryDefinition(
+		_statusAnyQueryDefinition = new QueryDefinition<BlogsEntry>(
 			WorkflowConstants.STATUS_ANY, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			null);
-		_statusApprovedQueryDefinition = new QueryDefinition(
+		_statusApprovedQueryDefinition = new QueryDefinition<BlogsEntry>(
 			WorkflowConstants.STATUS_APPROVED, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, null);
-		_statusInTrashQueryDefinition = new QueryDefinition(
+		_statusInTrashQueryDefinition = new QueryDefinition<BlogsEntry>(
 			WorkflowConstants.STATUS_IN_TRASH, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, null);
 		_user = TestPropsValues.getUser();
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		GroupLocalServiceUtil.deleteGroup(_group);
 	}
 
 	@Test
@@ -145,9 +143,8 @@ public class BlogsEntryLocalServiceTest {
 
 		BlogsEntry nextEntry = addEntry(false);
 
-		BlogsEntry[] entries =
-			BlogsEntryLocalServiceUtil.getEntriesPrevAndNext(
-				currentEntry.getEntryId());
+		BlogsEntry[] entries = BlogsEntryLocalServiceUtil.getEntriesPrevAndNext(
+			currentEntry.getEntryId());
 
 		Assert.assertNotNull(
 			"The previous entry relative to entry " +
@@ -368,6 +365,24 @@ public class BlogsEntryLocalServiceTest {
 	}
 
 	@Test
+	public void testGetNoAssetEntries() throws Exception {
+		BlogsEntry entry = BlogsTestUtil.addEntry(_group, true);
+
+		AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
+			BlogsEntry.class.getName(), entry.getEntryId());
+
+		Assert.assertNotNull(assetEntry);
+
+		AssetEntryLocalServiceUtil.deleteAssetEntry(assetEntry);
+
+		List<BlogsEntry> entries =
+			BlogsEntryLocalServiceUtil.getNoAssetEntries();
+
+		Assert.assertEquals(1, entries.size());
+		Assert.assertEquals(entry, entries.get(0));
+	}
+
+	@Test
 	public void testGetOrganizationEntriesCountInTrash() throws Exception {
 		testGetOrganizationEntriesCount(true);
 	}
@@ -490,7 +505,8 @@ public class BlogsEntryLocalServiceTest {
 	protected void testGetCompanyEntries(boolean statusInTrash)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -517,7 +533,8 @@ public class BlogsEntryLocalServiceTest {
 	protected void testGetCompanyEntriesCount(boolean statusInTrash)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -539,7 +556,8 @@ public class BlogsEntryLocalServiceTest {
 			boolean statusInTrash, boolean displayDate)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -581,7 +599,8 @@ public class BlogsEntryLocalServiceTest {
 			boolean statusInTrash, boolean displayDate)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -618,7 +637,8 @@ public class BlogsEntryLocalServiceTest {
 	protected void testGetGroupUserEntries(boolean statusInTrash)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -647,7 +667,8 @@ public class BlogsEntryLocalServiceTest {
 	protected void testGetGroupUserEntriesCount(boolean statusInTrash)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -670,7 +691,8 @@ public class BlogsEntryLocalServiceTest {
 	protected void testGetOrganizationEntries(boolean statusInTrash)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -701,7 +723,8 @@ public class BlogsEntryLocalServiceTest {
 	protected void testGetOrganizationEntriesCount(boolean statusInTrash)
 		throws Exception {
 
-		QueryDefinition queryDefinition = _statusInTrashQueryDefinition;
+		QueryDefinition<BlogsEntry> queryDefinition =
+			_statusInTrashQueryDefinition;
 
 		if (!statusInTrash) {
 			queryDefinition = _statusAnyQueryDefinition;
@@ -725,10 +748,12 @@ public class BlogsEntryLocalServiceTest {
 		Assert.assertEquals(initialCount + 1, actualCount);
 	}
 
+	@DeleteAfterTestRun
 	private Group _group;
-	private QueryDefinition _statusAnyQueryDefinition;
-	private QueryDefinition _statusApprovedQueryDefinition;
-	private QueryDefinition _statusInTrashQueryDefinition;
+
+	private QueryDefinition<BlogsEntry> _statusAnyQueryDefinition;
+	private QueryDefinition<BlogsEntry> _statusApprovedQueryDefinition;
+	private QueryDefinition<BlogsEntry> _statusInTrashQueryDefinition;
 	private User _user;
 
 }

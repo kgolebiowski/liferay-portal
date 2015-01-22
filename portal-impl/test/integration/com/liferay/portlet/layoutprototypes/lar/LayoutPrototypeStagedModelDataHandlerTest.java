@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.layoutprototypes.lar;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.lar.BaseStagedModelDataHandlerTestCase;
 import com.liferay.portal.model.Group;
@@ -25,29 +25,46 @@ import com.liferay.portal.model.StagedModel;
 import com.liferay.portal.service.LayoutFriendlyURLLocalServiceUtil;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
 import com.liferay.portal.service.LayoutPrototypeLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
-import com.liferay.portal.util.LayoutTestUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.RandomTestUtil;
 
 import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.runner.RunWith;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
 /**
  * @author Daniela Zapata Riesco
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class LayoutPrototypeStagedModelDataHandlerTest
 	extends BaseStagedModelDataHandlerTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
+
+	@After
+	@Override
+	public void tearDown() throws Exception {
+		super.tearDown();
+
+		_layoutPrototype =
+			LayoutPrototypeLocalServiceUtil.
+				fetchLayoutPrototypeByUuidAndCompanyId(
+					_layoutPrototype.getUuid(),
+					_layoutPrototype.getCompanyId());
+
+		LayoutPrototypeLocalServiceUtil.deleteLayoutPrototype(_layoutPrototype);
+	}
 
 	@Override
 	protected StagedModel addStagedModel(
@@ -55,10 +72,10 @@ public class LayoutPrototypeStagedModelDataHandlerTest
 			Map<String, List<StagedModel>> dependentStagedModelsMap)
 		throws Exception {
 
-		LayoutPrototype layoutPrototype = LayoutTestUtil.addLayoutPrototype(
-			ServiceTestUtil.randomString());
+		_layoutPrototype = LayoutTestUtil.addLayoutPrototype(
+			RandomTestUtil.randomString());
 
-		Layout layout = layoutPrototype.getLayout();
+		Layout layout = _layoutPrototype.getLayout();
 
 		UnicodeProperties typeSettings = layout.getTypeSettingsProperties();
 
@@ -80,7 +97,7 @@ public class LayoutPrototypeStagedModelDataHandlerTest
 			dependentStagedModelsMap, LayoutFriendlyURL.class,
 			layoutFriendlyURLs.get(0));
 
-		return layoutPrototype;
+		return _layoutPrototype;
 	}
 
 	@Override
@@ -159,5 +176,7 @@ public class LayoutPrototypeStagedModelDataHandlerTest
 			layoutFriendlyURL.getFriendlyURL(),
 			importedLayoutFriendlyURL.getFriendlyURL());
 	}
+
+	private LayoutPrototype _layoutPrototype;
 
 }

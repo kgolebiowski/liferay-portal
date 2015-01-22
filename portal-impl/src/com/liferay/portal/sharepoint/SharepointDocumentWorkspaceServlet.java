@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -89,8 +89,8 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 			results = results.substring(pos + 1);
 		}
 
-		results = results.replaceAll("<", "&lt;");
-		results = results.replaceAll(">", "&gt;");
+		results = StringUtil.replace(results, "<", "&lt;");
+		results = StringUtil.replace(results, ">", "&gt;");
 
 		sb.append(results);
 
@@ -172,7 +172,7 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 			Element schemaEl = root.addElement("Schema");
 
 			schemaEl.addAttribute("Name", "Documents");
-			schemaEl.addAttribute("Url", group.getName());
+			schemaEl.addAttribute("Url", group.getDescriptiveName());
 
 			Element fieldEl = schemaEl.addElement("Field");
 
@@ -248,7 +248,7 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 
 		Element resultsEl = root.addElement("Results");
 
-		resultsEl.addElement("Title").setText(group.getName());
+		resultsEl.addElement("Title").setText(group.getDescriptiveName());
 		resultsEl.addElement("LastUpdate");
 
 		User user = (User)request.getSession().getAttribute(WebKeys.USER);
@@ -305,7 +305,7 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 		return doc.asXML();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		SharepointDocumentWorkspaceServlet.class);
 
 }

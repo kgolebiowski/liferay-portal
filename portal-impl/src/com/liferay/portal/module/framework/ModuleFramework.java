@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -43,6 +43,8 @@ public interface ModuleFramework {
 	public String getState(long bundleId) throws PortalException;
 
 	public void registerContext(Object context);
+
+	public void registerExtraPackages();
 
 	public void setBundleStartLevel(long bundleId, int startLevel)
 		throws PortalException;

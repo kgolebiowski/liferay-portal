@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,12 +15,12 @@
 package com.liferay.portal.dao.shard;
 
 import com.liferay.portal.kernel.dao.shard.ShardUtil;
-import com.liferay.portal.tools.javadocformatter.SinceJava;
 
 import java.io.PrintWriter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 
 import java.util.logging.Logger;
 
@@ -57,9 +57,9 @@ public class ShardDataSource implements DataSource {
 		return getDataSource().getLogWriter();
 	}
 
-	@SinceJava(1.7)
-	public Logger getParentLogger() {
-		throw new UnsupportedOperationException();
+	@Override
+	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		return getDataSource().getParentLogger();
 	}
 
 	@Override
@@ -98,6 +98,6 @@ public class ShardDataSource implements DataSource {
 		return ShardUtil.getDataSource();
 	}
 
-	private static ShardDataSource _instance = new ShardDataSource();
+	private static final ShardDataSource _instance = new ShardDataSource();
 
 }

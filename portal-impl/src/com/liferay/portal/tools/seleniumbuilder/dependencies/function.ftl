@@ -1,6 +1,7 @@
 package ${seleniumBuilderContext.getFunctionPackageName(functionName)};
 
 import com.liferay.portalweb.portal.util.liferayselenium.LiferaySelenium;
+import com.liferay.portalweb.util.block.function.BaseFunction;
 
 public class ${seleniumBuilderContext.getFunctionSimpleClassName(functionName)} extends BaseFunction {
 
@@ -14,6 +15,8 @@ public class ${seleniumBuilderContext.getFunctionSimpleClassName(functionName)} 
 
 	<#list commandElements as commandElement>
 		public ${seleniumBuilderContext.getFunctionReturnType(functionName)} ${commandElement.attributeValue("name")}(
+
+		String ignoreJavaScriptError,
 
 		<#list 1..seleniumBuilderContext.getFunctionLocatorCount(functionName) as i>
 			String locator${i}, String value${i}

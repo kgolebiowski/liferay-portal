@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,11 +25,16 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.model.ThemeConstants;
+import com.liferay.portlet.messageboards.util.MBUtil;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,7 +46,7 @@ import java.util.regex.Pattern;
 public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 
 	public HtmlBBCodeTranslatorImpl() {
-		_listStyles = new HashMap<String, String>();
+		_listStyles = new HashMap<>();
 
 		_listStyles.put("a", "list-style: lower-alpha outside;");
 		_listStyles.put("A", "list-style: upper-alpha outside;");
@@ -49,7 +54,7 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 		_listStyles.put("i", "list-style: lower-roman outside;");
 		_listStyles.put("I", "list-style: upper-roman outside;");
 
-		_excludeNewLineTypes = new HashMap<String, Integer>();
+		_excludeNewLineTypes = new HashMap<>();
 
 		_excludeNewLineTypes.put("*", BBCodeParser.TYPE_TAG_START_END);
 		_excludeNewLineTypes.put("li", BBCodeParser.TYPE_TAG_START_END);
@@ -58,7 +63,7 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 		_excludeNewLineTypes.put("th", BBCodeParser.TYPE_TAG_START_END);
 		_excludeNewLineTypes.put("tr", BBCodeParser.TYPE_TAG_START_END);
 
-		_bbCodeCharacters = new HashMap<String, String>();
+		_bbCodeCharacters = new HashMap<>();
 
 		_bbCodeCharacters.put("&", "&amp;");
 		_bbCodeCharacters.put("<", "&lt;");
@@ -81,10 +86,22 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 
 			String image = emoticon[0];
 
-			emoticon[0] =
-				"<img alt=\"emoticon\" src=\"@theme_images_path@/emoticons/" +
-					image + "\" >";
+			StringBuilder sb = new StringBuilder(6);
+
+			sb.append("<img alt=\"emoticon\" src=\"");
+			sb.append(ThemeConstants.TOKEN_THEME_IMAGES_PATH);
+			sb.append(MBUtil.EMOTICONS);
+			sb.append("/");
+			sb.append(image);
+			sb.append("\" >");
+
+			emoticon[0] = sb.toString();
 		}
+
+		_imageAttributes = new HashSet<String>(
+			Arrays.asList(
+				"alt", "class", "dir", "height", "id", "lang", "longdesc",
+				"style", "title", "width"));
 	}
 
 	@Override
@@ -126,7 +143,7 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 		StringBundler sb = new StringBundler();
 
 		List<BBCodeItem> bbCodeItems = _bbCodeParser.parse(text);
-		Stack<String> tags = new Stack<String>();
+		Stack<String> tags = new Stack<>();
 		IntegerWrapper marker = new IntegerWrapper();
 
 		for (; marker.getValue() < bbCodeItems.size(); marker.increment()) {
@@ -235,29 +252,27 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 		sb.append("<div class=\"lfr-code\">");
 		sb.append("<table>");
 		sb.append("<tbody>");
-		sb.append("<tr>");
-		sb.append("<td class=\"line-numbers\">");
 
 		String code = extractData(
 			bbCodeItems, marker, "code", BBCodeParser.TYPE_DATA, true);
 
 		code = HtmlUtil.escape(code);
-		code = code.replaceAll(StringPool.TAB, StringPool.FOUR_SPACES);
+		code = StringUtil.replace(code, StringPool.TAB, StringPool.FOUR_SPACES);
 
 		String[] lines = code.split("\r?\n");
 
 		for (int i = 0; i < lines.length; i++) {
+			sb.append("<tr>");
+			sb.append("<td class=\"line-numbers\">");
+			sb.append("<span class=\"number\">");
+
 			String index = String.valueOf(i + 1);
 
-			sb.append("<span class=\"number\">");
 			sb.append(index);
 			sb.append("</span>");
-		}
+			sb.append("</td>");
+			sb.append("<td class=\"lines\">");
 
-		sb.append("</td>");
-		sb.append("<td class=\"lines\">");
-
-		for (int i = 0; i < lines.length; i++) {
 			String line = lines[i];
 
 			line = StringUtil.replace(
@@ -271,10 +286,10 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 			sb.append("<div class=\"line\">");
 			sb.append(line);
 			sb.append("</div>");
+			sb.append("</td>");
+			sb.append("</tr>");
 		}
 
-		sb.append("</td>");
-		sb.append("</tr>");
 		sb.append("</tbody>");
 		sb.append("</table>");
 		sb.append("</div>");
@@ -380,6 +395,8 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 
 		sb.append("<img src=\"");
 
+		int pos = marker.getValue();
+
 		String src = extractData(
 			bbCodeItems, marker, "img", BBCodeParser.TYPE_DATA, true);
 
@@ -389,7 +406,41 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 			sb.append(HtmlUtil.escapeAttribute(src));
 		}
 
-		sb.append("\" />");
+		sb.append("\"");
+
+		BBCodeItem bbCodeItem = bbCodeItems.get(pos);
+
+		String attributes = bbCodeItem.getAttribute();
+
+		if (Validator.isNotNull(attributes)) {
+			sb.append(StringPool.SPACE);
+
+			handleImageAttributes(sb, attributes);
+		}
+
+		sb.append(" />");
+	}
+
+	protected void handleImageAttributes(StringBundler sb, String attributes) {
+		Matcher matcher = _attributesPattern.matcher(attributes);
+
+		while (matcher.find()) {
+			String attributeName = matcher.group(1);
+
+			if (Validator.isNotNull(attributeName) &&
+				_imageAttributes.contains(
+					StringUtil.toLowerCase(attributeName))) {
+
+				String attributeValue = matcher.group(2);
+
+				sb.append(StringPool.SPACE);
+				sb.append(attributeName);
+				sb.append(StringPool.EQUAL);
+				sb.append(StringPool.QUOTE);
+				sb.append(HtmlUtil.escapeAttribute(attributeValue));
+				sb.append(StringPool.QUOTE);
+			}
+		}
 	}
 
 	protected void handleItalic(StringBundler sb, Stack<String> tags) {
@@ -475,7 +526,9 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 		}
 
 		if (data.length() > 0) {
-			data = data.replaceAll("\r?\n", "<br />");
+			data = StringUtil.replace(
+				data, StringPool.RETURN_NEW_LINE, "<br />");
+			data = StringUtil.replace(data, StringPool.NEW_LINE, "<br />");
 		}
 
 		return data;
@@ -697,30 +750,34 @@ public class HtmlBBCodeTranslatorImpl implements BBCodeTranslator {
 		{"wub.gif", ":wub:", "wub"}
 	};
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		HtmlBBCodeTranslatorImpl.class);
 
-	private Map<String, String> _bbCodeCharacters;
-	private BBCodeParser _bbCodeParser = new BBCodeParser();
-	private Pattern _bbCodePattern = Pattern.compile("[]&<>'\"`\\[()]");
-	private Pattern _colorPattern = Pattern.compile(
+	private final Pattern _attributesPattern = Pattern.compile(
+		"\\s*([^=]+)\\s*=\\s*\"([^\"]+)\"\\s*");
+	private final Map<String, String> _bbCodeCharacters;
+	private final BBCodeParser _bbCodeParser = new BBCodeParser();
+	private final Pattern _bbCodePattern = Pattern.compile("[]&<>'\"`\\[()]");
+	private final Pattern _colorPattern = Pattern.compile(
 		"^(:?aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|purple" +
 			"|red|silver|teal|white|yellow|#(?:[0-9a-f]{3})?[0-9a-f]{3})$",
 		Pattern.CASE_INSENSITIVE);
-	private String[] _emoticonDescriptions = new String[_EMOTICONS.length];
-	private String[] _emoticonFiles = new String[_EMOTICONS.length];
-	private String[] _emoticonSymbols = new String[_EMOTICONS.length];
-	private Map<String, Integer> _excludeNewLineTypes;
-	private int[] _fontSizes = {10, 12, 16, 18, 24, 32, 48};
-	private Pattern _imagePattern = Pattern.compile(
+	private final String[] _emoticonDescriptions =
+		new String[_EMOTICONS.length];
+	private final String[] _emoticonFiles = new String[_EMOTICONS.length];
+	private final String[] _emoticonSymbols = new String[_EMOTICONS.length];
+	private final Map<String, Integer> _excludeNewLineTypes;
+	private final int[] _fontSizes = {10, 12, 16, 18, 24, 32, 48};
+	private final Set<String> _imageAttributes;
+	private final Pattern _imagePattern = Pattern.compile(
 		"^(?:https?://|/)[-;/?:@&=+$,_.!~*'()%0-9a-z]{1,512}$",
 		Pattern.CASE_INSENSITIVE);
-	private Map<String, String> _listStyles;
-	private Pattern _tagPattern = Pattern.compile(
+	private final Map<String, String> _listStyles;
+	private final Pattern _tagPattern = Pattern.compile(
 		"^/?(?:b|center|code|colou?r|email|i|img|justify|left|pre|q|quote|" +
 			"right|\\*|s|size|table|tr|th|td|li|list|font|u|url)$",
 		Pattern.CASE_INSENSITIVE);
-	private Pattern _urlPattern = Pattern.compile(
+	private final Pattern _urlPattern = Pattern.compile(
 		"^[-;/?:@&=+$,_.!~*'()%0-9a-z#]{1,512}$", Pattern.CASE_INSENSITIVE);
 
 }

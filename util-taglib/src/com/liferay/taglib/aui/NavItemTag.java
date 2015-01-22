@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,8 +14,11 @@
 
 package com.liferay.taglib.aui;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.taglib.aui.base.BaseNavItemTag;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyTag;
 
@@ -33,6 +36,23 @@ public class NavItemTag extends BaseNavItemTag implements BodyTag {
 		super.doStartTag();
 
 		return BodyTag.EVAL_BODY_BUFFERED;
+	}
+
+	@Override
+	protected void setAttributes(HttpServletRequest request) {
+		super.setAttributes(request);
+
+		if (!getUseDialog() && AUIUtil.isOpensNewWindow(getTarget())) {
+			String title = getTitle();
+
+			if (title == null) {
+				title = StringPool.BLANK;
+			}
+
+			title = title.concat(LanguageUtil.get(request, "opens-new-window"));
+
+			setNamespacedAttribute(request, "title", String.valueOf(title));
+		}
 	}
 
 }

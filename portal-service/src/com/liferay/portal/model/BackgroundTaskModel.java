@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -25,6 +24,7 @@ import com.liferay.portlet.expando.model.ExpandoBridge;
 import java.io.Serializable;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * The base model interface for the BackgroundTask service. Represents a row in the &quot;BackgroundTask&quot; database table, with each column mapped to a property of this class.
@@ -144,10 +144,9 @@ public interface BackgroundTaskModel extends BaseModel<BackgroundTask>,
 	 * Returns the user uuid of this background task.
 	 *
 	 * @return the user uuid of this background task
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this background task.
@@ -252,19 +251,18 @@ public interface BackgroundTaskModel extends BaseModel<BackgroundTask>,
 	public void setTaskExecutorClassName(String taskExecutorClassName);
 
 	/**
-	 * Returns the task context of this background task.
+	 * Returns the task context map of this background task.
 	 *
-	 * @return the task context of this background task
+	 * @return the task context map of this background task
 	 */
-	@AutoEscape
-	public String getTaskContext();
+	public Map<String, Serializable> getTaskContextMap();
 
 	/**
-	 * Sets the task context of this background task.
+	 * Sets the task context map of this background task.
 	 *
-	 * @param taskContext the task context of this background task
+	 * @param taskContextMap the task context map of this background task
 	 */
-	public void setTaskContext(String taskContext);
+	public void setTaskContextMap(Map<String, Serializable> taskContextMap);
 
 	/**
 	 * Returns the completed of this background task.
@@ -367,19 +365,19 @@ public interface BackgroundTaskModel extends BaseModel<BackgroundTask>,
 	public Object clone();
 
 	@Override
-	public int compareTo(BackgroundTask backgroundTask);
+	public int compareTo(com.liferay.portal.model.BackgroundTask backgroundTask);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<BackgroundTask> toCacheModel();
+	public CacheModel<com.liferay.portal.model.BackgroundTask> toCacheModel();
 
 	@Override
-	public BackgroundTask toEscapedModel();
+	public com.liferay.portal.model.BackgroundTask toEscapedModel();
 
 	@Override
-	public BackgroundTask toUnescapedModel();
+	public com.liferay.portal.model.BackgroundTask toUnescapedModel();
 
 	@Override
 	public String toString();

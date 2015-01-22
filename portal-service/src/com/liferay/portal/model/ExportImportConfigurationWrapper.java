@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -67,6 +67,10 @@ public class ExportImportConfigurationWrapper
 		attributes.put("description", getDescription());
 		attributes.put("type", getType());
 		attributes.put("settings", getSettings());
+		attributes.put("status", getStatus());
+		attributes.put("statusByUserId", getStatusByUserId());
+		attributes.put("statusByUserName", getStatusByUserName());
+		attributes.put("statusDate", getStatusDate());
 
 		return attributes;
 	}
@@ -145,86 +149,50 @@ public class ExportImportConfigurationWrapper
 		if (settings != null) {
 			setSettings(settings);
 		}
+
+		Integer status = (Integer)attributes.get("status");
+
+		if (status != null) {
+			setStatus(status);
+		}
+
+		Long statusByUserId = (Long)attributes.get("statusByUserId");
+
+		if (statusByUserId != null) {
+			setStatusByUserId(statusByUserId);
+		}
+
+		String statusByUserName = (String)attributes.get("statusByUserName");
+
+		if (statusByUserName != null) {
+			setStatusByUserName(statusByUserName);
+		}
+
+		Date statusDate = (Date)attributes.get("statusDate");
+
+		if (statusDate != null) {
+			setStatusDate(statusDate);
+		}
+	}
+
+	@Override
+	public java.lang.Object clone() {
+		return new ExportImportConfigurationWrapper((ExportImportConfiguration)_exportImportConfiguration.clone());
+	}
+
+	@Override
+	public int compareTo(
+		com.liferay.portal.model.ExportImportConfiguration exportImportConfiguration) {
+		return _exportImportConfiguration.compareTo(exportImportConfiguration);
 	}
 
 	/**
-	* Returns the primary key of this export import configuration.
-	*
-	* @return the primary key of this export import configuration
+	* @deprecated As of 6.1.0, replaced by {@link #isApproved()}
 	*/
+	@Deprecated
 	@Override
-	public long getPrimaryKey() {
-		return _exportImportConfiguration.getPrimaryKey();
-	}
-
-	/**
-	* Sets the primary key of this export import configuration.
-	*
-	* @param primaryKey the primary key of this export import configuration
-	*/
-	@Override
-	public void setPrimaryKey(long primaryKey) {
-		_exportImportConfiguration.setPrimaryKey(primaryKey);
-	}
-
-	/**
-	* Returns the mvcc version of this export import configuration.
-	*
-	* @return the mvcc version of this export import configuration
-	*/
-	@Override
-	public long getMvccVersion() {
-		return _exportImportConfiguration.getMvccVersion();
-	}
-
-	/**
-	* Sets the mvcc version of this export import configuration.
-	*
-	* @param mvccVersion the mvcc version of this export import configuration
-	*/
-	@Override
-	public void setMvccVersion(long mvccVersion) {
-		_exportImportConfiguration.setMvccVersion(mvccVersion);
-	}
-
-	/**
-	* Returns the export import configuration ID of this export import configuration.
-	*
-	* @return the export import configuration ID of this export import configuration
-	*/
-	@Override
-	public long getExportImportConfigurationId() {
-		return _exportImportConfiguration.getExportImportConfigurationId();
-	}
-
-	/**
-	* Sets the export import configuration ID of this export import configuration.
-	*
-	* @param exportImportConfigurationId the export import configuration ID of this export import configuration
-	*/
-	@Override
-	public void setExportImportConfigurationId(long exportImportConfigurationId) {
-		_exportImportConfiguration.setExportImportConfigurationId(exportImportConfigurationId);
-	}
-
-	/**
-	* Returns the group ID of this export import configuration.
-	*
-	* @return the group ID of this export import configuration
-	*/
-	@Override
-	public long getGroupId() {
-		return _exportImportConfiguration.getGroupId();
-	}
-
-	/**
-	* Sets the group ID of this export import configuration.
-	*
-	* @param groupId the group ID of this export import configuration
-	*/
-	@Override
-	public void setGroupId(long groupId) {
-		_exportImportConfiguration.setGroupId(groupId);
+	public boolean getApproved() {
+		return _exportImportConfiguration.getApproved();
 	}
 
 	/**
@@ -238,78 +206,6 @@ public class ExportImportConfigurationWrapper
 	}
 
 	/**
-	* Sets the company ID of this export import configuration.
-	*
-	* @param companyId the company ID of this export import configuration
-	*/
-	@Override
-	public void setCompanyId(long companyId) {
-		_exportImportConfiguration.setCompanyId(companyId);
-	}
-
-	/**
-	* Returns the user ID of this export import configuration.
-	*
-	* @return the user ID of this export import configuration
-	*/
-	@Override
-	public long getUserId() {
-		return _exportImportConfiguration.getUserId();
-	}
-
-	/**
-	* Sets the user ID of this export import configuration.
-	*
-	* @param userId the user ID of this export import configuration
-	*/
-	@Override
-	public void setUserId(long userId) {
-		_exportImportConfiguration.setUserId(userId);
-	}
-
-	/**
-	* Returns the user uuid of this export import configuration.
-	*
-	* @return the user uuid of this export import configuration
-	* @throws SystemException if a system exception occurred
-	*/
-	@Override
-	public java.lang.String getUserUuid()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return _exportImportConfiguration.getUserUuid();
-	}
-
-	/**
-	* Sets the user uuid of this export import configuration.
-	*
-	* @param userUuid the user uuid of this export import configuration
-	*/
-	@Override
-	public void setUserUuid(java.lang.String userUuid) {
-		_exportImportConfiguration.setUserUuid(userUuid);
-	}
-
-	/**
-	* Returns the user name of this export import configuration.
-	*
-	* @return the user name of this export import configuration
-	*/
-	@Override
-	public java.lang.String getUserName() {
-		return _exportImportConfiguration.getUserName();
-	}
-
-	/**
-	* Sets the user name of this export import configuration.
-	*
-	* @param userName the user name of this export import configuration
-	*/
-	@Override
-	public void setUserName(java.lang.String userName) {
-		_exportImportConfiguration.setUserName(userName);
-	}
-
-	/**
 	* Returns the create date of this export import configuration.
 	*
 	* @return the create date of this export import configuration
@@ -320,13 +216,38 @@ public class ExportImportConfigurationWrapper
 	}
 
 	/**
-	* Sets the create date of this export import configuration.
+	* Returns the description of this export import configuration.
 	*
-	* @param createDate the create date of this export import configuration
+	* @return the description of this export import configuration
 	*/
 	@Override
-	public void setCreateDate(java.util.Date createDate) {
-		_exportImportConfiguration.setCreateDate(createDate);
+	public java.lang.String getDescription() {
+		return _exportImportConfiguration.getDescription();
+	}
+
+	@Override
+	public com.liferay.portlet.expando.model.ExpandoBridge getExpandoBridge() {
+		return _exportImportConfiguration.getExpandoBridge();
+	}
+
+	/**
+	* Returns the export import configuration ID of this export import configuration.
+	*
+	* @return the export import configuration ID of this export import configuration
+	*/
+	@Override
+	public long getExportImportConfigurationId() {
+		return _exportImportConfiguration.getExportImportConfigurationId();
+	}
+
+	/**
+	* Returns the group ID of this export import configuration.
+	*
+	* @return the group ID of this export import configuration
+	*/
+	@Override
+	public long getGroupId() {
+		return _exportImportConfiguration.getGroupId();
 	}
 
 	/**
@@ -340,13 +261,13 @@ public class ExportImportConfigurationWrapper
 	}
 
 	/**
-	* Sets the modified date of this export import configuration.
+	* Returns the mvcc version of this export import configuration.
 	*
-	* @param modifiedDate the modified date of this export import configuration
+	* @return the mvcc version of this export import configuration
 	*/
 	@Override
-	public void setModifiedDate(java.util.Date modifiedDate) {
-		_exportImportConfiguration.setModifiedDate(modifiedDate);
+	public long getMvccVersion() {
+		return _exportImportConfiguration.getMvccVersion();
 	}
 
 	/**
@@ -360,33 +281,114 @@ public class ExportImportConfigurationWrapper
 	}
 
 	/**
-	* Sets the name of this export import configuration.
+	* Returns the primary key of this export import configuration.
 	*
-	* @param name the name of this export import configuration
+	* @return the primary key of this export import configuration
 	*/
 	@Override
-	public void setName(java.lang.String name) {
-		_exportImportConfiguration.setName(name);
+	public long getPrimaryKey() {
+		return _exportImportConfiguration.getPrimaryKey();
+	}
+
+	@Override
+	public java.io.Serializable getPrimaryKeyObj() {
+		return _exportImportConfiguration.getPrimaryKeyObj();
 	}
 
 	/**
-	* Returns the description of this export import configuration.
+	* Returns the settings of this export import configuration.
 	*
-	* @return the description of this export import configuration
+	* @return the settings of this export import configuration
 	*/
 	@Override
-	public java.lang.String getDescription() {
-		return _exportImportConfiguration.getDescription();
+	public java.lang.String getSettings() {
+		return _exportImportConfiguration.getSettings();
+	}
+
+	@Override
+	public java.util.Map<java.lang.String, java.io.Serializable> getSettingsMap() {
+		return _exportImportConfiguration.getSettingsMap();
 	}
 
 	/**
-	* Sets the description of this export import configuration.
+	* Returns the status of this export import configuration.
 	*
-	* @param description the description of this export import configuration
+	* @return the status of this export import configuration
 	*/
 	@Override
-	public void setDescription(java.lang.String description) {
-		_exportImportConfiguration.setDescription(description);
+	public int getStatus() {
+		return _exportImportConfiguration.getStatus();
+	}
+
+	/**
+	* Returns the status by user ID of this export import configuration.
+	*
+	* @return the status by user ID of this export import configuration
+	*/
+	@Override
+	public long getStatusByUserId() {
+		return _exportImportConfiguration.getStatusByUserId();
+	}
+
+	/**
+	* Returns the status by user name of this export import configuration.
+	*
+	* @return the status by user name of this export import configuration
+	*/
+	@Override
+	public java.lang.String getStatusByUserName() {
+		return _exportImportConfiguration.getStatusByUserName();
+	}
+
+	/**
+	* Returns the status by user uuid of this export import configuration.
+	*
+	* @return the status by user uuid of this export import configuration
+	*/
+	@Override
+	public java.lang.String getStatusByUserUuid() {
+		return _exportImportConfiguration.getStatusByUserUuid();
+	}
+
+	/**
+	* Returns the status date of this export import configuration.
+	*
+	* @return the status date of this export import configuration
+	*/
+	@Override
+	public java.util.Date getStatusDate() {
+		return _exportImportConfiguration.getStatusDate();
+	}
+
+	/**
+	* Returns the trash entry created when this export import configuration was moved to the Recycle Bin. The trash entry may belong to one of the ancestors of this export import configuration.
+	*
+	* @return the trash entry created when this export import configuration was moved to the Recycle Bin
+	*/
+	@Override
+	public com.liferay.portlet.trash.model.TrashEntry getTrashEntry()
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _exportImportConfiguration.getTrashEntry();
+	}
+
+	/**
+	* Returns the class primary key of the trash entry for this export import configuration.
+	*
+	* @return the class primary key of the trash entry for this export import configuration
+	*/
+	@Override
+	public long getTrashEntryClassPK() {
+		return _exportImportConfiguration.getTrashEntryClassPK();
+	}
+
+	/**
+	* Returns the trash handler for this export import configuration.
+	*
+	* @return the trash handler for this export import configuration
+	*/
+	@Override
+	public com.liferay.portal.kernel.trash.TrashHandler getTrashHandler() {
+		return _exportImportConfiguration.getTrashHandler();
 	}
 
 	/**
@@ -400,43 +402,48 @@ public class ExportImportConfigurationWrapper
 	}
 
 	/**
-	* Sets the type of this export import configuration.
+	* Returns the user ID of this export import configuration.
 	*
-	* @param type the type of this export import configuration
+	* @return the user ID of this export import configuration
 	*/
 	@Override
-	public void setType(int type) {
-		_exportImportConfiguration.setType(type);
+	public long getUserId() {
+		return _exportImportConfiguration.getUserId();
 	}
 
 	/**
-	* Returns the settings of this export import configuration.
+	* Returns the user name of this export import configuration.
 	*
-	* @return the settings of this export import configuration
+	* @return the user name of this export import configuration
 	*/
 	@Override
-	public java.lang.String getSettings() {
-		return _exportImportConfiguration.getSettings();
+	public java.lang.String getUserName() {
+		return _exportImportConfiguration.getUserName();
 	}
 
 	/**
-	* Sets the settings of this export import configuration.
+	* Returns the user uuid of this export import configuration.
 	*
-	* @param settings the settings of this export import configuration
+	* @return the user uuid of this export import configuration
 	*/
 	@Override
-	public void setSettings(java.lang.String settings) {
-		_exportImportConfiguration.setSettings(settings);
+	public java.lang.String getUserUuid() {
+		return _exportImportConfiguration.getUserUuid();
 	}
 
 	@Override
-	public boolean isNew() {
-		return _exportImportConfiguration.isNew();
+	public int hashCode() {
+		return _exportImportConfiguration.hashCode();
 	}
 
+	/**
+	* Returns <code>true</code> if this export import configuration is approved.
+	*
+	* @return <code>true</code> if this export import configuration is approved; <code>false</code> otherwise
+	*/
 	@Override
-	public void setNew(boolean n) {
-		_exportImportConfiguration.setNew(n);
+	public boolean isApproved() {
+		return _exportImportConfiguration.isApproved();
 	}
 
 	@Override
@@ -444,9 +451,24 @@ public class ExportImportConfigurationWrapper
 		return _exportImportConfiguration.isCachedModel();
 	}
 
+	/**
+	* Returns <code>true</code> if this export import configuration is denied.
+	*
+	* @return <code>true</code> if this export import configuration is denied; <code>false</code> otherwise
+	*/
 	@Override
-	public void setCachedModel(boolean cachedModel) {
-		_exportImportConfiguration.setCachedModel(cachedModel);
+	public boolean isDenied() {
+		return _exportImportConfiguration.isDenied();
+	}
+
+	/**
+	* Returns <code>true</code> if this export import configuration is a draft.
+	*
+	* @return <code>true</code> if this export import configuration is a draft; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isDraft() {
+		return _exportImportConfiguration.isDraft();
 	}
 
 	@Override
@@ -454,19 +476,129 @@ public class ExportImportConfigurationWrapper
 		return _exportImportConfiguration.isEscapedModel();
 	}
 
+	/**
+	* Returns <code>true</code> if this export import configuration is expired.
+	*
+	* @return <code>true</code> if this export import configuration is expired; <code>false</code> otherwise
+	*/
 	@Override
-	public java.io.Serializable getPrimaryKeyObj() {
-		return _exportImportConfiguration.getPrimaryKeyObj();
+	public boolean isExpired() {
+		return _exportImportConfiguration.isExpired();
+	}
+
+	/**
+	* Returns <code>true</code> if this export import configuration is in the Recycle Bin.
+	*
+	* @return <code>true</code> if this export import configuration is in the Recycle Bin; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isInTrash() {
+		return _exportImportConfiguration.isInTrash();
+	}
+
+	/**
+	* Returns <code>true</code> if the parent of this export import configuration is in the Recycle Bin.
+	*
+	* @return <code>true</code> if the parent of this export import configuration is in the Recycle Bin; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isInTrashContainer() {
+		return _exportImportConfiguration.isInTrashContainer();
 	}
 
 	@Override
-	public void setPrimaryKeyObj(java.io.Serializable primaryKeyObj) {
-		_exportImportConfiguration.setPrimaryKeyObj(primaryKeyObj);
+	public boolean isInTrashExplicitly() {
+		return _exportImportConfiguration.isInTrashExplicitly();
 	}
 
 	@Override
-	public com.liferay.portlet.expando.model.ExpandoBridge getExpandoBridge() {
-		return _exportImportConfiguration.getExpandoBridge();
+	public boolean isInTrashImplicitly() {
+		return _exportImportConfiguration.isInTrashImplicitly();
+	}
+
+	/**
+	* Returns <code>true</code> if this export import configuration is inactive.
+	*
+	* @return <code>true</code> if this export import configuration is inactive; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isInactive() {
+		return _exportImportConfiguration.isInactive();
+	}
+
+	/**
+	* Returns <code>true</code> if this export import configuration is incomplete.
+	*
+	* @return <code>true</code> if this export import configuration is incomplete; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isIncomplete() {
+		return _exportImportConfiguration.isIncomplete();
+	}
+
+	@Override
+	public boolean isNew() {
+		return _exportImportConfiguration.isNew();
+	}
+
+	/**
+	* Returns <code>true</code> if this export import configuration is pending.
+	*
+	* @return <code>true</code> if this export import configuration is pending; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isPending() {
+		return _exportImportConfiguration.isPending();
+	}
+
+	/**
+	* Returns <code>true</code> if this export import configuration is scheduled.
+	*
+	* @return <code>true</code> if this export import configuration is scheduled; <code>false</code> otherwise
+	*/
+	@Override
+	public boolean isScheduled() {
+		return _exportImportConfiguration.isScheduled();
+	}
+
+	@Override
+	public void persist() {
+		_exportImportConfiguration.persist();
+	}
+
+	@Override
+	public void setCachedModel(boolean cachedModel) {
+		_exportImportConfiguration.setCachedModel(cachedModel);
+	}
+
+	/**
+	* Sets the company ID of this export import configuration.
+	*
+	* @param companyId the company ID of this export import configuration
+	*/
+	@Override
+	public void setCompanyId(long companyId) {
+		_exportImportConfiguration.setCompanyId(companyId);
+	}
+
+	/**
+	* Sets the create date of this export import configuration.
+	*
+	* @param createDate the create date of this export import configuration
+	*/
+	@Override
+	public void setCreateDate(java.util.Date createDate) {
+		_exportImportConfiguration.setCreateDate(createDate);
+	}
+
+	/**
+	* Sets the description of this export import configuration.
+	*
+	* @param description the description of this export import configuration
+	*/
+	@Override
+	public void setDescription(java.lang.String description) {
+		_exportImportConfiguration.setDescription(description);
 	}
 
 	@Override
@@ -487,20 +619,174 @@ public class ExportImportConfigurationWrapper
 		_exportImportConfiguration.setExpandoBridgeAttributes(serviceContext);
 	}
 
+	/**
+	* Sets the export import configuration ID of this export import configuration.
+	*
+	* @param exportImportConfigurationId the export import configuration ID of this export import configuration
+	*/
 	@Override
-	public java.lang.Object clone() {
-		return new ExportImportConfigurationWrapper((ExportImportConfiguration)_exportImportConfiguration.clone());
+	public void setExportImportConfigurationId(long exportImportConfigurationId) {
+		_exportImportConfiguration.setExportImportConfigurationId(exportImportConfigurationId);
+	}
+
+	/**
+	* Sets the group ID of this export import configuration.
+	*
+	* @param groupId the group ID of this export import configuration
+	*/
+	@Override
+	public void setGroupId(long groupId) {
+		_exportImportConfiguration.setGroupId(groupId);
+	}
+
+	/**
+	* Sets the modified date of this export import configuration.
+	*
+	* @param modifiedDate the modified date of this export import configuration
+	*/
+	@Override
+	public void setModifiedDate(java.util.Date modifiedDate) {
+		_exportImportConfiguration.setModifiedDate(modifiedDate);
+	}
+
+	/**
+	* Sets the mvcc version of this export import configuration.
+	*
+	* @param mvccVersion the mvcc version of this export import configuration
+	*/
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		_exportImportConfiguration.setMvccVersion(mvccVersion);
+	}
+
+	/**
+	* Sets the name of this export import configuration.
+	*
+	* @param name the name of this export import configuration
+	*/
+	@Override
+	public void setName(java.lang.String name) {
+		_exportImportConfiguration.setName(name);
 	}
 
 	@Override
-	public int compareTo(
-		com.liferay.portal.model.ExportImportConfiguration exportImportConfiguration) {
-		return _exportImportConfiguration.compareTo(exportImportConfiguration);
+	public void setNew(boolean n) {
+		_exportImportConfiguration.setNew(n);
+	}
+
+	/**
+	* Sets the primary key of this export import configuration.
+	*
+	* @param primaryKey the primary key of this export import configuration
+	*/
+	@Override
+	public void setPrimaryKey(long primaryKey) {
+		_exportImportConfiguration.setPrimaryKey(primaryKey);
 	}
 
 	@Override
-	public int hashCode() {
-		return _exportImportConfiguration.hashCode();
+	public void setPrimaryKeyObj(java.io.Serializable primaryKeyObj) {
+		_exportImportConfiguration.setPrimaryKeyObj(primaryKeyObj);
+	}
+
+	/**
+	* Sets the settings of this export import configuration.
+	*
+	* @param settings the settings of this export import configuration
+	*/
+	@Override
+	public void setSettings(java.lang.String settings) {
+		_exportImportConfiguration.setSettings(settings);
+	}
+
+	/**
+	* Sets the status of this export import configuration.
+	*
+	* @param status the status of this export import configuration
+	*/
+	@Override
+	public void setStatus(int status) {
+		_exportImportConfiguration.setStatus(status);
+	}
+
+	/**
+	* Sets the status by user ID of this export import configuration.
+	*
+	* @param statusByUserId the status by user ID of this export import configuration
+	*/
+	@Override
+	public void setStatusByUserId(long statusByUserId) {
+		_exportImportConfiguration.setStatusByUserId(statusByUserId);
+	}
+
+	/**
+	* Sets the status by user name of this export import configuration.
+	*
+	* @param statusByUserName the status by user name of this export import configuration
+	*/
+	@Override
+	public void setStatusByUserName(java.lang.String statusByUserName) {
+		_exportImportConfiguration.setStatusByUserName(statusByUserName);
+	}
+
+	/**
+	* Sets the status by user uuid of this export import configuration.
+	*
+	* @param statusByUserUuid the status by user uuid of this export import configuration
+	*/
+	@Override
+	public void setStatusByUserUuid(java.lang.String statusByUserUuid) {
+		_exportImportConfiguration.setStatusByUserUuid(statusByUserUuid);
+	}
+
+	/**
+	* Sets the status date of this export import configuration.
+	*
+	* @param statusDate the status date of this export import configuration
+	*/
+	@Override
+	public void setStatusDate(java.util.Date statusDate) {
+		_exportImportConfiguration.setStatusDate(statusDate);
+	}
+
+	/**
+	* Sets the type of this export import configuration.
+	*
+	* @param type the type of this export import configuration
+	*/
+	@Override
+	public void setType(int type) {
+		_exportImportConfiguration.setType(type);
+	}
+
+	/**
+	* Sets the user ID of this export import configuration.
+	*
+	* @param userId the user ID of this export import configuration
+	*/
+	@Override
+	public void setUserId(long userId) {
+		_exportImportConfiguration.setUserId(userId);
+	}
+
+	/**
+	* Sets the user name of this export import configuration.
+	*
+	* @param userName the user name of this export import configuration
+	*/
+	@Override
+	public void setUserName(java.lang.String userName) {
+		_exportImportConfiguration.setUserName(userName);
+	}
+
+	/**
+	* Sets the user uuid of this export import configuration.
+	*
+	* @param userUuid the user uuid of this export import configuration
+	*/
+	@Override
+	public void setUserUuid(java.lang.String userUuid) {
+		_exportImportConfiguration.setUserUuid(userUuid);
 	}
 
 	@Override
@@ -514,29 +800,18 @@ public class ExportImportConfigurationWrapper
 	}
 
 	@Override
-	public com.liferay.portal.model.ExportImportConfiguration toUnescapedModel() {
-		return new ExportImportConfigurationWrapper(_exportImportConfiguration.toUnescapedModel());
-	}
-
-	@Override
 	public java.lang.String toString() {
 		return _exportImportConfiguration.toString();
 	}
 
 	@Override
+	public com.liferay.portal.model.ExportImportConfiguration toUnescapedModel() {
+		return new ExportImportConfigurationWrapper(_exportImportConfiguration.toUnescapedModel());
+	}
+
+	@Override
 	public java.lang.String toXmlString() {
 		return _exportImportConfiguration.toXmlString();
-	}
-
-	@Override
-	public void persist()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		_exportImportConfiguration.persist();
-	}
-
-	@Override
-	public java.util.Map<java.lang.String, java.io.Serializable> getSettingsMap() {
-		return _exportImportConfiguration.getSettingsMap();
 	}
 
 	@Override
@@ -587,5 +862,5 @@ public class ExportImportConfigurationWrapper
 		_exportImportConfiguration.resetOriginalValues();
 	}
 
-	private ExportImportConfiguration _exportImportConfiguration;
+	private final ExportImportConfiguration _exportImportConfiguration;
 }

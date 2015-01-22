@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -42,7 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>
- * See http://issues.liferay.com/browse/LEP-5943.
+ * See https://issues.liferay.com/browse/LEP-5943.
  * </p>
  *
  * @author Prashant Dighe
@@ -88,7 +88,7 @@ public class OpenSSOUtil {
 	private Map<String, String> _getAttributes(
 		HttpServletRequest request, String serviceUrl) {
 
-		Map<String, String> nameValues = new HashMap<String, String>();
+		Map<String, String> nameValues = new HashMap<>();
 
 		String url = serviceUrl.concat(_GET_ATTRIBUTES);
 
@@ -171,7 +171,7 @@ public class OpenSSOUtil {
 			return cookieNames;
 		}
 
-		List<String> cookieNamesList = new ArrayList<String>();
+		List<String> cookieNamesList = new ArrayList<>();
 
 		try {
 			String cookieName = null;
@@ -358,12 +358,23 @@ public class OpenSSOUtil {
 
 			int responseCode = httpURLConnection.getResponseCode();
 
-			if (responseCode != HttpURLConnection.HTTP_OK) {
+			if (!((responseCode == HttpURLConnection.HTTP_OK) ||
+				 ((responseCode >= HttpURLConnection.HTTP_MULT_CHOICE) &&
+				  (responseCode <= HttpURLConnection.HTTP_NOT_MODIFIED)))) {
+
 				if (_log.isDebugEnabled()) {
-					_log.debug("Attributes response code " + responseCode);
+					_log.debug(
+						"URL " + url + " is invalid with response code " +
+							responseCode);
 				}
 
 				return false;
+			}
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					"URL " + url + " is valid with response code " +
+						responseCode);
 			}
 		}
 		catch (IOException ioe) {
@@ -421,11 +432,11 @@ public class OpenSSOUtil {
 
 	private static final String _VALIDATE_TOKEN = "/identity/isTokenValid";
 
-	private static Log _log = LogFactoryUtil.getLog(OpenSSOUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(OpenSSOUtil.class);
 
-	private static OpenSSOUtil _instance = new OpenSSOUtil();
+	private static final OpenSSOUtil _instance = new OpenSSOUtil();
 
-	private Map<String, String[]> _cookieNamesMap =
-		new ConcurrentHashMap<String, String[]>();
+	private final Map<String, String[]> _cookieNamesMap =
+		new ConcurrentHashMap<>();
 
 }

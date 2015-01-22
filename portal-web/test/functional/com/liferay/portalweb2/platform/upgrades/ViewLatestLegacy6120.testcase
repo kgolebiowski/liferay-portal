@@ -1,3 +1,0 @@
-<definition component-name="portal-upgrades" extends="ViewLatestLegacy">
-	<property name="portal.version" value="6.1.20" />
-</definition>

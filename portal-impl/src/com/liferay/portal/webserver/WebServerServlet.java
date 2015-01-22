@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -263,8 +263,10 @@ public class WebServerServlet extends HttpServlet {
 					sendPortletFileEntry(request, response, pathArray);
 				}
 				else {
-					if (isLegacyImageGalleryImageId(request, response)) {
-						return;
+					if (PropsValues.WEB_SERVER_SERVLET_CHECK_IMAGE_GALLERY) {
+						if (isLegacyImageGalleryImageId(request, response)) {
+							return;
+						}
 					}
 
 					Image image = getImage(request, true);
@@ -322,7 +324,7 @@ public class WebServerServlet extends HttpServlet {
 	}
 
 	protected Image convertFileEntry(boolean smallImage, FileEntry fileEntry)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		try {
 			Image image = new ImageImpl();
@@ -421,7 +423,7 @@ public class WebServerServlet extends HttpServlet {
 	}
 
 	protected Image getImage(HttpServletRequest request, boolean getDefault)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Image image = null;
 
@@ -515,8 +517,7 @@ public class WebServerServlet extends HttpServlet {
 		return image.getTextObj();
 	}
 
-	protected long getImageId(HttpServletRequest request)
-		throws SystemException {
+	protected long getImageId(HttpServletRequest request) {
 
 		// The image id may be passed in as image_id, img_id, or i_id
 
@@ -631,7 +632,7 @@ public class WebServerServlet extends HttpServlet {
 	}
 
 	protected Image getUserPortraitImageResized(Image image, long imageId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (image == null) {
 			return null;
@@ -804,7 +805,7 @@ public class WebServerServlet extends HttpServlet {
 			}
 		}
 
-		List<WebServerEntry> webServerEntries = new ArrayList<WebServerEntry>();
+		List<WebServerEntry> webServerEntries = new ArrayList<>();
 
 		webServerEntries.add(new WebServerEntry(path, "../"));
 
@@ -858,26 +859,22 @@ public class WebServerServlet extends HttpServlet {
 		String tempFileId = DLUtil.getTempFileId(
 			fileEntry.getFileEntryId(), version);
 
-		if (fileEntry.getModel() instanceof DLFileEntry) {
-			LiferayFileEntry liferayFileEntry = (LiferayFileEntry)fileEntry;
+		if (fileEntry.isInTrash()) {
+			int status = ParamUtil.getInteger(
+				request, "status", WorkflowConstants.STATUS_APPROVED);
 
-			if (liferayFileEntry.isInTrash()) {
-				int status = ParamUtil.getInteger(
-					request, "status", WorkflowConstants.STATUS_APPROVED);
+			if (status != WorkflowConstants.STATUS_IN_TRASH) {
+				throw new NoSuchFileEntryException();
+			}
 
-				if (status != WorkflowConstants.STATUS_IN_TRASH) {
-					throw new NoSuchFileEntryException();
-				}
+			PermissionChecker permissionChecker =
+				PermissionThreadLocal.getPermissionChecker();
 
-				PermissionChecker permissionChecker =
-					PermissionThreadLocal.getPermissionChecker();
+			if (!PortletPermissionUtil.hasControlPanelAccessPermission(
+					permissionChecker, fileEntry.getGroupId(),
+					PortletKeys.TRASH)) {
 
-				if (!PortletPermissionUtil.hasControlPanelAccessPermission(
-						permissionChecker, fileEntry.getGroupId(),
-						PortletKeys.TRASH)) {
-
-					throw new PrincipalException();
-				}
+				throw new PrincipalException();
 			}
 		}
 
@@ -895,15 +892,7 @@ public class WebServerServlet extends HttpServlet {
 			return;
 		}
 
-		String fileName = fileVersion.getTitle();
-
-		String extension = fileVersion.getExtension();
-
-		if (Validator.isNotNull(extension) &&
-			!fileName.endsWith(StringPool.PERIOD + extension)) {
-
-			fileName += StringPool.PERIOD + extension;
-		}
+		String fileName = fileVersion.getFileName();
 
 		// Handle requested conversion
 
@@ -1013,7 +1002,8 @@ public class WebServerServlet extends HttpServlet {
 
 			if (Validator.isNotNull(targetExtension)) {
 				File convertedFile = DocumentConversionUtil.convert(
-					tempFileId, inputStream, extension, targetExtension);
+					tempFileId, inputStream, fileVersion.getExtension(),
+					targetExtension);
 
 				if (convertedFile != null) {
 					fileName = FileUtil.stripExtension(fileName).concat(
@@ -1049,9 +1039,18 @@ public class WebServerServlet extends HttpServlet {
 				contentType);
 		}
 		else {
-			ServletResponseUtil.sendFile(
-				request, response, fileName, inputStream, contentLength,
-				contentType);
+			boolean download = ParamUtil.getBoolean(request, "download");
+
+			if (download) {
+				ServletResponseUtil.sendFile(
+					request, response, fileName, inputStream, contentLength,
+					contentType, HttpHeaders.CONTENT_DISPOSITION_ATTACHMENT);
+			}
+			else {
+				ServletResponseUtil.sendFile(
+					request, response, fileName, inputStream, contentLength,
+					contentType);
+			}
 		}
 	}
 
@@ -1133,7 +1132,7 @@ public class WebServerServlet extends HttpServlet {
 			return;
 		}
 
-		List<WebServerEntry> webServerEntries = new ArrayList<WebServerEntry>();
+		List<WebServerEntry> webServerEntries = new ArrayList<>();
 
 		List<Group> groups = WebDAVUtil.getGroups(user);
 
@@ -1189,16 +1188,25 @@ public class WebServerServlet extends HttpServlet {
 			return;
 		}
 
-		String fileName = HttpUtil.decodeURL(
-			HtmlUtil.escape(pathArray[2]), true);
+		String fileName = HttpUtil.decodeURL(HtmlUtil.escape(pathArray[2]));
 
 		if (fileEntry.isInTrash()) {
 			fileName = TrashUtil.getOriginalTitle(fileName);
 		}
 
-		ServletResponseUtil.sendFile(
-			request, response, fileName, fileEntry.getContentStream(),
-			fileEntry.getSize(), fileEntry.getMimeType());
+		boolean download = ParamUtil.getBoolean(request, "download");
+
+		if (download) {
+			ServletResponseUtil.sendFile(
+				request, response, fileName, fileEntry.getContentStream(),
+				fileEntry.getSize(), fileEntry.getMimeType(),
+				HttpHeaders.CONTENT_DISPOSITION_ATTACHMENT);
+		}
+		else {
+			ServletResponseUtil.sendFile(
+				request, response, fileName, fileEntry.getContentStream(),
+				fileEntry.getSize(), fileEntry.getMimeType());
+		}
 	}
 
 	protected void writeImage(
@@ -1336,11 +1344,12 @@ public class WebServerServlet extends HttpServlet {
 		StringUtil.equalsIgnoreCase(
 			PropsValues.WEB_SERVER_SERVLET_VERSION_VERBOSITY, "partial");
 
-	private static Log _log = LogFactoryUtil.getLog(WebServerServlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		WebServerServlet.class);
 
-	private static Set<String> _acceptRangesMimeTypes = SetUtil.fromArray(
+	private static final Set<String> _acceptRangesMimeTypes = SetUtil.fromArray(
 		PropsValues.WEB_SERVER_SERVLET_ACCEPT_RANGES_MIME_TYPES);
-	private static Format _dateFormat =
+	private static final Format _dateFormat =
 		FastDateFormatFactoryUtil.getSimpleDateFormat("d MMM yyyy HH:mm z");
 
 	private boolean _lastModified = true;

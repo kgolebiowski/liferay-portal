@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -51,18 +51,16 @@ int mergeFailCount = SitesUtil.getMergeFailCount(layoutSetPrototype);
 	}
 	%>
 
-	<div class="alert alert-block">
-		<liferay-ui:message arguments='<%= new Object[] {mergeFailCount, LanguageUtil.get(pageContext, "site-template")} %>' key="the-propagation-of-changes-from-the-x-has-been-disabled-temporarily-after-x-errors" translateArguments="<%= false %>" />
+	<div class="alert alert-warning">
+		<liferay-ui:message arguments='<%= new Object[] {mergeFailCount, LanguageUtil.get(request, "site-template")} %>' key="the-propagation-of-changes-from-the-x-has-been-disabled-temporarily-after-x-errors" translateArguments="<%= false %>" />
 
 		<liferay-ui:message arguments="site-template" key='<%= merge ? "click-reset-and-propagate-to-reset-the-failure-count-and-propagate-changes-from-the-x" : "click-reset-to-reset-the-failure-count-and-reenable-propagation" %>' />
 
-		<aui:button id='<%= randomNamespace + "resetButton" %>' value='<%= merge ? "reset-and-propagate" : "reset" %>' />
+		<aui:button id='<%= randomNamespace + "resetButton" %>' useNamespace="<%= false %>" value='<%= merge ? "reset-and-propagate" : "reset" %>' />
 	</div>
 
-	<aui:script use="aui-base">
-		var resetButton= A.one('#<%= randomNamespace %>resetButton');
-
-		resetButton.on(
+	<aui:script>
+		AUI.$('#<%= randomNamespace %>resetButton').on(
 			'click',
 			function(event) {
 				submitForm(document.hrefFm, '<%= portletURL.toString() %>');
@@ -76,7 +74,7 @@ List<Layout> mergeFailFriendlyURLLayouts = SitesUtil.getMergeFailFriendlyURLLayo
 %>
 
 <c:if test="<%= !mergeFailFriendlyURLLayouts.isEmpty() %>">
-	<div class="alert alert-block">
+	<div class="alert alert-warning">
 		<liferay-ui:message key="some-pages-from-the-site-template-cannot-be-propagated-because-their-friendly-urls-conflict-with-the-following-pages" />
 
 		<liferay-ui:message key="modify-the-friendly-url-of-the-pages-to-allow-their-propagation-from-the-site-template" />

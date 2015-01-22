@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,7 +49,7 @@ public class MessageValuesThreadLocal {
 		Map<String, Object> messageValues = _messageValuesThreadLocal.get();
 
 		if (messageValues == null) {
-			messageValues = new HashMap<String, Object>();
+			messageValues = new HashMap<>();
 
 			_messageValuesThreadLocal.set(messageValues);
 		}
@@ -57,8 +57,9 @@ public class MessageValuesThreadLocal {
 		messageValues.put(key, value);
 	}
 
-	private static ThreadLocal<Map<String, Object>> _messageValuesThreadLocal =
-		new AutoResetThreadLocal<Map<String, Object>>(
-			MessageValuesThreadLocal.class.getName());
+	private static final ThreadLocal<Map<String, Object>>
+		_messageValuesThreadLocal =
+			new AutoResetThreadLocal<Map<String, Object>>(
+				MessageValuesThreadLocal.class.getName());
 
 }

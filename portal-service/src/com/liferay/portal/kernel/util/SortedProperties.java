@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -44,10 +44,10 @@ public class SortedProperties extends Properties {
 		_comparator = comparator;
 
 		if (comparator != null) {
-			_names = new TreeSet<String>(comparator);
+			_names = new TreeSet<>(comparator);
 		}
 		else {
-			_names = new TreeSet<String>();
+			_names = new TreeSet<>();
 		}
 
 		if (properties != null) {
@@ -153,6 +153,6 @@ public class SortedProperties extends Properties {
 	}
 
 	private Comparator<String> _comparator;
-	private Set<String> _names;
+	private final Set<String> _names;
 
 }

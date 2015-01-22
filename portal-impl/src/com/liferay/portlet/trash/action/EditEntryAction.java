@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -33,6 +33,7 @@ import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.portlet.trash.RestoreEntryException;
 import com.liferay.portlet.trash.model.TrashEntry;
 import com.liferay.portlet.trash.service.TrashEntryServiceUtil;
 import com.liferay.portlet.trash.util.TrashUtil;
@@ -103,10 +104,18 @@ public class EditEntryAction extends PortletAction {
 				addRestoreData(actionRequest, entryOVPs);
 			}
 
-			sendRedirect(actionRequest, actionResponse);
+			String redirect = PortalUtil.escapeRedirect(
+				ParamUtil.getString(actionRequest, "redirect"));
+
+			sendRedirect(actionRequest, actionResponse, redirect);
 		}
 		catch (Exception e) {
-			if (e instanceof TrashPermissionException) {
+			if (e instanceof RestoreEntryException) {
+				RestoreEntryException ree = (RestoreEntryException)e;
+
+				SessionErrors.add(actionRequest, ree.getClass(), ree);
+			}
+			else if (e instanceof TrashPermissionException) {
 				TrashPermissionException tpe = (TrashPermissionException)e;
 
 				SessionErrors.add(actionRequest, tpe.getClass(), tpe);
@@ -148,11 +157,11 @@ public class EditEntryAction extends PortletAction {
 			return;
 		}
 
-		List<String> restoreClassNames = new ArrayList<String>();
-		List<String> restoreEntryLinks = new ArrayList<String>();
-		List<String> restoreEntryMessages = new ArrayList<String>();
-		List<String> restoreLinks = new ArrayList<String>();
-		List<String> restoreMessages = new ArrayList<String>();
+		List<String> restoreClassNames = new ArrayList<>();
+		List<String> restoreEntryLinks = new ArrayList<>();
+		List<String> restoreEntryMessages = new ArrayList<>();
+		List<String> restoreLinks = new ArrayList<>();
+		List<String> restoreMessages = new ArrayList<>();
 
 		for (int i = 0; i < entryOVPs.size(); i++) {
 			ObjectValuePair<String, Long> entryOVP = entryOVPs.get(i);
@@ -188,7 +197,7 @@ public class EditEntryAction extends PortletAction {
 			restoreMessages.add(restoreMessage);
 		}
 
-		Map<String, List<String>> data = new HashMap<String, List<String>>();
+		Map<String, List<String>> data = new HashMap<>();
 
 		data.put("restoreClassNames", restoreClassNames);
 		data.put("restoreEntryLinks", restoreEntryLinks);
@@ -245,11 +254,10 @@ public class EditEntryAction extends PortletAction {
 	protected List<ObjectValuePair<String, Long>> getEntryOVPs(
 		String className, long classPK) {
 
-		List<ObjectValuePair<String, Long>> entryOVPs =
-			new ArrayList<ObjectValuePair<String, Long>>();
+		List<ObjectValuePair<String, Long>> entryOVPs = new ArrayList<>();
 
-		ObjectValuePair<String, Long> entryOVP =
-			new ObjectValuePair<String, Long>(className, classPK);
+		ObjectValuePair<String, Long> entryOVP = new ObjectValuePair<>(
+			className, classPK);
 
 		entryOVPs.add(entryOVP);
 
@@ -289,8 +297,7 @@ public class EditEntryAction extends PortletAction {
 		long[] restoreEntryIds = StringUtil.split(
 			ParamUtil.getString(actionRequest, "restoreTrashEntryIds"), 0L);
 
-		List<ObjectValuePair<String, Long>> entryOVPs =
-			new ArrayList<ObjectValuePair<String, Long>>();
+		List<ObjectValuePair<String, Long>> entryOVPs = new ArrayList<>();
 
 		for (long restoreEntryId : restoreEntryIds) {
 			TrashEntry entry = TrashEntryServiceUtil.restoreEntry(

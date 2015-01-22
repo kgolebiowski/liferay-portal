@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,6 +25,8 @@ public class DDMStructureConstants {
 	public static final int TYPE_AUTO = 1;
 
 	public static final int TYPE_DEFAULT = 0;
+
+	public static final String VERSION_DEFAULT = "1.0";
 
 	public static final String XSD_NAME_RESERVED = "reserved";
 

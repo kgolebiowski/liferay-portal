@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,69 +14,21 @@
 
 package com.liferay.portlet.dynamicdatamapping.util.comparator;
 
-import com.liferay.portal.kernel.util.DateUtil;
-import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.lar.StagedModelModifiedDateComparator;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
-
-import java.util.Date;
 
 /**
  * @author Eduardo Garcia
  */
-public class TemplateModifiedDateComparator extends OrderByComparator {
-
-	public static final String ORDER_BY_ASC = "DDMTemplate.modifiedDate ASC";
-
-	public static final String ORDER_BY_DESC = "DDMTemplate.modifiedDate DESC";
-
-	public static final String[] ORDER_BY_FIELDS = {"modifiedDate"};
+public class TemplateModifiedDateComparator
+	extends StagedModelModifiedDateComparator<DDMTemplate> {
 
 	public TemplateModifiedDateComparator() {
 		this(false);
 	}
 
 	public TemplateModifiedDateComparator(boolean ascending) {
-		_ascending = ascending;
+		super(ascending);
 	}
-
-	@Override
-	public int compare(Object obj1, Object obj2) {
-		DDMTemplate template1 = (DDMTemplate)obj1;
-		DDMTemplate template2 = (DDMTemplate)obj2;
-
-		Date modifiedDate1 = template1.getModifiedDate();
-		Date modifiedDate2 = template2.getModifiedDate();
-
-		int value = DateUtil.compareTo(modifiedDate1, modifiedDate2);
-
-		if (_ascending) {
-			return value;
-		}
-		else {
-			return -value;
-		}
-	}
-
-	@Override
-	public String getOrderBy() {
-		if (_ascending) {
-			return ORDER_BY_ASC;
-		}
-		else {
-			return ORDER_BY_DESC;
-		}
-	}
-
-	@Override
-	public String[] getOrderByFields() {
-		return ORDER_BY_FIELDS;
-	}
-
-	@Override
-	public boolean isAscending() {
-		return _ascending;
-	}
-
-	private boolean _ascending;
 
 }

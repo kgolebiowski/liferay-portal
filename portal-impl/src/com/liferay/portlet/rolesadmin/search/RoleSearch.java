@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,8 +40,10 @@ import javax.portlet.PortletURL;
  */
 public class RoleSearch extends SearchContainer<Role> {
 
-	static List<String> headerNames = new ArrayList<String>();
-	static Map<String, String> orderableHeaders = new HashMap<String, String>();
+	public static final String EMPTY_RESULTS_MESSAGE = "no-roles-were-found";
+
+	public static List<String> headerNames = new ArrayList<>();
+	public static Map<String, String> orderableHeaders = new HashMap<>();
 
 	static {
 		headerNames.add("title");
@@ -60,8 +62,6 @@ public class RoleSearch extends SearchContainer<Role> {
 		orderableHeaders.put("type", "type");
 		orderableHeaders.put("description", "description");
 	}
-
-	public static final String EMPTY_RESULTS_MESSAGE = "no-roles-were-found";
 
 	public RoleSearch(PortletRequest portletRequest, PortletURL iteratorURL) {
 		super(
@@ -103,7 +103,7 @@ public class RoleSearch extends SearchContainer<Role> {
 					PortletKeys.ROLES_ADMIN, "roles-order-by-type", "asc");
 			}
 
-			OrderByComparator orderByComparator =
+			OrderByComparator<Role> orderByComparator =
 				UsersAdminUtil.getRoleOrderByComparator(
 					orderByCol, orderByType);
 
@@ -117,6 +117,6 @@ public class RoleSearch extends SearchContainer<Role> {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(RoleSearch.class);
+	private static final Log _log = LogFactoryUtil.getLog(RoleSearch.class);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,10 +16,10 @@ package com.liferay.portal.security.pwd;
 
 import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.security.RandomUtil;
 import com.liferay.portal.kernel.security.SecureRandom;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.PwdGenerator;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.words.WordsUtil;
@@ -28,7 +28,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.service.PasswordTrackerLocalServiceUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.util.PwdGenerator;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -84,19 +83,19 @@ public class PasswordPolicyToolkit extends BasicToolkit {
 	public void validate(
 			long userId, String password1, String password2,
 			PasswordPolicy passwordPolicy)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (passwordPolicy.isCheckSyntax()) {
 			if (!passwordPolicy.isAllowDictionaryWords() &&
 				WordsUtil.isDictionaryWord(password1)) {
 
-				throw new UserPasswordException(
-					UserPasswordException.PASSWORD_CONTAINS_TRIVIAL_WORDS);
+				throw new UserPasswordException.MustNotContainDictionaryWords(
+					userId, WordsUtil.getDictionaryList());
 			}
 
 			if (password1.length() < passwordPolicy.getMinLength()) {
-				throw new UserPasswordException(
-					UserPasswordException.PASSWORD_LENGTH);
+				throw new UserPasswordException.MustBeLonger(
+					userId, passwordPolicy.getMinLength());
 			}
 
 			if ((getUsageCount(password1, _alphanumericCharsetArray) <
@@ -110,21 +109,19 @@ public class PasswordPolicyToolkit extends BasicToolkit {
 				(getUsageCount(password1, _upperCaseCharsetArray) <
 					passwordPolicy.getMinUpperCase())) {
 
-				throw new UserPasswordException(
-					UserPasswordException.PASSWORD_TOO_TRIVIAL);
+				throw new UserPasswordException.MustNotBeTrivial(userId);
 			}
 
-			if (Validator.isNotNull(passwordPolicy.getRegex()) &&
-				!password1.matches(passwordPolicy.getRegex())) {
+			String regex = passwordPolicy.getRegex();
 
-				throw new UserPasswordException(
-					UserPasswordException.PASSWORD_INVALID);
+			if (Validator.isNotNull(regex) && !password1.matches(regex)) {
+				throw new UserPasswordException.MustComplyWithRegex(
+					userId, regex);
 			}
 		}
 
 		if (!passwordPolicy.isChangeable() && (userId != 0)) {
-			throw new UserPasswordException(
-				UserPasswordException.PASSWORD_NOT_CHANGEABLE);
+			throw new UserPasswordException.MustNotBeChanged(userId);
 		}
 
 		if (userId == 0) {
@@ -136,38 +133,30 @@ public class PasswordPolicyToolkit extends BasicToolkit {
 		Date passwordModfiedDate = user.getPasswordModifiedDate();
 
 		if (passwordModfiedDate != null) {
-
-			// LEP-2961
-
 			Date now = new Date();
 
 			long passwordModificationElapsedTime =
 				now.getTime() - passwordModfiedDate.getTime();
 
-			long userCreationElapsedTime =
-				now.getTime() - user.getCreateDate().getTime();
-
 			long minAge = passwordPolicy.getMinAge() * 1000;
 
 			if ((passwordModificationElapsedTime < minAge) &&
-				(userCreationElapsedTime > minAge)) {
+				!user.getPasswordReset()) {
 
-				throw new UserPasswordException(
-					UserPasswordException.PASSWORD_TOO_YOUNG);
+				throw new UserPasswordException.MustNotBeChangedYet(
+					userId, new Date(passwordModfiedDate.getTime() + minAge));
 			}
 		}
 
 		if (PasswordTrackerLocalServiceUtil.isSameAsCurrentPassword(
 				userId, password1)) {
 
-			throw new UserPasswordException(
-				UserPasswordException.PASSWORD_SAME_AS_CURRENT);
+			throw new UserPasswordException.MustNotBeEqualToCurrent(userId);
 		}
 		else if (!PasswordTrackerLocalServiceUtil.isValidPassword(
 					userId, password1)) {
 
-			throw new UserPasswordException(
-				UserPasswordException.PASSWORD_ALREADY_USED);
+			throw new UserPasswordException.MustNotBeRecentlyUsed(userId);
 		}
 	}
 
@@ -272,11 +261,11 @@ public class PasswordPolicyToolkit extends BasicToolkit {
 		return count;
 	}
 
-	private char[] _alphanumericCharsetArray;
-	private String _completeCharset;
-	private char[] _lowerCaseCharsetArray;
-	private char[] _numbersCharsetArray;
-	private char[] _symbolsCharsetArray;
-	private char[] _upperCaseCharsetArray;
+	private final char[] _alphanumericCharsetArray;
+	private final String _completeCharset;
+	private final char[] _lowerCaseCharsetArray;
+	private final char[] _numbersCharsetArray;
+	private final char[] _symbolsCharsetArray;
+	private final char[] _upperCaseCharsetArray;
 
 }

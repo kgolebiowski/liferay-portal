@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -55,7 +55,7 @@ public class ActionUtil {
 	public static void getFileEntries(HttpServletRequest request)
 		throws Exception {
 
-		List<FileEntry> fileEntries = new ArrayList<FileEntry>();
+		List<FileEntry> fileEntries = new ArrayList<>();
 
 		long[] fileEntryIds = StringUtil.split(
 			ParamUtil.getString(request, "fileEntryIds"), 0L);
@@ -115,12 +115,15 @@ public class ActionUtil {
 			fileVersion = fileEntry.getFileVersion();
 		}
 
-		RawMetadataProcessorUtil.generateMetadata(fileVersion);
+		if (RawMetadataProcessorUtil.isSupported(fileVersion)) {
+			RawMetadataProcessorUtil.generateMetadata(fileVersion);
+		}
 
 		String cmd = ParamUtil.getString(request, Constants.CMD);
 
 		if (fileEntry.isInTrash() && !cmd.equals(Constants.MOVE_FROM_TRASH)) {
-			throw new NoSuchFileEntryException();
+			throw new NoSuchFileEntryException(
+				"{fileEntryId=" + fileEntryId + "}");
 		}
 	}
 
@@ -163,7 +166,7 @@ public class ActionUtil {
 		long[] fileShortcutIds = StringUtil.split(
 			ParamUtil.getString(request, "fileShortcutIds"), 0L);
 
-		List<DLFileShortcut> fileShortcuts = new ArrayList<DLFileShortcut>();
+		List<DLFileShortcut> fileShortcuts = new ArrayList<>();
 
 		for (long fileShortcutId : fileShortcutIds) {
 			if (fileShortcutId > 0) {
@@ -191,7 +194,10 @@ public class ActionUtil {
 
 		long folderId = ParamUtil.getLong(request, "folderId");
 
-		if (folderId <= 0) {
+		boolean ignoreRootFolder = ParamUtil.getBoolean(
+			request, "ignoreRootFolder");
+
+		if ((folderId <= 0) && !ignoreRootFolder) {
 			PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
 			String portletId = portletDisplay.getId();
@@ -213,7 +219,8 @@ public class ActionUtil {
 				DLFolder dlFolder = (DLFolder)folder.getModel();
 
 				if (dlFolder.isInTrash()) {
-					throw new NoSuchFolderException();
+					throw new NoSuchFolderException(
+						"{folderId=" + folderId + "}");
 				}
 			}
 		}
@@ -239,7 +246,7 @@ public class ActionUtil {
 		long[] folderIds = StringUtil.split(
 			ParamUtil.getString(request, "folderIds"), 0L);
 
-		List<Folder> folders = new ArrayList<Folder>();
+		List<Folder> folders = new ArrayList<>();
 
 		for (long folderId : folderIds) {
 			try {

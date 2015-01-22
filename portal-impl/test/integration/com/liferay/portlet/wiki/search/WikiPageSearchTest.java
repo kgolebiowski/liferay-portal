@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,42 +15,58 @@
 package com.liferay.portlet.wiki.search;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.SearchEngine;
+import com.liferay.portal.kernel.search.SearchEngineUtil;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.ClassedModel;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.search.BaseSearchTestCase;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationExecutionTestListener;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.SearchContextTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.wiki.asset.WikiPageAssetRenderer;
 import com.liferay.portlet.wiki.model.WikiPage;
 import com.liferay.portlet.wiki.service.WikiNodeLocalServiceUtil;
+import com.liferay.portlet.wiki.service.WikiPageLocalServiceUtil;
 import com.liferay.portlet.wiki.service.WikiPageServiceUtil;
-import com.liferay.portlet.wiki.util.WikiTestUtil;
+import com.liferay.portlet.wiki.util.test.WikiTestUtil;
 
 import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.ClassRule;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Eudaldo Alonso
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		SynchronousDestinationExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 @Sync
 public class WikiPageSearchTest extends BaseSearchTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
+
+	@Ignore()
+	@Override
+	@Test
+	public void testLocalizedSearch() throws Exception {
+	}
 
 	@Ignore()
 	@Override
@@ -88,6 +104,14 @@ public class WikiPageSearchTest extends BaseSearchTestCase {
 	public void testSearchWithinDDMStructure() throws Exception {
 	}
 
+	@Test
+	public void testSpecificFields() throws Exception {
+		TestSpecificFieldsHelper testSpecificFieldsHelper =
+			new TestSpecificFieldsHelper();
+
+		testSpecificFieldsHelper.searchSpecificFields();
+	}
+
 	@Override
 	protected void addAttachment(ClassedModel classedModel) throws Exception {
 		WikiPage page = (WikiPage)classedModel;
@@ -106,7 +130,12 @@ public class WikiPageSearchTest extends BaseSearchTestCase {
 		return WikiTestUtil.addPage(
 			TestPropsValues.getUserId(),
 			(Long)parentBaseModel.getPrimaryKeyObj(),
-			ServiceTestUtil.randomString(), keywords, approved, serviceContext);
+			RandomTestUtil.randomString(), keywords, approved, serviceContext);
+	}
+
+	@Override
+	protected void deleteBaseModel(long primaryKey) throws Exception {
+		WikiPageLocalServiceUtil.deleteWikiPage(primaryKey);
 	}
 
 	@Override
@@ -169,6 +198,14 @@ public class WikiPageSearchTest extends BaseSearchTestCase {
 	}
 
 	@Override
+	protected void moveBaseModelToTrash(long primaryKey) throws Exception {
+		WikiPage page = WikiPageLocalServiceUtil.getPageByPageId(primaryKey);
+
+		WikiPageLocalServiceUtil.movePageToTrash(
+			TestPropsValues.getUserId(), page.getNodeId(), page.getTitle());
+	}
+
+	@Override
 	protected BaseModel<?> updateBaseModel(
 			BaseModel<?> baseModel, String keywords,
 			ServiceContext serviceContext)
@@ -178,6 +215,72 @@ public class WikiPageSearchTest extends BaseSearchTestCase {
 
 		return WikiTestUtil.updatePage(
 			page, TestPropsValues.getUserId(), keywords, serviceContext);
+	}
+
+	protected class TestSpecificFieldsHelper {
+
+		/**
+		 * See https://dev.liferay.com/discover/portal/-/knowledge_base/6-2/searching-for-content-in-liferay
+		 */
+		public void searchSpecificFields() throws Exception {
+			Assume.assumeTrue(
+				isSearchSpecificFieldsImplementedForSearchEngine());
+
+			addPageWithTitle(RandomTestUtil.randomString());
+			addPageWithTitle("foo");
+			addPageWithTitle("bar");
+			addPageWithTitle("foo bar");
+			addPageWithTitle("fooxyz");
+
+			assertSearch("foo", 2);
+			assertSearch("title:foo", 2);
+			assertSearch("title:foo -title:bar", 1);
+		}
+
+		protected TestSpecificFieldsHelper() throws Exception {
+			_serviceContext = ServiceContextTestUtil.getServiceContext(
+				group.getGroupId());
+
+			_parentBaseModel = getParentBaseModel(group, _serviceContext);
+		}
+
+		protected void addPageWithTitle(String title) throws Exception {
+			WikiTestUtil.addPage(
+				TestPropsValues.getUserId(),
+				(Long)_parentBaseModel.getPrimaryKeyObj(), title,
+				RandomTestUtil.randomString(), true, _serviceContext);
+		}
+
+		protected void assertSearch(String keywords, int count)
+			throws Exception {
+
+			SearchContext searchContext =
+				SearchContextTestUtil.getSearchContext(group.getGroupId());
+
+			searchContext.setKeywords(keywords);
+
+			Assert.assertEquals(
+				count,
+				searchBaseModelsCount(
+					getBaseModelClass(), group.getGroupId(), searchContext));
+		}
+
+		protected boolean isSearchSpecificFieldsImplementedForSearchEngine() {
+			SearchEngine searchEngine = SearchEngineUtil.getSearchEngine(
+				SearchEngineUtil.getDefaultSearchEngineId());
+
+			String vendor = searchEngine.getVendor();
+
+			if (vendor.equals("Lucene") || vendor.equals("Elasticsearch")) {
+				return true;
+			}
+
+			return false;
+		}
+
+		private final BaseModel<?> _parentBaseModel;
+		private final ServiceContext _serviceContext;
+
 	}
 
 }

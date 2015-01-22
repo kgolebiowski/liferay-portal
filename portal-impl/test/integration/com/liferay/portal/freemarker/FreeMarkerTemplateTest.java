@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,9 +19,9 @@ import com.liferay.portal.kernel.template.StringTemplateResource;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateException;
 import com.liferay.portal.kernel.template.TemplateResource;
-import com.liferay.portal.kernel.util.ReflectionUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.template.TemplateContextHelper;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
 
 import freemarker.cache.TemplateCache;
 
@@ -35,8 +35,6 @@ import java.io.ObjectOutput;
 import java.io.Reader;
 import java.io.StringReader;
 
-import java.lang.reflect.Field;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,27 +44,30 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Tina Tian
  */
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class FreeMarkerTemplateTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayIntegrationTestRule liferayIntegrationTestRule =
+		new LiferayIntegrationTestRule();
 
 	@Before
 	public void setUp() throws Exception {
 		_configuration = new Configuration();
 
 		try {
-			Field field = ReflectionUtil.getDeclaredField(
-				Configuration.class, "cache");
-
 			TemplateCache templateCache = new LiferayTemplateCache(
 				_configuration);
 
-			field.set(_configuration, templateCache);
+			ReflectionTestUtil.setFieldValue(
+				_configuration, "cache", templateCache);
 		}
 		catch (Exception e) {
 			throw new TemplateException(
@@ -267,7 +268,7 @@ public class FreeMarkerTemplateTest {
 
 	@Test
 	public void testProcessTemplate8() throws Exception {
-		Map<String, Object> context = new HashMap<String, Object>();
+		Map<String, Object> context = new HashMap<>();
 
 		context.put(_TEST_KEY, _TEST_VALUE);
 

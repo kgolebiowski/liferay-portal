@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,24 +14,6 @@
 
 package com.liferay.portal.action;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-
-import com.liferay.portal.jsonwebservice.JSONWebServiceServiceAction;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -57,6 +39,24 @@ import com.liferay.portal.service.ServiceContextUtil;
 import com.liferay.portal.struts.JSONAction;
 import com.liferay.portal.util.ClassLoaderUtil;
 import com.liferay.portal.util.PropsValues;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * @author Brian Wing Shun Chan
@@ -203,13 +203,15 @@ public class JSONServiceAction extends JSONAction {
 
 			return new Short(ParamUtil.getShort(request, parameter));
 		}
-		else if (typeNameOrClassDescriptor.equals(Date.class.getName())) {
-			return new Date(ParamUtil.getLong(request, parameter));
-		}
 		else if (typeNameOrClassDescriptor.equals(Calendar.class.getName())) {
 			Calendar cal = Calendar.getInstance(LocaleUtil.getDefault());
-			cal.setTime(new Date(ParamUtil.getLong(request, parameter)));
-			return cal;	
+
+			cal.setTimeInMillis(ParamUtil.getLong(request, parameter));
+
+			return cal;
+		}
+		else if (typeNameOrClassDescriptor.equals(Date.class.getName())) {
+			return new Date(ParamUtil.getLong(request, parameter));
 		}
 		else if (typeNameOrClassDescriptor.equals(
 					ServiceContext.class.getName())) {
@@ -408,7 +410,7 @@ public class JSONServiceAction extends JSONAction {
 		}
 		else {
 			try {
-				return JSONFactoryUtil.looseDeserializeSafe(value);
+				return JSONFactoryUtil.looseDeserialize(value);
 			}
 			catch (Exception e) {
 				_log.error(
@@ -649,14 +651,14 @@ public class JSONServiceAction extends JSONAction {
 
 	private static final String _REROUTE_PATH = "/api/json";
 
-	private static Log _log = LogFactoryUtil.getLog(JSONServiceAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		JSONServiceAction.class);
 
-	private static Pattern _fieldDescriptorPattern = Pattern.compile(
+	private static final Pattern _fieldDescriptorPattern = Pattern.compile(
 		"^(.*?)((\\[\\])*)$", Pattern.DOTALL);
 
-	private Set<String> _invalidClassNames;
-	private Set<String> _invalidMethodNames;
-	private Map<String, Object[]> _methodCache =
-		new HashMap<String, Object[]>();
+	private final Set<String> _invalidClassNames;
+	private final Set<String> _invalidMethodNames;
+	private final Map<String, Object[]> _methodCache = new HashMap<>();
 
 }

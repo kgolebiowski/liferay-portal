@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portal.pop;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.pop.MessageListener;
@@ -24,6 +26,7 @@ import javax.mail.Message;
 /**
  * @author Brian Wing Shun Chan
  */
+@ProviderType
 public class MessageListenerWrapper implements MessageListener {
 
 	public MessageListenerWrapper(MessageListener listener) {
@@ -83,14 +86,18 @@ public class MessageListenerWrapper implements MessageListener {
 		return _listener.getId();
 	}
 
+	public MessageListener getMessageListener() {
+		return _listener;
+	}
+
 	@Override
 	public int hashCode() {
 		return _listener.getId().hashCode();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		MessageListenerWrapper.class);
 
-	private MessageListener _listener;
+	private final MessageListener _listener;
 
 }

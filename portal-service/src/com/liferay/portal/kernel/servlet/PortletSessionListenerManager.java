@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,7 +30,7 @@ import javax.servlet.http.HttpSessionListener;
 
 /**
  * <p>
- * See http://issues.liferay.com/browse/LEP-2299.
+ * See https://issues.liferay.com/browse/LEP-2299.
  * </p>
  *
  * @author Olaf Fricke
@@ -282,16 +282,13 @@ public class PortletSessionListenerManager
 		return httpSessionEvent;
 	}
 
-	private static List<HttpSessionActivationListener>
-		_httpSessionActivationListeners =
-			new ArrayList<HttpSessionActivationListener>();
-	private static List<HttpSessionAttributeListener>
-		_httpSessionAttributeListeners =
-			new ArrayList<HttpSessionAttributeListener>();
-	private static List<HttpSessionBindingListener>
-		_httpSessionBindingListeners =
-			new ArrayList<HttpSessionBindingListener>();
-	private static List<HttpSessionListener> _httpSessionListeners =
-		new ArrayList<HttpSessionListener>();
+	private static final List<HttpSessionActivationListener>
+		_httpSessionActivationListeners = new ArrayList<>();
+	private static final List<HttpSessionAttributeListener>
+		_httpSessionAttributeListeners = new ArrayList<>();
+	private static final List<HttpSessionBindingListener>
+		_httpSessionBindingListeners = new ArrayList<>();
+	private static final List<HttpSessionListener> _httpSessionListeners =
+		new ArrayList<>();
 
 }

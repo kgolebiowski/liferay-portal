@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,7 +20,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.util.Tuple;
-import com.liferay.portal.kernel.util.UniqueList;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
@@ -37,6 +36,7 @@ import com.liferay.portlet.social.model.SocialActivityProcessor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +67,7 @@ public class SocialConfigurationImpl implements SocialConfiguration {
 	public List<String> getActivityCounterNames(
 		int ownerType, boolean transientCounter) {
 
-		List<String> activityCounterNames = new UniqueList<String>();
+		Set<String> activityCounterNames = new LinkedHashSet<>();
 
 		for (Map<Integer, SocialActivityDefinition> activityDefinitions :
 				_activityDefinitions.values()) {
@@ -92,7 +92,7 @@ public class SocialConfigurationImpl implements SocialConfiguration {
 			}
 		}
 
-		return activityCounterNames;
+		return new ArrayList<>(activityCounterNames);
 	}
 
 	@Override
@@ -135,7 +135,7 @@ public class SocialConfigurationImpl implements SocialConfiguration {
 	public List<Object> read(ClassLoader classLoader, String[] xmls)
 		throws Exception {
 
-		List<Object> objects = new ArrayList<Object>();
+		List<Object> objects = new ArrayList<>();
 
 		for (String xml : xmls) {
 			_read(classLoader, xml, objects);
@@ -293,8 +293,7 @@ public class SocialConfigurationImpl implements SocialConfiguration {
 			_activityDefinitions.get(modelName);
 
 		if (activityDefinitions == null) {
-			activityDefinitions =
-				new HashMap<Integer, SocialActivityDefinition>();
+			activityDefinitions = new HashMap<>();
 
 			_activityDefinitions.put(modelName, activityDefinitions);
 		}
@@ -506,11 +505,10 @@ public class SocialConfigurationImpl implements SocialConfiguration {
 		objects.add(tuple);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		SocialConfigurationImpl.class);
 
-	private Map<String, Map<Integer, SocialActivityDefinition>>
-		_activityDefinitions =
-			new HashMap<String, Map<Integer, SocialActivityDefinition>>();
+	private final Map<String, Map<Integer, SocialActivityDefinition>>
+		_activityDefinitions = new HashMap<>();
 
 }

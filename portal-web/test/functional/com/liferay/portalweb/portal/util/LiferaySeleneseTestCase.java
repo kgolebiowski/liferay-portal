@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,6 +15,7 @@
 package com.liferay.portalweb.portal.util;
 
 import com.liferay.portalweb.portal.util.liferayselenium.LiferaySelenium;
+import com.liferay.portalweb.util.RuntimeVariables;
 
 import com.thoughtworks.selenium.SeleneseTestBase;
 import com.thoughtworks.selenium.SeleneseTestCase;
@@ -38,7 +39,6 @@ public class LiferaySeleneseTestCase extends SeleneseTestCase {
 	}
 
 	public LiferaySeleneseTestCase() {
-		super();
 	}
 
 	public LiferaySeleneseTestCase(String name) {

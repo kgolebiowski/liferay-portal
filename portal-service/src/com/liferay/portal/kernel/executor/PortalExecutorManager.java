@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,11 @@
 
 package com.liferay.portal.kernel.executor;
 
+import com.liferay.portal.kernel.concurrent.NoticeableFuture;
 import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
  */
 public interface PortalExecutorManager {
 
-	public <T> Future<T> execute(String name, Callable<T> callable);
+	public <T> NoticeableFuture<T> execute(String name, Callable<T> callable);
 
 	public <T> T execute(
 			String name, Callable<T> callable, long timeout, TimeUnit timeUnit)

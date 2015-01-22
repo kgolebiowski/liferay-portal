@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,6 +23,7 @@ import com.liferay.portal.model.MembershipRequest;
 import com.liferay.portal.model.PortletPreferencesIds;
 import com.liferay.portal.model.Team;
 import com.liferay.portal.service.GroupLocalServiceUtil;
+import com.liferay.portal.service.LayoutServiceUtil;
 import com.liferay.portal.service.MembershipRequestLocalServiceUtil;
 import com.liferay.portal.service.PortletPreferencesLocalServiceUtil;
 import com.liferay.portal.service.TeamLocalServiceUtil;
@@ -197,6 +198,38 @@ public class ActionUtil
 			portletRequest);
 
 		getTeam(request);
+	}
+
+	public static void removePortletIds(
+			HttpServletRequest request, Layout layout)
+		throws Exception {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		LayoutTypePortlet layoutTypePortlet =
+			(LayoutTypePortlet)layout.getLayoutType();
+
+		List<String> portletIds = layoutTypePortlet.getPortletIds();
+
+		for (String portletId : portletIds) {
+			layoutTypePortlet.removePortletId(
+				themeDisplay.getUserId(), portletId);
+		}
+
+		LayoutServiceUtil.updateLayout(
+			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
+			layout.getTypeSettings());
+	}
+
+	public static void removePortletIds(
+			PortletRequest portletRequest, Layout layout)
+		throws Exception {
+
+		HttpServletRequest request = PortalUtil.getHttpServletRequest(
+			portletRequest);
+
+		removePortletIds(request, layout);
 	}
 
 }

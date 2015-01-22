@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,8 @@
 package com.liferay.portlet.layoutsetprototypes.lar;
 
 import com.liferay.portal.kernel.lar.ExportImportPathUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
@@ -36,11 +37,11 @@ import com.liferay.portal.service.LayoutFriendlyURLLocalServiceUtil;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
 import com.liferay.portal.service.LayoutPrototypeLocalServiceUtil;
 import com.liferay.portal.service.LayoutSetPrototypeLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
-import com.liferay.portal.util.LayoutTestUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.RandomTestUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,26 +51,52 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.runner.RunWith;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
 /**
  * @author Daniela Zapata Riesco
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class LayoutSetPrototypeStagedModelDataHandlerTest
 	extends BaseStagedModelDataHandlerTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
+
+	@After
+	@Override
+	public void tearDown() throws Exception {
+		super.tearDown();
+
+		_layoutSetPrototype =
+			LayoutSetPrototypeLocalServiceUtil.
+				fetchLayoutSetPrototypeByUuidAndCompanyId(
+					_layoutSetPrototype.getUuid(),
+					_layoutSetPrototype.getCompanyId());
+
+		LayoutSetPrototypeLocalServiceUtil.deleteLayoutSetPrototype(
+			_layoutSetPrototype);
+
+		_layoutPrototype =
+			LayoutPrototypeLocalServiceUtil.
+				fetchLayoutPrototypeByUuidAndCompanyId(
+					_layoutPrototype.getUuid(),
+					_layoutPrototype.getCompanyId());
+
+		LayoutPrototypeLocalServiceUtil.deleteLayoutPrototype(_layoutPrototype);
+	}
 
 	protected void addLayout(Class<?> clazz, Layout layout) throws Exception {
 		List<Layout> layouts = _layouts.get(clazz.getSimpleName());
 
 		if (layouts == null) {
-			layouts = new ArrayList<Layout>();
+			layouts = new ArrayList<>();
 
 			_layouts.put(clazz.getSimpleName(), layouts);
 		}
@@ -92,7 +119,7 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 			clazz.getSimpleName());
 
 		if (layoutFriendlyURLs == null) {
-			layoutFriendlyURLs = new ArrayList<LayoutFriendlyURL>();
+			layoutFriendlyURLs = new ArrayList<>();
 
 			_layoutFriendlyURLs.put(clazz.getSimpleName(), layoutFriendlyURLs);
 		}
@@ -109,14 +136,14 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 			Map<String, List<StagedModel>> dependentStagedModelsMap)
 		throws Exception {
 
-		LayoutPrototype layoutPrototype = LayoutTestUtil.addLayoutPrototype(
-			ServiceTestUtil.randomString());
+		_layoutPrototype = LayoutTestUtil.addLayoutPrototype(
+			RandomTestUtil.randomString());
 
 		addDependentStagedModel(
-			dependentStagedModelsMap, LayoutPrototype.class, layoutPrototype);
+			dependentStagedModelsMap, LayoutPrototype.class, _layoutPrototype);
 
 		List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
-			layoutPrototype.getGroupId(), true,
+			_layoutPrototype.getGroupId(), true,
 			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 
 		Assert.assertEquals(1, layouts.size());
@@ -139,7 +166,7 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 
 		addLayoutFriendlyURLs(LayoutPrototype.class, layout.getPlid());
 
-		return layoutPrototype;
+		return _layoutPrototype;
 	}
 
 	@Override
@@ -148,12 +175,11 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 			Map<String, List<StagedModel>> dependentStagedModelsMap)
 		throws Exception {
 
-		LayoutSetPrototype layoutSetPrototype =
-			LayoutTestUtil.addLayoutSetPrototype(
-				ServiceTestUtil.randomString());
+		_layoutSetPrototype = LayoutTestUtil.addLayoutSetPrototype(
+			RandomTestUtil.randomString());
 
 		List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
-			layoutSetPrototype.getGroupId(), true,
+			_layoutSetPrototype.getGroupId(), true,
 			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 
 		Assert.assertEquals(1, layouts.size());
@@ -167,14 +193,13 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 			dependentStagedModelsMap);
 
 		Layout prototypedLayout = LayoutTestUtil.addLayout(
-			layoutSetPrototype.getGroupId(), ServiceTestUtil.randomString(),
-			true, layoutPrototype, true);
+			_layoutSetPrototype.getGroupId(), true, layoutPrototype, true);
 
 		addLayout(LayoutSetPrototype.class, prototypedLayout);
 		addLayoutFriendlyURLs(
 			LayoutSetPrototype.class, prototypedLayout.getPlid());
 
-		return layoutSetPrototype;
+		return _layoutSetPrototype;
 	}
 
 	@Override
@@ -273,7 +298,7 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 
 		List<Element> elements = layoutElement.elements();
 
-		List<Layout> importedLayouts = new ArrayList<Layout>(elements.size());
+		List<Layout> importedLayouts = new ArrayList<>(elements.size());
 
 		for (Element element : elements) {
 			String layoutPrototypeUuid = element.attributeValue(
@@ -291,7 +316,14 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 
 		Assert.assertEquals(1, importedLayouts.size());
 
-		return importedLayouts.get(0);
+		try {
+			return importedLayouts.get(0);
+		}
+		finally {
+			zipReader.close();
+
+			StreamUtil.cleanUp(inputStream);
+		}
 	}
 
 	@Override
@@ -379,9 +411,10 @@ public class LayoutSetPrototypeStagedModelDataHandlerTest
 		}
 	}
 
-	private Map<String, List<LayoutFriendlyURL>> _layoutFriendlyURLs =
-		new HashMap<String, List<LayoutFriendlyURL>>();
-	private Map<String, List<Layout>> _layouts =
-		new HashMap<String, List<Layout>>();
+	private final Map<String, List<LayoutFriendlyURL>> _layoutFriendlyURLs =
+		new HashMap<>();
+	private LayoutPrototype _layoutPrototype;
+	private final Map<String, List<Layout>> _layouts = new HashMap<>();
+	private LayoutSetPrototype _layoutSetPrototype;
 
 }

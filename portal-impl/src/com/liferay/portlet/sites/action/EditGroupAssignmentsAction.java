@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -141,7 +141,7 @@ public class EditGroupAssignmentsAction extends PortletAction {
 	protected long[] filterAddUserIds(long groupId, long[] userIds)
 		throws Exception {
 
-		Set<Long> filteredUserIds = new HashSet<Long>(userIds.length);
+		Set<Long> filteredUserIds = new HashSet<>(userIds.length);
 
 		for (long userId : userIds) {
 			if (!UserLocalServiceUtil.hasGroupUser(groupId, userId)) {
@@ -156,7 +156,7 @@ public class EditGroupAssignmentsAction extends PortletAction {
 	protected long[] filterRemoveUserIds(long groupId, long[] userIds)
 		throws Exception {
 
-		Set<Long> filteredUserIds = new HashSet<Long>(userIds.length);
+		Set<Long> filteredUserIds = new HashSet<>(userIds.length);
 
 		for (long userId : userIds) {
 			if (UserLocalServiceUtil.hasGroupUser(groupId, userId)) {
@@ -261,22 +261,8 @@ public class EditGroupAssignmentsAction extends PortletAction {
 		long[] removeRoleIds = StringUtil.split(
 			ParamUtil.getString(actionRequest, "removeRoleIds"), 0L);
 
-		if (addRoleIds.length > 0) {
-			if (!UserLocalServiceUtil.hasGroupUser(groupId, user.getUserId())) {
-				ServiceContext serviceContext =
-					ServiceContextFactory.getInstance(actionRequest);
-
-				long[] userIds = new long[] {user.getUserId()};
-
-				UserServiceUtil.addGroupUsers(groupId, userIds, serviceContext);
-
-				LiveUsers.joinGroup(user.getCompanyId(), groupId, userIds);
-			}
-
-			UserGroupRoleServiceUtil.addUserGroupRoles(
-				user.getUserId(), groupId, addRoleIds);
-		}
-
+		UserGroupRoleServiceUtil.addUserGroupRoles(
+			user.getUserId(), groupId, addRoleIds);
 		UserGroupRoleServiceUtil.deleteUserGroupRoles(
 			user.getUserId(), groupId, removeRoleIds);
 	}

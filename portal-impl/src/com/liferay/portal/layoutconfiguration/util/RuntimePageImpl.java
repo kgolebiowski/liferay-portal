@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,8 +19,6 @@ import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
-import com.liferay.portal.kernel.servlet.PipingServletResponse;
-import com.liferay.portal.kernel.servlet.PluginContextListener;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
@@ -48,6 +46,7 @@ import com.liferay.portal.servlet.ThreadLocalFacadeServletRequestWrapperUtil;
 import com.liferay.portal.util.ClassLoaderUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.taglib.servlet.PipingServletResponse;
 import com.liferay.taglib.util.DummyVelocityTaglib;
 import com.liferay.taglib.util.VelocityTaglib;
 import com.liferay.taglib.util.VelocityTaglibImpl;
@@ -75,7 +74,6 @@ import javax.portlet.RenderResponse;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
 
 import org.apache.commons.lang.time.StopWatch;
 
@@ -89,39 +87,41 @@ public class RuntimePageImpl implements RuntimePage {
 
 	@Override
 	public StringBundler getProcessedTemplate(
-			PageContext pageContext, String portletId,
-			TemplateResource templateResource)
+			HttpServletRequest request, HttpServletResponse response,
+			String portletId, TemplateResource templateResource)
 		throws Exception {
 
-		return doDispatch(pageContext, portletId, templateResource, true);
+		return doDispatch(request, response, portletId, templateResource, true);
 	}
 
 	@Override
 	public void processCustomizationSettings(
-			PageContext pageContext, TemplateResource templateResource)
-		throws Exception {
-
-		doDispatch(pageContext, null, templateResource, false);
-	}
-
-	@Override
-	public void processTemplate(
-			PageContext pageContext, String portletId,
+			HttpServletRequest request, HttpServletResponse response,
 			TemplateResource templateResource)
 		throws Exception {
 
-		StringBundler sb = doDispatch(
-			pageContext, portletId, templateResource, true);
-
-		sb.writeTo(pageContext.getOut());
+		doDispatch(request, response, null, templateResource, false);
 	}
 
 	@Override
 	public void processTemplate(
-			PageContext pageContext, TemplateResource templateResource)
+			HttpServletRequest request, HttpServletResponse response,
+			String portletId, TemplateResource templateResource)
 		throws Exception {
 
-		processTemplate(pageContext, null, templateResource);
+		StringBundler sb = doDispatch(
+			request, response, portletId, templateResource, true);
+
+		sb.writeTo(response.getWriter());
+	}
+
+	@Override
+	public void processTemplate(
+			HttpServletRequest request, HttpServletResponse response,
+			TemplateResource templateResource)
+		throws Exception {
+
+		processTemplate(request, response, null, templateResource);
 	}
 
 	@Override
@@ -247,8 +247,9 @@ public class RuntimePageImpl implements RuntimePage {
 	}
 
 	protected StringBundler doDispatch(
-			PageContext pageContext, String portletId,
-			TemplateResource templateResource, boolean processTemplate)
+			HttpServletRequest request, HttpServletResponse response,
+			String portletId, TemplateResource templateResource,
+			boolean processTemplate)
 		throws Exception {
 
 		ClassLoader pluginClassLoader = null;
@@ -264,9 +265,7 @@ public class RuntimePageImpl implements RuntimePage {
 				pluginServletContextName);
 
 			if (pluginServletContext != null) {
-				pluginClassLoader =
-					(ClassLoader)pluginServletContext.getAttribute(
-						PluginContextListener.PLUGIN_CLASS_LOADER);
+				pluginClassLoader = pluginServletContext.getClassLoader();
 			}
 		}
 
@@ -282,11 +281,11 @@ public class RuntimePageImpl implements RuntimePage {
 
 			if (processTemplate) {
 				return doProcessTemplate(
-					pageContext, portletId, templateResource, false);
+					request, response, portletId, templateResource, false);
 			}
 			else {
 				doProcessCustomizationSettings(
-					pageContext, templateResource, false);
+					request, response, templateResource, false);
 
 				return null;
 			}
@@ -301,15 +300,12 @@ public class RuntimePageImpl implements RuntimePage {
 	}
 
 	protected void doProcessCustomizationSettings(
-			PageContext pageContext, TemplateResource templateResource,
-			boolean restricted)
+			HttpServletRequest request, HttpServletResponse response,
+			TemplateResource templateResource, boolean restricted)
 		throws Exception {
 
-		HttpServletRequest request =
-			(HttpServletRequest)pageContext.getRequest();
-
 		CustomizationSettingsProcessor processor =
-			new CustomizationSettingsProcessor(pageContext);
+			new CustomizationSettingsProcessor(request, response);
 
 		Template template = TemplateManagerUtil.getTemplate(
 			TemplateConstants.LANG_TYPE_VM, templateResource, restricted);
@@ -328,7 +324,7 @@ public class RuntimePageImpl implements RuntimePage {
 		template.put("theme", velocityTaglib);
 
 		try {
-			template.processTemplate(pageContext.getOut());
+			template.processTemplate(response.getWriter());
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -338,14 +334,10 @@ public class RuntimePageImpl implements RuntimePage {
 	}
 
 	protected StringBundler doProcessTemplate(
-			PageContext pageContext, String portletId,
-			TemplateResource templateResource, boolean restricted)
+			HttpServletRequest request, HttpServletResponse response,
+			String portletId, TemplateResource templateResource,
+			boolean restricted)
 		throws Exception {
-
-		HttpServletRequest request =
-			(HttpServletRequest)pageContext.getRequest();
-		HttpServletResponse response =
-			(HttpServletResponse)pageContext.getResponse();
 
 		TemplateProcessor processor = new TemplateProcessor(
 			request, response, portletId);
@@ -364,9 +356,8 @@ public class RuntimePageImpl implements RuntimePage {
 		UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter();
 
 		VelocityTaglib velocityTaglib = new VelocityTaglibImpl(
-			pageContext.getServletContext(), request,
-			new PipingServletResponse(response, unsyncStringWriter),
-			pageContext, template);
+			request.getServletContext(), request,
+			new PipingServletResponse(response, unsyncStringWriter), template);
 
 		template.put("taglibLiferay", velocityTaglib);
 		template.put("theme", velocityTaglib);
@@ -385,8 +376,7 @@ public class RuntimePageImpl implements RuntimePage {
 
 		Lock lock = null;
 
-		Map<String, StringBundler> contentsMap =
-			new HashMap<String, StringBundler>();
+		Map<String, StringBundler> contentsMap = new HashMap<>();
 
 		Map<Integer, List<PortletRenderer>> portletRenderersMap =
 			processor.getPortletRenderers();
@@ -401,15 +391,13 @@ public class RuntimePageImpl implements RuntimePage {
 
 			List<PortletRenderer> portletRenderers = entry.getValue();
 
-			if (portletParallelRender && (portletRenderers.size() > 1)) {
-				StopWatch stopWatch = null;
+			StopWatch stopWatch = new StopWatch();
 
+			stopWatch.start();
+
+			if (portletParallelRender && (portletRenderers.size() > 1)) {
 				if (_log.isDebugEnabled()) {
 					_log.debug("Start parallel rendering");
-
-					stopWatch = new StopWatch();
-
-					stopWatch.start();
 				}
 
 				if (lock == null) {
@@ -442,14 +430,8 @@ public class RuntimePageImpl implements RuntimePage {
 				}
 			}
 			else {
-				StopWatch stopWatch = null;
-
 				if (_log.isDebugEnabled()) {
 					_log.debug("Start serial rendering");
-
-					stopWatch = new StopWatch();
-
-					stopWatch.start();
 				}
 
 				for (PortletRenderer portletRenderer : portletRenderers) {
@@ -535,9 +517,8 @@ public class RuntimePageImpl implements RuntimePage {
 			PortalExecutorManagerUtil.getPortalExecutor(
 				RuntimePageImpl.class.getName());
 
-		Map<Future<StringBundler>, PortletRenderer> futures =
-			new HashMap<Future<StringBundler>, PortletRenderer>(
-				portletRenderers.size());
+		Map<Future<StringBundler>, PortletRenderer> futures = new HashMap<>(
+			portletRenderers.size());
 
 		for (PortletRenderer portletRenderer : portletRenderers) {
 			if (_log.isDebugEnabled()) {
@@ -565,7 +546,7 @@ public class RuntimePageImpl implements RuntimePage {
 				// setting, but to be more robust, we take care of this by
 				// converting the rejection to a fallback action.
 
-				future = new FutureTask<StringBundler>(renderCallable);
+				future = new FutureTask<>(renderCallable);
 
 				// Cancel immediately
 
@@ -690,7 +671,8 @@ public class RuntimePageImpl implements RuntimePage {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(RuntimePageImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		RuntimePageImpl.class);
 
 	private int _waitTime = Integer.MAX_VALUE;
 

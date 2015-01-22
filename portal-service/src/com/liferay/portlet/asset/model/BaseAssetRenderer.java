@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,11 +15,11 @@
 package com.liferay.portlet.asset.model;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -33,9 +33,13 @@ import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portlet.asset.AssetRendererFactoryRegistryUtil;
+import com.liferay.portlet.asset.provider.DisplayPortletProvider;
 import com.liferay.portlet.asset.service.AssetEntryLocalServiceUtil;
 import com.liferay.portlet.assetpublisher.util.AssetPublisherUtil;
+import com.liferay.portlet.dynamicdatamapping.storage.Fields;
 import com.liferay.portlet.trash.util.TrashUtil;
+import com.liferay.registry.collections.ServiceTrackerCollections;
+import com.liferay.registry.collections.ServiceTrackerMap;
 
 import java.util.Date;
 import java.util.Locale;
@@ -57,6 +61,13 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 
 	@Override
 	public String getAddToPagePortletId() throws Exception {
+		DisplayPortletProvider displayPortletProvider =
+			_serviceTrackerMap.getService(getClassName());
+
+		if (displayPortletProvider != null) {
+			return displayPortletProvider.getPortletId();
+		}
+
 		return PortletKeys.ASSET_PUBLISHER;
 	}
 
@@ -92,6 +103,11 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 	}
 
 	@Override
+	public DDMFieldReader getDDMFieldReader() {
+		return _nullDDMFieldReader;
+	}
+
+	@Override
 	public String getDiscussionPath() {
 		return null;
 	}
@@ -99,6 +115,12 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 	@Override
 	public Date getDisplayDate() {
 		return null;
+	}
+
+	@Override
+	@SuppressWarnings("unused")
+	public String getIconCssClass() throws PortalException {
+		return getAssetRendererFactory().getIconCssClass();
 	}
 
 	@Override
@@ -124,7 +146,27 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 
 	@Override
 	public String getSearchSummary(Locale locale) {
-		return getSummary(locale);
+		return getSummary(null, null);
+	}
+
+	@Override
+	public String getSummary() {
+		return getSummary(null, null);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getSummary(PortletRequest,
+	 *             PortletResponse)}
+	 */
+	@Deprecated
+	@Override
+	public String getSummary(Locale locale) {
+		return getSummary(null, null);
+	}
+
+	@Override
+	public String[] getSupportedConversions() {
+		return null;
 	}
 
 	@Override
@@ -185,7 +227,6 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 		editPortletURL.setDoAsGroupId(getGroupId());
 
 		editPortletURL.setParameter("redirect", redirectURL.toString());
-		editPortletURL.setParameter("originalRedirect", redirectURL.toString());
 
 		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
@@ -239,6 +280,15 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 	}
 
 	@Override
+	public PortletURL getURLViewDiffs(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse)
+		throws Exception {
+
+		return null;
+	}
+
+	@Override
 	public String getURLViewInContext(
 			LiferayPortletRequest liferayPortletRequest,
 			LiferayPortletResponse liferayPortletResponse,
@@ -256,7 +306,7 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 	@Override
 	@SuppressWarnings("unused")
 	public boolean hasEditPermission(PermissionChecker permissionChecker)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return false;
 	}
@@ -264,7 +314,7 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 	@Override
 	@SuppressWarnings("unused")
 	public boolean hasViewPermission(PermissionChecker permissionChecker)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return true;
 	}
@@ -303,22 +353,34 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 
 	@Override
 	public void setAddToPagePreferences(
-			PortletPreferences preferences, String portletId,
+			PortletPreferences portletPreferences, String portletId,
 			ThemeDisplay themeDisplay)
 		throws Exception {
 
-		preferences.setValue("displayStyle", "full-content");
-		preferences.setValue(
-			"emailAssetEntryAddedEnabled", Boolean.FALSE.toString());
-		preferences.setValue("selectionStyle", "manual");
-		preferences.setValue("showAddContentButton", Boolean.FALSE.toString());
+		DisplayPortletProvider displayPortletProvider =
+			_serviceTrackerMap.getService(getClassName());
 
-		AssetEntry entry = AssetEntryLocalServiceUtil.getEntry(
+		if (displayPortletProvider != null) {
+			displayPortletProvider.setPortletPreferences(
+				portletPreferences, portletId, getClassName(), getClassPK(),
+				themeDisplay);
+
+			return;
+		}
+
+		portletPreferences.setValue("displayStyle", "full-content");
+		portletPreferences.setValue(
+			"emailAssetEntryAddedEnabled", Boolean.FALSE.toString());
+		portletPreferences.setValue("selectionStyle", "manual");
+		portletPreferences.setValue(
+			"showAddContentButton", Boolean.FALSE.toString());
+
+		AssetEntry assetEntry = AssetEntryLocalServiceUtil.getEntry(
 			getClassName(), getClassPK());
 
 		AssetPublisherUtil.addSelection(
-			themeDisplay, preferences, portletId, entry.getEntryId(), -1,
-			entry.getClassName());
+			themeDisplay, portletPreferences, portletId,
+			assetEntry.getEntryId(), -1, assetEntry.getClassName());
 	}
 
 	public void setAssetRendererType(int assetRendererType) {
@@ -327,19 +389,27 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 
 	protected long getControlPanelPlid(
 			LiferayPortletRequest liferayPortletRequest)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return PortalUtil.getControlPanelPlid(liferayPortletRequest);
 	}
 
 	protected long getControlPanelPlid(ThemeDisplay themeDisplay)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return PortalUtil.getControlPanelPlid(themeDisplay.getCompanyId());
 	}
 
 	protected String getIconPath(ThemeDisplay themeDisplay) {
 		return themeDisplay.getPathThemeImages() + "/common/page.png";
+	}
+
+	protected Locale getLocale(PortletRequest portletRequest) {
+		if (portletRequest != null) {
+			return portletRequest.getLocale();
+		}
+
+		return LocaleUtil.getMostRelevantLocale();
 	}
 
 	protected String getURLViewInContext(
@@ -365,12 +435,36 @@ public abstract class BaseAssetRenderer implements AssetRenderer {
 		sb.append(StringPool.EQUAL);
 		sb.append(primaryKeyParameterValue);
 
-		return sb.toString();
+		return PortalUtil.addPreservedParameters(themeDisplay, sb.toString());
 	}
 
 	private static final String[] _AVAILABLE_LANGUAGE_IDS = new String[0];
 
+	private static final DDMFieldReader _nullDDMFieldReader =
+		new NullDDMFieldReader();
+	private static final ServiceTrackerMap<String, DisplayPortletProvider>
+		_serviceTrackerMap = ServiceTrackerCollections.singleValueMap(
+			DisplayPortletProvider.class, "model.class.name");
+
+	static {
+		_serviceTrackerMap.open();
+	}
+
 	private AssetRendererFactory _assetRendererFactory;
 	private int _assetRendererType = AssetRendererFactory.TYPE_LATEST_APPROVED;
+
+	private static final class NullDDMFieldReader implements DDMFieldReader {
+
+		@Override
+		public Fields getFields() {
+			return new Fields();
+		}
+
+		@Override
+		public Fields getFields(String ddmType) {
+			return getFields();
+		}
+
+	}
 
 }

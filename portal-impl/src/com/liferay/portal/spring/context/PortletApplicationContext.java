@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,6 +16,7 @@ package com.liferay.portal.spring.context;
 
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactoryUtil;
+import com.liferay.portal.kernel.dao.shard.ShardUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletClassLoaderUtil;
@@ -53,7 +54,7 @@ public class PortletApplicationContext extends XmlWebApplicationContext {
 		return _pacl.getBeanClassLoader();
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public ClassLoader getBeanClassLoader();
 
@@ -99,8 +100,11 @@ public class PortletApplicationContext extends XmlWebApplicationContext {
 			"WEB-INF/classes/META-INF/hibernate-spring.xml");
 		serviceBuilderPropertiesConfigLocations.remove(
 			"WEB-INF/classes/META-INF/infrastructure-spring.xml");
-		serviceBuilderPropertiesConfigLocations.remove(
-			"WEB-INF/classes/META-INF/shard-data-source-spring.xml");
+
+		if (ShardUtil.isEnabled()) {
+			serviceBuilderPropertiesConfigLocations.remove(
+				"WEB-INF/classes/META-INF/shard-data-source-spring.xml");
+		}
 
 		return ArrayUtil.append(
 			configLocations,
@@ -162,10 +166,10 @@ public class PortletApplicationContext extends XmlWebApplicationContext {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortletApplicationContext.class);
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
 	private static class NoPACL implements PACL {
 

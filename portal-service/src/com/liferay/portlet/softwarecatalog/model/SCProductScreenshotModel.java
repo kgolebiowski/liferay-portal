@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -194,19 +194,20 @@ public interface SCProductScreenshotModel extends BaseModel<SCProductScreenshot>
 	public Object clone();
 
 	@Override
-	public int compareTo(SCProductScreenshot scProductScreenshot);
+	public int compareTo(
+		com.liferay.portlet.softwarecatalog.model.SCProductScreenshot scProductScreenshot);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<SCProductScreenshot> toCacheModel();
+	public CacheModel<com.liferay.portlet.softwarecatalog.model.SCProductScreenshot> toCacheModel();
 
 	@Override
-	public SCProductScreenshot toEscapedModel();
+	public com.liferay.portlet.softwarecatalog.model.SCProductScreenshot toEscapedModel();
 
 	@Override
-	public SCProductScreenshot toUnescapedModel();
+	public com.liferay.portlet.softwarecatalog.model.SCProductScreenshot toUnescapedModel();
 
 	@Override
 	public String toString();

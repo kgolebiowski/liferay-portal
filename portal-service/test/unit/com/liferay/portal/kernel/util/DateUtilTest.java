@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -42,6 +42,16 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({CalendarFactoryUtil.class, DateFormatFactoryUtil.class})
 @RunWith(PowerMockRunner.class)
 public class DateUtilTest extends PowerMockito {
+
+	@Test
+	public void testEquals() throws Exception {
+		Assert.assertEquals(
+			DateUtil.equals(null, new Date()),
+			DateUtil.equals(new Date(), null));
+		Assert.assertEquals(
+			DateUtil.equals(null, new Date(), false),
+			DateUtil.equals(null, new Date(), true));
+	}
 
 	@Test
 	public void testGetDaysBetweenLeap() throws Exception {
@@ -200,7 +210,7 @@ public class DateUtilTest extends PowerMockito {
 			return _pattern;
 		}
 
-		private String _pattern;
+		private final String _pattern;
 
 	}
 

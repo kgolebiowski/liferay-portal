@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,12 +16,15 @@ package com.liferay.portal.template;
 
 import com.liferay.portal.kernel.audit.AuditMessageFactoryUtil;
 import com.liferay.portal.kernel.audit.AuditRouterUtil;
+import com.liferay.portal.kernel.image.ImageToolUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.UnicodeLanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletModeFactory_IW;
+import com.liferay.portal.kernel.portlet.PortletRequestModel;
+import com.liferay.portal.kernel.portlet.PortletRequestModelFactory;
 import com.liferay.portal.kernel.portlet.WindowStateFactory_IW;
 import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.template.Template;
@@ -84,9 +87,8 @@ import com.liferay.portlet.expando.service.ExpandoColumnLocalService;
 import com.liferay.portlet.expando.service.ExpandoRowLocalService;
 import com.liferay.portlet.expando.service.ExpandoTableLocalService;
 import com.liferay.portlet.expando.service.ExpandoValueLocalService;
-import com.liferay.portlet.journalcontent.util.JournalContentUtil;
+import com.liferay.portlet.journal.util.JournalContentUtil;
 import com.liferay.taglib.util.VelocityTaglibImpl;
-import com.liferay.util.portlet.PortletRequestUtil;
 
 import java.lang.reflect.Method;
 
@@ -177,7 +179,7 @@ public class TemplateContextHelper {
 			}
 		}
 
-		Map<String, Object> helperUtilities = new HashMap<String, Object>();
+		Map<String, Object> helperUtilities = new HashMap<>();
 
 		populateCommonHelperUtilities(helperUtilities);
 		populateExtraHelperUtilities(helperUtilities);
@@ -249,13 +251,23 @@ public class TemplateContextHelper {
 
 		if ((portletRequest != null) && (portletResponse != null)) {
 			template.put(
+				"portletRequestModelFactory",
+				new PortletRequestModelFactory(
+					portletRequest, portletResponse));
+
+			// Deprecated
+
+			template.put(
 				"xmlRequest",
 				new Object() {
 
 					@Override
 					public String toString() {
-						return PortletRequestUtil.toXML(
-							portletRequest, portletResponse);
+						PortletRequestModel portletRequestModel =
+							new PortletRequestModel(
+								portletRequest, portletResponse);
+
+						return portletRequestModel.toXML();
 					}
 
 				}
@@ -351,7 +363,7 @@ public class TemplateContextHelper {
 		_helperUtilitiesMaps.remove(classLoader);
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public TemplateControlContext getTemplateControlContext();
 
@@ -513,6 +525,15 @@ public class TemplateContextHelper {
 
 		try {
 			variables.put("httpUtil", HttpUtil.getHttp());
+		}
+		catch (SecurityException se) {
+			_log.error(se, se);
+		}
+
+		// Image tool util
+
+		try {
+			variables.put("imageToolUtil", ImageToolUtil.getImageTool());
 		}
 		catch (SecurityException se) {
 			_log.error(se, se);
@@ -871,13 +892,13 @@ public class TemplateContextHelper {
 		template.put("tilesSelectable", tilesSelectable);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		TemplateContextHelper.class);
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
-	private Map<ClassLoader, Map<String, Object>[]> _helperUtilitiesMaps =
-		new ConcurrentHashMap<ClassLoader, Map<String, Object>[]>();
+	private final Map<ClassLoader, Map<String, Object>[]> _helperUtilitiesMaps =
+		new ConcurrentHashMap<>();
 
 	private static class NoPACL implements PACL {
 

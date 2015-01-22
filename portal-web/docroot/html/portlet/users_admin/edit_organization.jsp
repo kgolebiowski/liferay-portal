@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
+
 String backURL = ParamUtil.getString(request, "backURL", redirect);
 
 Organization organization = (Organization)request.getAttribute(WebKeys.ORGANIZATION);
@@ -33,8 +34,16 @@ String[] miscellaneousSections = PropsValues.ORGANIZATIONS_FORM_ADD_MISCELLANEOU
 
 if (organization != null) {
 	mainSections = PropsUtil.getArray(PropsKeys.ORGANIZATIONS_FORM_UPDATE_MAIN, new Filter(organization.getType()));
+
+	Group group = organization.getGroup();
+
+	if (group.isSite()) {
+		mainSections = ArrayUtil.remove(mainSections, "organization-site");
+	}
+
 	identificationSections = PropsUtil.getArray(PropsKeys.ORGANIZATIONS_FORM_UPDATE_IDENTIFICATION, new Filter(organization.getType()));
 	miscellaneousSections = PropsUtil.getArray(PropsKeys.ORGANIZATIONS_FORM_UPDATE_MISCELLANEOUS, new Filter(organization.getType()));
+
 }
 
 String[][] categorySections = {mainSections, identificationSections, miscellaneousSections};
@@ -56,20 +65,20 @@ else if (parentOrganizationId > 0) {
 </aui:nav-bar>
 
 <div id="breadcrumb">
-	<liferay-ui:breadcrumb showCurrentGroup="<%= false %>" showCurrentPortlet="<%= false %>" showGuestGroup="<%= false %>" showLayout="<%= false %>" showPortletBreadcrumb="<%= true %>" />
+	<liferay-ui:breadcrumb showCurrentGroup="<%= false %>" showGuestGroup="<%= false %>" showLayout="<%= false %>" showPortletBreadcrumb="<%= true %>" />
 </div>
 
 <%
 String headerTitle = null;
 
 if (organization != null) {
-	headerTitle = LanguageUtil.format(pageContext, "edit-x", organization.getName(), false);
+	headerTitle = LanguageUtil.format(request, "edit-x", organization.getName(), false);
 }
 else if (Validator.isNotNull(type)) {
-	headerTitle = LanguageUtil.format(pageContext, "add-x", type, false);
+	headerTitle = LanguageUtil.format(request, "add-x", type);
 }
 else {
-	headerTitle = LanguageUtil.get(pageContext, "add-organization");
+	headerTitle = LanguageUtil.get(request, "add-organization");
 }
 %>
 
@@ -114,7 +123,7 @@ else {
 
 			<div class="organization-info">
 				<div class="float-container">
-					<img alt="<%= HtmlUtil.escape(organization.getName()) %>" class="organization-logo" src="<%= themeDisplay.getPathImage() %>/organization_logo?img_id=<%= logoId %>&t=<%= WebServerServletTokenUtil.getToken(logoId) %>" />
+					<img alt="<%= HtmlUtil.escapeAttribute(organization.getName()) %>" class="organization-logo" src="<%= themeDisplay.getPathImage() %>/organization_logo?img_id=<%= logoId %>&t=<%= WebServerServletTokenUtil.getToken(logoId) %>" />
 
 					<span class="organization-name"><%= HtmlUtil.escape(organization.getName()) %></span>
 				</div>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,16 +17,15 @@ package com.liferay.portlet.workflowtasks.notifications;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.notifications.BaseUserNotificationHandler;
-import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.workflow.WorkflowHandler;
+import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
+import com.liferay.portal.kernel.workflow.WorkflowTask;
+import com.liferay.portal.kernel.workflow.WorkflowTaskManagerUtil;
 import com.liferay.portal.model.UserNotificationEvent;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.service.UserNotificationEventLocalServiceUtil;
 import com.liferay.portal.util.PortletKeys;
-import com.liferay.portlet.PortletURLFactoryUtil;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.WindowState;
 
 /**
  * @author Jonathan Lee
@@ -35,6 +34,7 @@ public class WorkflowTasksUserNotificationHandler
 	extends BaseUserNotificationHandler {
 
 	public WorkflowTasksUserNotificationHandler() {
+		setOpenDialog(true);
 		setPortletId(PortletKeys.MY_WORKFLOW_TASKS);
 	}
 
@@ -46,6 +46,18 @@ public class WorkflowTasksUserNotificationHandler
 
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
 			userNotificationEvent.getPayload());
+
+		long workflowTaskId = jsonObject.getLong("workflowTaskId");
+
+		WorkflowTask workflowTask = WorkflowTaskManagerUtil.fetchWorkflowTask(
+			serviceContext.getCompanyId(), workflowTaskId);
+
+		if (workflowTask == null) {
+			UserNotificationEventLocalServiceUtil.deleteUserNotificationEvent(
+				userNotificationEvent.getUserNotificationEventId());
+
+			return null;
+		}
 
 		return HtmlUtil.escape(jsonObject.getString("notificationMessage"));
 	}
@@ -59,19 +71,19 @@ public class WorkflowTasksUserNotificationHandler
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
 			userNotificationEvent.getPayload());
 
-		LiferayPortletURL portletURL = PortletURLFactoryUtil.create(
-			serviceContext.getRequest(), PortletKeys.MY_WORKFLOW_TASKS,
-			PortalUtil.getControlPanelPlid(serviceContext.getCompanyId()),
-			PortletRequest.RENDER_PHASE);
+		String entryClassName = jsonObject.getString("entryClassName");
 
-		portletURL.setControlPanelCategory("my");
-		portletURL.setParameter(
-			"struts_action", "/my_workflow_tasks/edit_workflow_task");
-		portletURL.setParameter(
-			"workflowTaskId", jsonObject.getString("workflowTaskId"));
-		portletURL.setWindowState(WindowState.MAXIMIZED);
+		WorkflowHandler<?> workflowHandler =
+			WorkflowHandlerRegistryUtil.getWorkflowHandler(entryClassName);
 
-		return portletURL.toString();
+		if (workflowHandler == null) {
+			return null;
+		}
+
+		long workflowTaskId = jsonObject.getLong("workflowTaskId");
+
+		return workflowHandler.getURLEditWorkflowTask(
+			workflowTaskId, serviceContext);
 	}
 
 }

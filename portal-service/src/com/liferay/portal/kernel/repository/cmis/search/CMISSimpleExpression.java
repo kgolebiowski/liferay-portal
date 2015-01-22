@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -46,8 +46,8 @@ public class CMISSimpleExpression implements CMISCriterion {
 		return sb.toString();
 	}
 
-	private CMISSimpleExpressionOperator _cmisSimpleExpressionOperator;
-	private String _field;
-	private String _value;
+	private final CMISSimpleExpressionOperator _cmisSimpleExpressionOperator;
+	private final String _field;
+	private final String _value;
 
 }

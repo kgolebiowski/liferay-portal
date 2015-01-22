@@ -50,7 +50,7 @@
 
 		<mkdir dir="docroot/WEB-INF/classes/META-INF" />
 
-		<manifest file="docroot/WEB-INF/classes/META-INF/MANIFEST.MF">
+		<manifest file="docroot/WEB-INF/classes/META-INF/MANIFEST.MF" mode="update">
 			<attribute name="Extension-List" value="crypto" />
 			<attribute name="crypto-Extension-Name" value="javax.crypto" />
 		</manifest>
@@ -107,7 +107,7 @@
 						<available file="docroot" type="dir" />
 						<then>
 							<copy todir="${war.file.dest}" preservelastmodified="true">
-								<fileset dir="docroot" excludes="/html/js/editor/_fckeditor/**,/html/themes/*/_diffs/**" />
+								<fileset dir="docroot" excludes="/html/themes/*/_diffs/**" />
 							</copy>
 						</then>
 					</elseif>
@@ -124,6 +124,7 @@
 				<or>
 					<equals arg1="${app.server.major.version}" arg2="6" />
 					<equals arg1="${app.server.major.version}" arg2="7" />
+					<equals arg1="${app.server.major.version}" arg2="8" />
 				</or>
 			</and>
 			<then>

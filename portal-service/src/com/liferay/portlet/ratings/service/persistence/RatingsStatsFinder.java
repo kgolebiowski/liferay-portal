@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,10 +18,13 @@ import aQute.bnd.annotation.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
+ * @generated
  */
 @ProviderType
 public interface RatingsStatsFinder {
+	public java.util.Map<java.io.Serializable, com.liferay.portlet.ratings.model.RatingsStats> fetchByPrimaryKeys(
+		java.util.Set<java.io.Serializable> primaryKeys);
+
 	public java.util.List<com.liferay.portlet.ratings.model.RatingsStats> findByC_C(
-		long classNameId, java.util.List<java.lang.Long> classPKs)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		long classNameId, java.util.List<java.lang.Long> classPKs);
 }

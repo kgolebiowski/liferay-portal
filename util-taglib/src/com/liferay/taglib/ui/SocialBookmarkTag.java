@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -105,7 +105,7 @@ public class SocialBookmarkTag extends IncludeTag {
 	}
 
 	protected String getPostUrl() {
-		Map<String, String> vars = new HashMap<String, String>();
+		Map<String, String> vars = new HashMap<>();
 
 		vars.put("liferay:social-bookmark:title", HttpUtil.encodeURL(_title));
 		vars.put("liferay:social-bookmark:url", _url);
@@ -161,8 +161,7 @@ public class SocialBookmarkTag extends IncludeTag {
 	private static final String _PAGE =
 		"/html/taglib/ui/social_bookmark/page.jsp";
 
-	private static Map<String, String> _jspPaths =
-		new HashMap<String, String>();
+	private static final Map<String, String> _jspPaths = new HashMap<>();
 
 	private String _contentId;
 	private String _displayStyle;

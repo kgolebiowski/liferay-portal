@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -24,13 +24,13 @@ import com.liferay.portal.kernel.dao.orm.Type;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.security.pacl.NotPrivileged;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.UnmodifiableList;
 
 import java.io.Serializable;
 
 import java.sql.Timestamp;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -45,11 +45,15 @@ public class SQLQueryImpl implements SQLQuery {
 		_sqlQuery = sqlQuery;
 		_strictName = strictName;
 
-		if (!_strictName) {
-			_names = sqlQuery.getNamedParameters();
+		String[] names = null;
 
-			Arrays.sort(_names);
+		if (!_strictName) {
+			names = sqlQuery.getNamedParameters();
+
+			Arrays.sort(names);
 		}
+
+		_names = names;
 	}
 
 	@Override
@@ -177,7 +181,7 @@ public class SQLQueryImpl implements SQLQuery {
 			List<?> list = _sqlQuery.list();
 
 			if (unmodifiable) {
-				list = new UnmodifiableList<Object>(list);
+				list = Collections.unmodifiableList(list);
 			}
 			else if (copy) {
 				list = ListUtil.copy(list);
@@ -416,8 +420,8 @@ public class SQLQueryImpl implements SQLQuery {
 		}
 	}
 
-	private String[] _names;
-	private org.hibernate.SQLQuery _sqlQuery;
-	private boolean _strictName;
+	private final String[] _names;
+	private final org.hibernate.SQLQuery _sqlQuery;
+	private final boolean _strictName;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.Image;
 import com.liferay.portlet.documentlibrary.NoSuchFileException;
 import com.liferay.portlet.documentlibrary.store.DLStoreUtil;
+import com.liferay.portlet.documentlibrary.util.DLValidatorUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,9 +33,7 @@ import java.io.InputStream;
 public class DLHook extends BaseHook {
 
 	@Override
-	public void deleteImage(Image image)
-		throws PortalException, SystemException {
-
+	public void deleteImage(Image image) throws PortalException {
 		String fileName = getFileName(image.getImageId(), image.getType());
 
 		try {
@@ -46,9 +45,7 @@ public class DLHook extends BaseHook {
 	}
 
 	@Override
-	public byte[] getImageAsBytes(Image image)
-		throws PortalException, SystemException {
-
+	public byte[] getImageAsBytes(Image image) throws PortalException {
 		String fileName = getFileName(image.getImageId(), image.getType());
 
 		InputStream is = DLStoreUtil.getFileAsStream(
@@ -67,9 +64,7 @@ public class DLHook extends BaseHook {
 	}
 
 	@Override
-	public InputStream getImageAsStream(Image image)
-		throws PortalException, SystemException {
-
+	public InputStream getImageAsStream(Image image) throws PortalException {
 		String fileName = getFileName(image.getImageId(), image.getType());
 
 		return DLStoreUtil.getFileAsStream(
@@ -78,9 +73,11 @@ public class DLHook extends BaseHook {
 
 	@Override
 	public void updateImage(Image image, String type, byte[] bytes)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		String fileName = getFileName(image.getImageId(), image.getType());
+
+		DLValidatorUtil.validateFileSize(fileName, bytes);
 
 		if (DLStoreUtil.hasFile(_COMPANY_ID, _REPOSITORY_ID, fileName)) {
 			DLStoreUtil.deleteFile(_COMPANY_ID, _REPOSITORY_ID, fileName);

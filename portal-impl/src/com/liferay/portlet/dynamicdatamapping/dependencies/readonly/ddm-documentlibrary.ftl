@@ -1,27 +1,25 @@
 <#include "../init.ftl">
 
-<#assign fileEntryTitle = "">
-<#assign fileEntryURL = "">
-
-<#if (fields??) && (fieldValue != "")>
-	<#assign fileJSONObject = getFileJSONObject(fieldRawValue)>
-
-	<#assign fileEntry = getFileEntry(fileJSONObject)>
-
-	<#if (fileEntry != "")>
-		<#assign fileEntryTitle = fileEntry.getTitle()>
-		<#assign fileEntryURL = getFileEntryURL(fileEntry)>
-	</#if>
-</#if>
-
 <div class="field-wrapper-content lfr-forms-field-wrapper">
-	<label>
-		<@liferay_ui.message key=escape(label) />
-	</label>
+	<#if hasFieldValue || showEmptyFieldLabel>
+		<label>
+			<@liferay_ui.message key=escape(label) />
+		</label>
+	</#if>
 
-	<a href="${fileEntryURL}">${escape(fileEntryTitle)}</a>
+	<#if hasFieldValue>
+		<#if !disabled>
+			<@aui.input name=namespacedFieldName type="hidden" value=fieldRawValue />
+		</#if>
+
+		<#assign fileJSONObject = getFileJSONObject(fieldRawValue)>
+
+		<#assign fileEntry = getFileEntry(fileJSONObject)>
+
+		<#if (fileEntry != "")>
+			<a href="${getFileEntryURL(fileEntry)}">${escape(fileEntry.getTitle())}</a>
+		</#if>
+	</#if>
 
 	${fieldStructure.children}
 </div>
-
-<@aui.input name=namespacedFieldName type="hidden" value=fieldRawValue />

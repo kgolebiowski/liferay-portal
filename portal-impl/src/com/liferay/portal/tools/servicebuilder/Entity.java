@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,6 +49,16 @@ public class Entity {
 				return entity.getName();
 			}
 
+			@Override
+			public Class<String> getAttributeClass() {
+				return String.class;
+			}
+
+			@Override
+			public Class<Entity> getTypeClass() {
+				return Entity.class;
+			}
+
 		};
 
 	public static EntityColumn getColumn(
@@ -89,7 +99,7 @@ public class Entity {
 		this(
 			null, null, null, name, null, null, null, false, false, false, true,
 			null, null, null, null, null, true, false, false, false, false,
-			false, null, null, null, null, null, null, null, null, null);
+			false, null, null, null, null, null, null, null, null, null, null);
 	}
 
 	public Entity(
@@ -103,7 +113,8 @@ public class Entity {
 		List<EntityColumn> regularColList, List<EntityColumn> blobList,
 		List<EntityColumn> collectionList, List<EntityColumn> columnList,
 		EntityOrder order, List<EntityFinder> finderList,
-		List<Entity> referenceList, List<String> txRequiredList) {
+		List<Entity> referenceList, List<String> unresolvedReferenceList,
+		List<String> txRequiredList) {
 
 		_packagePath = packagePath;
 		_portletName = portletName;
@@ -123,7 +134,6 @@ public class Entity {
 		_sessionFactory = GetterUtil.getString(
 			sessionFactory, DEFAULT_SESSION_FACTORY);
 		_txManager = GetterUtil.getString(txManager, DEFAULT_TX_MANAGER);
-		_cacheEnabled = cacheEnabled;
 		_dynamicUpdateEnabled = dynamicUpdateEnabled;
 		_jsonEnabled = jsonEnabled;
 		_mvccEnabled = mvccEnabled;
@@ -137,16 +147,17 @@ public class Entity {
 		_order = order;
 		_finderList = finderList;
 		_referenceList = referenceList;
+		_unresolvedReferenceList = unresolvedReferenceList;
 		_txRequiredList = txRequiredList;
 
 		if (_finderList != null) {
-			Set<EntityColumn> finderColumns = new HashSet<EntityColumn>();
+			Set<EntityColumn> finderColumns = new HashSet<>();
 
 			for (EntityFinder entityFinder : _finderList) {
 				finderColumns.addAll(entityFinder.getColumns());
 			}
 
-			_finderColumnsList = new ArrayList<EntityColumn>(finderColumns);
+			_finderColumnsList = new ArrayList<>(finderColumns);
 
 			Collections.sort(_finderColumnsList);
 		}
@@ -157,22 +168,32 @@ public class Entity {
 		if ((_blobList != null) && !_blobList.isEmpty()) {
 			for (EntityColumn col : _blobList) {
 				if (!col.isLazy()) {
-					_cacheEnabled = false;
+					cacheEnabled = false;
 
 					break;
 				}
 			}
 		}
+
+		_cacheEnabled = cacheEnabled;
+
+		boolean containerModel = false;
 
 		if ((_columnList != null) && !_columnList.isEmpty()) {
 			for (EntityColumn col : _columnList) {
 				if (col.isContainerModel() || col.isParentContainerModel()) {
-					_containerModel = true;
+					containerModel = true;
 
 					break;
 				}
 			}
 		}
+
+		_containerModel = containerModel;
+	}
+
+	public void addReference(Entity reference) {
+		_referenceList.add(reference);
 	}
 
 	@Override
@@ -430,6 +451,14 @@ public class Entity {
 		return finderList;
 	}
 
+	public List<String> getUnresolvedReferenceList() {
+		if (_unresolvedReferenceList == null) {
+			return new ArrayList<>();
+		}
+
+		return _unresolvedReferenceList;
+	}
+
 	public String getVarName() {
 		return TextFormatter.format(_name, TextFormatter.I);
 	}
@@ -472,7 +501,7 @@ public class Entity {
 	}
 
 	public boolean hasColumns() {
-		if ((_columnList == null) || (_columnList.size() == 0)) {
+		if (ListUtil.isEmpty(_columnList)) {
 			return false;
 		}
 		else {
@@ -524,16 +553,6 @@ public class Entity {
 
 		for (EntityColumn col : _blobList) {
 			if (col.isLazy()) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	public boolean hasLocalizedColumn() {
-		for (EntityColumn col : _columnList) {
-			if (col.isLocalized()) {
 				return true;
 			}
 		}
@@ -686,6 +705,16 @@ public class Entity {
 		return _jsonEnabled;
 	}
 
+	public boolean isLocalizedModel() {
+		for (EntityColumn col : _columnList) {
+			if (col.isLocalized()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public boolean isMvccEnabled() {
 		return _mvccEnabled;
 	}
@@ -737,6 +766,16 @@ public class Entity {
 
 	public boolean isPortalReference() {
 		return _portalReference;
+	}
+
+	public boolean isResolved() {
+		if ((_unresolvedReferenceList != null) &&
+			_unresolvedReferenceList.isEmpty()) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public boolean isResourcedModel() {
@@ -824,6 +863,10 @@ public class Entity {
 		_portalReference = portalReference;
 	}
 
+	public void setResolved() {
+		_unresolvedReferenceList = null;
+	}
+
 	public void setTransients(List<String> transients) {
 		_transients = transients;
 	}
@@ -837,41 +880,42 @@ public class Entity {
 		return _pkList.get(0);
 	}
 
-	private String _alias;
+	private final String _alias;
 	private List<EntityColumn> _blobList;
-	private boolean _cacheEnabled;
-	private List<EntityColumn> _collectionList;
-	private List<EntityColumn> _columnList;
-	private boolean _containerModel;
-	private String _dataSource;
-	private boolean _deprecated;
-	private boolean _dynamicUpdateEnabled;
-	private String _finderClass;
-	private List<EntityColumn> _finderColumnsList;
-	private List<EntityFinder> _finderList;
-	private String _humanName;
-	private boolean _jsonEnabled;
-	private boolean _localService;
-	private boolean _mvccEnabled;
-	private String _name;
-	private EntityOrder _order;
-	private String _packagePath;
+	private final boolean _cacheEnabled;
+	private final List<EntityColumn> _collectionList;
+	private final List<EntityColumn> _columnList;
+	private final boolean _containerModel;
+	private final String _dataSource;
+	private final boolean _deprecated;
+	private final boolean _dynamicUpdateEnabled;
+	private final String _finderClass;
+	private final List<EntityColumn> _finderColumnsList;
+	private final List<EntityFinder> _finderList;
+	private final String _humanName;
+	private final boolean _jsonEnabled;
+	private final boolean _localService;
+	private final boolean _mvccEnabled;
+	private final String _name;
+	private final EntityOrder _order;
+	private final String _packagePath;
 	private List<String> _parentTransients;
-	private String _persistenceClass;
-	private List<EntityColumn> _pkList;
+	private final String _persistenceClass;
+	private final List<EntityColumn> _pkList;
 	private boolean _portalReference;
-	private String _portletName;
-	private String _portletShortName;
-	private List<Entity> _referenceList;
-	private List<EntityColumn> _regularColList;
-	private boolean _remoteService;
-	private String _sessionFactory;
-	private String _table;
+	private final String _portletName;
+	private final String _portletShortName;
+	private final List<Entity> _referenceList;
+	private final List<EntityColumn> _regularColList;
+	private final boolean _remoteService;
+	private final String _sessionFactory;
+	private final String _table;
 	private List<String> _transients;
-	private boolean _trashEnabled;
-	private String _txManager;
-	private List<String> _txRequiredList;
-	private boolean _uuid;
-	private boolean _uuidAccessor;
+	private final boolean _trashEnabled;
+	private final String _txManager;
+	private final List<String> _txRequiredList;
+	private List<String> _unresolvedReferenceList;
+	private final boolean _uuid;
+	private final boolean _uuidAccessor;
 
 }

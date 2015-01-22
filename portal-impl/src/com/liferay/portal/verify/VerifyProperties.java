@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -76,6 +76,14 @@ public class VerifyProperties extends VerifyProcess {
 			verifyObsoletePortalProperty(key);
 		}
 
+		for (String[] keys : _MODULARIZED_PORTAL_KEYS) {
+			String oldKey = keys[0];
+			String newKey = keys[1];
+			String moduleName = keys[2];
+
+			verifyModularizedPortalProperty(oldKey, newKey, moduleName);
+		}
+
 		// Document library
 
 		StoreFactory.checkProperties();
@@ -83,6 +91,16 @@ public class VerifyProperties extends VerifyProcess {
 		// LDAP
 
 		verifyLDAPProperties();
+	}
+
+	protected boolean isPortalProperty(String key) {
+		String value = PropsUtil.get(key);
+
+		if (value != null) {
+			return true;
+		}
+
+		return false;
 	}
 
 	protected void verifyLDAPProperties() throws Exception {
@@ -118,9 +136,7 @@ public class VerifyProperties extends VerifyProcess {
 	protected void verifyMigratedPortalProperty(String oldKey, String newKey)
 		throws Exception {
 
-		String value = PropsUtil.get(oldKey);
-
-		if (value != null) {
+		if (isPortalProperty(oldKey)) {
 			_log.error(
 				"Portal property \"" + oldKey +
 					"\" was migrated to the system property \"" + newKey +
@@ -141,10 +157,19 @@ public class VerifyProperties extends VerifyProcess {
 		}
 	}
 
-	protected void verifyObsoletePortalProperty(String key) throws Exception {
-		String value = PropsUtil.get(key);
+	protected void verifyModularizedPortalProperty(
+			String oldKey, String newKey, String moduleName)
+		throws Exception {
 
-		if (value != null) {
+		if (isPortalProperty(oldKey)) {
+			_log.error(
+				"Portal property \"" + oldKey + "\" was modularized to " +
+					moduleName + " as \"" + newKey);
+		}
+	}
+
+	protected void verifyObsoletePortalProperty(String key) throws Exception {
+		if (isPortalProperty(key)) {
 			_log.error("Portal property \"" + key + "\" is obsolete");
 		}
 	}
@@ -160,9 +185,7 @@ public class VerifyProperties extends VerifyProcess {
 	protected void verifyRenamedPortalProperty(String oldKey, String newKey)
 		throws Exception {
 
-		String value = PropsUtil.get(oldKey);
-
-		if (value != null) {
+		if (isPortalProperty(oldKey)) {
 			_log.error(
 				"Portal property \"" + oldKey + "\" was renamed to \"" +
 					newKey + "\"");
@@ -258,20 +281,188 @@ public class VerifyProperties extends VerifyProcess {
 		}
 	};
 
+	private static final String[][] _MODULARIZED_PORTAL_KEYS = {
+
+		// Asset
+
+		new String[] {
+			"asset.categories.navigation.display.templates.config",
+			"display.templates.config",
+			"com.liferay.asset.categories.navigation.web"
+		},
+		new String[] {
+			"asset.tags.navigation.display.templates.config",
+			"display.templates.config", "com.liferay.asset.tags.web"
+		},
+
+		// Bookmarks
+
+		new String[] {
+			"bookmarks.email.entry.added.body", "email.entry.added.body",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.entry.added.enabled", "email.entry.added.enabled",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.entry.added.subject", "email.entry.added.subject",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.entry.updated.body", "email.entry.updated.body",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.entry.updated.enabled",
+			"email.entry.updated.enabled", "com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.entry.updated.subject",
+			"email.entry.updated.subject", "com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.from.address", "email.from.address",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.email.from.name", "email.from.name",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.entry.columns", "entry.columns",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.folder.columns", "folder.columns",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.folders.search.visible", "folders.search.visible",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.related.assets.enabled", "related.assets.enabled",
+			"com.liferay.bookmarks.service"
+		},
+		new String[] {
+			"bookmarks.subfolders.visible", "subfolders.visible",
+			"com.liferay.bookmarks.service"
+		},
+
+		// Journal
+
+		new String[] {
+			"journal.content.publish.to.live.by.default",
+			"publish.to.live.by.default", "com.liferay.journal.content.web"
+		},
+
+		// Nested Portlets
+
+		new String[] {
+			"nested.portlets.layout.template.default",
+			"layout.template.default", "com.liferay.nested.portlets.web"
+		},
+		new String[] {
+			"nested.portlets.layout.template.unsupported",
+			"layout.template.unsupported", "com.liferay.nested.portlets.web"
+		},
+
+		// Polls
+
+		new String[] {
+			"polls.publish.to.live.by.default", "publish.to.live.by.default",
+			"com.liferay.polls.service"
+		},
+
+		// RSS
+
+		new String[] {
+			"rss.display.templates.config", "display.templates.config",
+			"com.liferay.rss.web"
+		},
+
+		// Translator
+
+		new String[] {
+			"translator.default.languages", "translation.id",
+			"com.liferay.translator.web"
+		},
+		new String[] {
+			"translator.languages", "language.ids", "com.liferay.translator.web"
+		},
+
+		// XSL content
+
+		new String[] {
+			"xsl.content.xml.doctype.declaration.allowed",
+			"xml.doctype.declaration.allowed", "com.liferay.xsl.content.web"
+		},
+		new String[] {
+			"xsl.content.xml.external.general.entities.allowed",
+			"xml.external.general.entities.allowed",
+			"com.liferay.xsl.content.web"
+		},
+		new String[] {
+			"xsl.content.xml.external.parameter.entities.allowed",
+			"xml.external.parameter.entities.allowed",
+			"com.liferay.xsl.content.web"
+		},
+		new String[] {
+			"xsl.content.xsl.secure.processing.enabled",
+			"xsl.secure.processing.enabled", "com.liferay.xsl.content.web"
+		}
+	};
+
 	private static final String[] _OBSOLETE_PORTAL_KEYS = new String[] {
-		"asset.entry.increment.view.counter.enabled", "auth.max.failures.limit",
+		"amazon.access.key.id", "amazon.associate.tag",
+		"amazon.secret.access.key",
+		"asset.entry.increment.view.counter.enabled",
+		"asset.publisher.filter.unlistable.entries",
+		"asset.tag.permissions.enabled", "asset.tag.properties.default",
+		"asset.tag.properties.enabled", "auth.max.failures.limit",
 		"buffered.increment.parallel.queue.size",
 		"buffered.increment.serial.queue.size", "cas.validate.url",
 		"cluster.executor.heartbeat.interval",
 		"com.liferay.filters.doubleclick.DoubleClickFilter",
 		"com.liferay.portal.servlet.filters.doubleclick.DoubleClickFilter",
-		"commons.pool.enabled", "dl.file.entry.read.count.enabled",
+		"com.liferay.portal.servlet.filters.charbufferpool." +
+			"CharBufferPoolFilter",
+		"com.liferay.portal.servlet.filters.validhtml.ValidHtmlFilter",
+		"commons.pool.enabled", "convert.processes",
+		"dl.file.entry.read.count.enabled",
 		"dynamic.data.lists.template.language.parser[ftl]",
 		"dynamic.data.lists.template.language.parser[vm]",
 		"dynamic.data.lists.template.language.parser[xsl]",
+		"dynamic.data.mapping.structure.private.field.names",
+		"dynamic.data.mapping.structure.private.field.datatype[_fieldsDisplay]",
+		"dynamic.data.mapping.structure.private.field.repeatable[" +
+			"_fieldsDisplay]",
 		"dynamic.data.mapping.template.language.types",
-		"ehcache.statistics.enabled", "javax.persistence.validation.mode",
-		"jbi.workflow.url", "journal.template.language.parser[css]",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.asset_publisher." +
+			"configuration.jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.blogs.configuration." +
+			"jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.bookmarks." +
+			"configuration.jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.document_library." +
+		"editor.wysiwyg.portal-web.docroot.html.portlet.invitation." +
+			"configuration.jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.journal." +
+			"configuration.jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.login.configuration." +
+			"jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.message_boards." +
+			"configuration.jsp",
+		"editor.wysiwyg.portal-web.docroot.html.portlet.portal_settings." +
+			"email_notifications.jsp",
+		"ehcache.statistics.enabled", "index.filter.search.limit",
+		"invitation.email.max.recipients", "invitation.email.message.body",
+		"invitation.email.message.subject", "javax.persistence.validation.mode",
+		"jbi.workflow.url", "json.deserializer.strict.mode",
+		"journal.article.form.translate", "journal.article.types",
+		"journal.articles.page.delta.values",
+		"journal.template.language.parser[css]",
 		"journal.template.language.parser[ftl]",
 		"journal.template.language.parser[vm]",
 		"journal.template.language.parser[xsl]",
@@ -279,7 +470,7 @@ public class VerifyProperties extends VerifyProcess {
 		"jpa.database.platform", "jpa.database.type", "jpa.load.time.weaver",
 		"jpa.provider", "jpa.provider.property.eclipselink.allow-zero-id",
 		"jpa.provider.property.eclipselink.logging.level",
-		"jpa.provider.property.eclipselink.logging.timestamp",
+		"jpa.provider.property.eclipselink.logging.timestamp", "layout.types",
 		"lucene.analyzer", "lucene.store.jdbc.auto.clean.up",
 		"lucene.store.jdbc.auto.clean.up.enabled",
 		"lucene.store.jdbc.auto.clean.up.interval",
@@ -289,13 +480,20 @@ public class VerifyProperties extends VerifyProcess {
 		"lucene.store.jdbc.dialect.mysql", "lucene.store.jdbc.dialect.oracle",
 		"lucene.store.jdbc.dialect.postgresql",
 		"memory.cluster.scheduler.lock.cache.enabled",
+		"message.boards.email.message.added.signature",
+		"message.boards.email.message.updated.signature",
 		"message.boards.thread.locking.enabled", "portal.ctx",
-		"portal.security.manager.enable", "permissions.user.check.algorithm",
-		"persistence.provider", "scheduler.classes", "schema.run.minimal",
-		"shard.available.names", "velocity.engine.resource.manager",
+		"portal.security.manager.enable", "permissions.list.filter",
+		"permissions.thread.local.cache.max.size",
+		"permissions.user.check.algorithm", "persistence.provider",
+		"ratings.max.score", "ratings.min.score", "scheduler.classes",
+		"schema.run.minimal", "shard.available.names",
+		"velocity.engine.resource.manager",
 		"velocity.engine.resource.manager.cache.enabled",
 		"webdav.storage.class", "webdav.storage.show.edit.url",
-		"webdav.storage.show.view.url", "webdav.storage.tokens", "xss.allow"
+		"webdav.storage.show.view.url", "webdav.storage.tokens",
+		"wiki.email.page.added.signature", "wiki.email.page.updated.signature",
+		"xss.allow"
 	};
 
 	private static final String[] _OBSOLETE_SYSTEM_KEYS = new String[] {
@@ -432,6 +630,9 @@ public class VerifyProperties extends VerifyProcess {
 			"field.editable.user.types"
 		},
 		new String[] {
+			"icon.menu.max.display.items", "menu.max.display.items"
+		},
+		new String[] {
 			"journal.error.template.freemarker", "journal.error.template[ftl]"
 		},
 		new String[] {
@@ -447,6 +648,12 @@ public class VerifyProperties extends VerifyProcess {
 		new String[] {
 			"journal.template.velocity.restricted.variables",
 			"velocity.engine.restricted.variables"
+		},
+		new String[] {
+			"portal.instance.http.port", "portal.instance.http.socket.address"
+		},
+		new String[] {
+			"portal.instance.https.port", "portal.instance.http.socket.address"
 		},
 		new String[] {
 			"referer.url.domains.allowed", "redirect.url.domains.allowed"
@@ -472,6 +679,7 @@ public class VerifyProperties extends VerifyProcess {
 		}
 	};
 
-	private static Log _log = LogFactoryUtil.getLog(VerifyProperties.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		VerifyProperties.class);
 
 }

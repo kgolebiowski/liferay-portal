@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -95,9 +95,18 @@
 	font-style: italic;
 }
 
-.alert-block .lfr-inline-code {
+.alert-warning .lfr-inline-code {
 	background-color: #EEB;
 	color: #333;
+}
+
+.rtl #banner .configuration-title {
+	float: left;
+}
+
+.rtl #banner .logo {
+	margin-left: 20px;
+	margin-right: 0;
 }
 
 .ie6 #wrapper {
@@ -105,7 +114,7 @@
 }
 
 @media (max-width: 767px) {
-	.aui #wrapper {
+	#wrapper {
 		padding: 1em 1.1em 0;
 	}
 

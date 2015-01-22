@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -24,26 +24,8 @@ long repositoryId = ParamUtil.getLong(request, "repositoryId");
 long breadcrumbsFolderId = ParamUtil.getLong(request, "breadcrumbsFolderId");
 
 long searchFolderId = ParamUtil.getLong(request, "searchFolderId");
-long searchFolderIds = ParamUtil.getLong(request, "searchFolderIds");
-
-long[] folderIdsArray = null;
-
-if (searchFolderId > 0) {
-	folderIdsArray = new long[] {searchFolderId};
-}
-else {
-	List folderIds = new ArrayList();
-
-	folderIds.add(new Long(searchFolderIds));
-
-	DLAppServiceUtil.getSubfolderIds(repositoryId, folderIds, searchFolderIds);
-
-	folderIdsArray = StringUtil.split(StringUtil.merge(folderIds), 0L);
-}
 
 String keywords = ParamUtil.getString(request, "keywords");
-
-String[] mediaGalleryMimeTypes = DLUtil.getMediaGalleryMimeTypes(portletPreferences, renderRequest);
 %>
 
 <liferay-portlet:renderURL varImpl="searchURL">
@@ -56,7 +38,6 @@ String[] mediaGalleryMimeTypes = DLUtil.getMediaGalleryMimeTypes(portletPreferen
 	<aui:input name="repositoryId" type="hidden" value="<%= repositoryId %>" />
 	<aui:input name="breadcrumbsFolderId" type="hidden" value="<%= breadcrumbsFolderId %>" />
 	<aui:input name="searchFolderId" type="hidden" value="<%= searchFolderId %>" />
-	<aui:input name="searchFolderIds" type="hidden" value="<%= searchFolderIds %>" />
 
 	<liferay-ui:header
 		backURL="<%= redirect %>"
@@ -70,18 +51,17 @@ String[] mediaGalleryMimeTypes = DLUtil.getMediaGalleryMimeTypes(portletPreferen
 	portletURL.setParameter("redirect", redirect);
 	portletURL.setParameter("breadcrumbsFolderId", String.valueOf(breadcrumbsFolderId));
 	portletURL.setParameter("searchFolderId", String.valueOf(searchFolderId));
-	portletURL.setParameter("searchFolderIds", String.valueOf(searchFolderIds));
 	portletURL.setParameter("keywords", keywords);
 
-	SearchContainer searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, portletURL, null, LanguageUtil.format(pageContext, "no-entries-were-found-that-matched-the-keywords-x", "<strong>" + HtmlUtil.escape(keywords) + "</strong>", false));
+	SearchContainer searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, portletURL, null, LanguageUtil.format(request, "no-entries-were-found-that-matched-the-keywords-x", "<strong>" + HtmlUtil.escape(keywords) + "</strong>", false));
 
 	try {
 		SearchContext searchContext = SearchContextFactory.getInstance(request);
 
-		searchContext.setAttribute("mimeTypes", mediaGalleryMimeTypes);
+		searchContext.setAttribute("mimeTypes", dlPortletInstanceSettings.getMimeTypes());
 		searchContext.setAttribute("paginationType", "more");
 		searchContext.setEnd(searchContainer.getEnd());
-		searchContext.setFolderIds(folderIdsArray);
+		searchContext.setFolderIds(new long[] {searchFolderId});
 		searchContext.setKeywords(keywords);
 		searchContext.setStart(searchContainer.getStart());
 
@@ -119,12 +99,12 @@ String[] mediaGalleryMimeTypes = DLUtil.getMediaGalleryMimeTypes(portletPreferen
 		<%
 		Folder folder = (Folder)request.getAttribute(WebKeys.DOCUMENT_LIBRARY_FOLDER);
 
-		long defaultFolderId = GetterUtil.getLong(portletPreferences.getValue("rootFolderId", StringPool.BLANK), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+		long defaultFolderId = dlPortletInstanceSettings.getDefaultFolderId();
 
 		long folderId = BeanParamUtil.getLong(folder, request, "folderId", defaultFolderId);
 
 		request.setAttribute("view.jsp-folderId", String.valueOf(folderId));
-		request.setAttribute("view.jsp-mediaGalleryMimeTypes", mediaGalleryMimeTypes);
+		request.setAttribute("view.jsp-mediaGalleryMimeTypes", dlPortletInstanceSettings.getMimeTypes());
 		request.setAttribute("view.jsp-searchContainer", searchContainer);
 		%>
 
@@ -145,7 +125,7 @@ if (searchFolderId > 0) {
 	IGUtil.addPortletBreadcrumbEntries(searchFolderId, request, renderResponse);
 }
 
-PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "search") + ": " + keywords, currentURL);
+PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "search") + ": " + keywords, currentURL);
 %>
 
 <%!

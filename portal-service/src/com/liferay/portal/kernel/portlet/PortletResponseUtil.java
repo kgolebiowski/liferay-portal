@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -155,8 +155,8 @@ public class PortletResponseUtil {
 		throws IOException {
 
 		sendFile(
-			portletRequest, mimeResponse, fileName, inputStream, 0, contentType,
-			null);
+			portletRequest, mimeResponse, fileName, inputStream, contentLength,
+			contentType, null);
 	}
 
 	public static void sendFile(
@@ -251,9 +251,7 @@ public class PortletResponseUtil {
 
 		FileInputStream fileInputStream = new FileInputStream(file);
 
-		FileChannel fileChannel = fileInputStream.getChannel();
-
-		try {
+		try (FileChannel fileChannel = fileInputStream.getChannel()) {
 			int contentLength = (int)fileChannel.size();
 
 			if (mimeResponse instanceof ResourceResponse) {
@@ -266,9 +264,6 @@ public class PortletResponseUtil {
 			fileChannel.transferTo(
 				0, contentLength,
 				Channels.newChannel(mimeResponse.getPortletOutputStream()));
-		}
-		finally {
-			fileChannel.close();
 		}
 	}
 
@@ -283,28 +278,22 @@ public class PortletResponseUtil {
 			int contentLength)
 		throws IOException {
 
-		OutputStream outputStream = null;
+		if (mimeResponse.isCommitted()) {
+			StreamUtil.cleanUp(inputStream);
 
-		try {
-			if (mimeResponse.isCommitted()) {
-				return;
-			}
-
-			if (contentLength > 0) {
-				if (mimeResponse instanceof ResourceResponse) {
-					ResourceResponse resourceResponse =
-						(ResourceResponse)mimeResponse;
-
-					resourceResponse.setContentLength(contentLength);
-				}
-			}
-
-			StreamUtil.transfer(
-				inputStream, mimeResponse.getPortletOutputStream(), false);
+			return;
 		}
-		finally {
-			StreamUtil.cleanUp(inputStream, outputStream);
+
+		if (contentLength > 0) {
+			if (mimeResponse instanceof ResourceResponse) {
+				ResourceResponse resourceResponse =
+					(ResourceResponse)mimeResponse;
+
+				resourceResponse.setContentLength(contentLength);
+			}
 		}
+
+		StreamUtil.transfer(inputStream, mimeResponse.getPortletOutputStream());
 	}
 
 	public static void write(MimeResponse mimeResponse, String s)
@@ -410,6 +399,7 @@ public class PortletResponseUtil {
 			HttpHeaders.CONTENT_DISPOSITION, sb.toString());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(PortletResponseUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortletResponseUtil.class);
 
 }

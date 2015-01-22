@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -173,7 +173,7 @@ public class PACLUtil {
 		return false;
 	}
 
-	private static Permission _permission = new PACLUtil.Permission();
+	private static final Permission _permission = new PACLUtil.Permission();
 
 	private static class ProtectionDomainPrivilegedAction
 		implements PrivilegedAction<ProtectionDomain> {
@@ -187,7 +187,7 @@ public class PACLUtil {
 			return _clazz.getProtectionDomain();
 		}
 
-		private Class<?> _clazz;
+		private final Class<?> _clazz;
 
 	}
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -115,7 +115,7 @@ public class BaseStatistics implements Statistics {
 	private long _lowerBound;
 	private long _maxTime;
 	private long _minTime;
-	private String _name;
+	private final String _name;
 	private long _startTime;
 	private long _upperBound;
 

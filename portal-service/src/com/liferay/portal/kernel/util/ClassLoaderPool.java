@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -112,9 +112,9 @@ public class ClassLoaderPool {
 		}
 	}
 
-	private static Map<String, ClassLoader> _classLoaders =
-		new ConcurrentHashMap<String, ClassLoader>();
-	private static Map<ClassLoader, String> _contextNames =
-		new ConcurrentHashMap<ClassLoader, String>();
+	private static final Map<String, ClassLoader> _classLoaders =
+		new ConcurrentHashMap<>();
+	private static final Map<ClassLoader, String> _contextNames =
+		new ConcurrentHashMap<>();
 
 }

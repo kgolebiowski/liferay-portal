@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -91,11 +91,11 @@ public class NetlogonIdentityInfo extends NdrObject {
 		}
 	}
 
-	private rpc.unicode_string _logonDomainName;
-	private int _parameterControl;
-	private int _reservedHigh;
-	private int _reservedLow;
-	private rpc.unicode_string _userName;
-	private rpc.unicode_string _workstation;
+	private final rpc.unicode_string _logonDomainName;
+	private final int _parameterControl;
+	private final int _reservedHigh;
+	private final int _reservedLow;
+	private final rpc.unicode_string _userName;
+	private final rpc.unicode_string _workstation;
 
 }

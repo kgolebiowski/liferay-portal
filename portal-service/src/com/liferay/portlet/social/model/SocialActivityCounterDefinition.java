@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,7 @@
 
 package com.liferay.portlet.social.model;
 
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -121,6 +122,21 @@ public class SocialActivityCounterDefinition implements Serializable {
 
 	public int getPeriodLength() {
 		return _periodLength;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = HashUtil.hash(0, _enabled);
+
+		hash = HashUtil.hash(hash, _increment);
+		hash = HashUtil.hash(hash, _limitEnabled);
+		hash = HashUtil.hash(hash, _limitPeriod);
+		hash = HashUtil.hash(hash, _limitValue);
+		hash = HashUtil.hash(hash, _name);
+		hash = HashUtil.hash(hash, _ownerType);
+		hash = HashUtil.hash(hash, _periodLength);
+
+		return HashUtil.hash(hash, _transient);
 	}
 
 	public boolean isEnabled() {

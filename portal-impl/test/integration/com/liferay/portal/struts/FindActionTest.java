@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,7 @@
 package com.liferay.portal.struts;
 
 import com.liferay.portal.NoSuchLayoutException;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
@@ -23,17 +23,19 @@ import com.liferay.portal.model.PortletConstants;
 import com.liferay.portal.model.impl.VirtualLayout;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.PermissionCheckerFactoryUtil;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalCallbackAwareExecutionTestListener;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.Sync;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
 import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.LayoutTestUtil;
 import com.liferay.portal.util.PortletKeys;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.blogs.model.BlogsEntry;
-import com.liferay.portlet.blogs.util.BlogsTestUtil;
+import com.liferay.portlet.blogs.util.test.BlogsTestUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,8 +43,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -51,13 +54,15 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @author Laszlo Csontos
  * @author Eduardo Garcia
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalCallbackAwareExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
+@Sync
 public class FindActionTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
 
 	@Test
 	public void testGetPlidAndPortletIdViewInContext() throws Exception {
@@ -94,7 +99,7 @@ public class FindActionTest {
 
 		HttpServletRequest request = getHttpServletRequest();
 
-		FindAction.setTargetGroup(
+		FindAction.setTargetLayout(
 			request, _blogsEntry.getGroupId(), _blogLayout.getPlid());
 
 		Layout layout = (Layout)request.getAttribute(WebKeys.LAYOUT);
@@ -109,7 +114,7 @@ public class FindActionTest {
 
 		HttpServletRequest request = getHttpServletRequest();
 
-		FindAction.setTargetGroup(
+		FindAction.setTargetLayout(
 			request, _blogsEntry.getGroupId(), _blogLayout.getPlid());
 
 		Layout layout = (Layout)request.getAttribute(WebKeys.LAYOUT);
@@ -123,20 +128,20 @@ public class FindActionTest {
 
 		_group = GroupTestUtil.addGroup();
 
-		_blogLayout = LayoutTestUtil.addLayout(_group.getGroupId(), "Blog");
-		_assetLayout = LayoutTestUtil.addLayout(_group.getGroupId(), "Asset");
+		_blogLayout = LayoutTestUtil.addLayout(_group);
+		_assetLayout = LayoutTestUtil.addLayout(_group);
 
 		if (portletExists) {
 			LayoutTestUtil.addPortletToLayout(_blogLayout, PortletKeys.BLOGS);
 		}
 
-		Map<String, String[]> preferenceMap = new HashMap<String, String[]>();
+		Map<String, String[]> preferenceMap = new HashMap<>();
 
 		preferenceMap.put("assetLinkBehavior", new String[] {"viewInPortlet"});
 
 		_assetPublisherPortletId =
 			PortletKeys.ASSET_PUBLISHER + PortletConstants.INSTANCE_SEPARATOR +
-				ServiceTestUtil.randomString();
+				RandomTestUtil.randomString();
 
 		LayoutTestUtil.addPortletToLayout(
 			TestPropsValues.getUserId(), _assetLayout, _assetPublisherPortletId,
@@ -148,8 +153,7 @@ public class FindActionTest {
 			group = GroupTestUtil.addGroup();
 		}
 
-		_blogsEntry = BlogsTestUtil.addEntry(
-			TestPropsValues.getUserId(), group, true);
+		_blogsEntry = BlogsTestUtil.addEntry(group, true);
 	}
 
 	protected HttpServletRequest getHttpServletRequest() throws Exception {
@@ -175,7 +179,7 @@ public class FindActionTest {
 		return themeDisplay;
 	}
 
-	private final static String[] _PORTLET_IDS = {
+	private static final String[] _PORTLET_IDS = {
 		PortletKeys.BLOGS_ADMIN, PortletKeys.BLOGS, PortletKeys.BLOGS_AGGREGATOR
 	};
 
@@ -183,6 +187,8 @@ public class FindActionTest {
 	private String _assetPublisherPortletId;
 	private Layout _blogLayout;
 	private BlogsEntry _blogsEntry;
+
+	@DeleteAfterTestRun
 	private Group _group;
 
 }

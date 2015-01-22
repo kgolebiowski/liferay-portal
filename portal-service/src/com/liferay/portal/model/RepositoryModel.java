@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -161,10 +160,9 @@ public interface RepositoryModel extends BaseModel<Repository>, MVCCModel,
 	 * Returns the user uuid of this repository.
 	 *
 	 * @return the user uuid of this repository
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this repository.
@@ -360,19 +358,19 @@ public interface RepositoryModel extends BaseModel<Repository>, MVCCModel,
 	public Object clone();
 
 	@Override
-	public int compareTo(Repository repository);
+	public int compareTo(com.liferay.portal.model.Repository repository);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Repository> toCacheModel();
+	public CacheModel<com.liferay.portal.model.Repository> toCacheModel();
 
 	@Override
-	public Repository toEscapedModel();
+	public com.liferay.portal.model.Repository toEscapedModel();
 
 	@Override
-	public Repository toUnescapedModel();
+	public com.liferay.portal.model.Repository toUnescapedModel();
 
 	@Override
 	public String toString();

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,15 +14,17 @@
 
 package com.liferay.portlet.journal.lar;
 
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.BaseStagedModelDataHandler;
 import com.liferay.portal.kernel.lar.ExportImportHelper;
 import com.liferay.portal.kernel.lar.ExportImportPathUtil;
 import com.liferay.portal.kernel.lar.PortletDataContext;
 import com.liferay.portal.kernel.lar.StagedModelDataHandlerUtil;
+import com.liferay.portal.kernel.lar.StagedModelModifiedDateComparator;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -42,6 +44,7 @@ import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalFeed;
 import com.liferay.portlet.journal.service.JournalFeedLocalServiceUtil;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,15 +58,37 @@ public class JournalFeedStagedModelDataHandler
 	@Override
 	public void deleteStagedModel(
 			String uuid, long groupId, String className, String extraData)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		JournalFeed feed =
-			JournalFeedLocalServiceUtil.fetchJournalFeedByUuidAndGroupId(
-				uuid, groupId);
+		JournalFeed feed = fetchStagedModelByUuidAndGroupId(uuid, groupId);
 
 		if (feed != null) {
 			JournalFeedLocalServiceUtil.deleteFeed(feed);
 		}
+	}
+
+	@Override
+	public JournalFeed fetchStagedModelByUuidAndCompanyId(
+		String uuid, long companyId) {
+
+		List<JournalFeed> feeds =
+			JournalFeedLocalServiceUtil.getJournalFeedsByUuidAndCompanyId(
+				uuid, companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				new StagedModelModifiedDateComparator<JournalFeed>());
+
+		if (ListUtil.isEmpty(feeds)) {
+			return null;
+		}
+
+		return feeds.get(0);
+	}
+
+	@Override
+	public JournalFeed fetchStagedModelByUuidAndGroupId(
+		String uuid, long groupId) {
+
+		return JournalFeedLocalServiceUtil.fetchJournalFeedByUuidAndGroupId(
+			uuid, groupId);
 	}
 
 	@Override
@@ -80,7 +105,7 @@ public class JournalFeedStagedModelDataHandler
 
 		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.fetchStructure(
 			feed.getGroupId(), PortalUtil.getClassNameId(JournalArticle.class),
-			feed.getStructureId(), true);
+			feed.getDDMStructureKey(), true);
 
 		if (ddmStructure != null) {
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
@@ -91,13 +116,13 @@ public class JournalFeedStagedModelDataHandler
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to find DDM structure with key " +
-						feed.getStructureId());
+						feed.getDDMStructureKey());
 			}
 		}
 
 		DDMTemplate ddmTemplate = DDMTemplateLocalServiceUtil.fetchTemplate(
 			feed.getGroupId(), PortalUtil.getClassNameId(DDMStructure.class),
-			feed.getTemplateId());
+			feed.getDDMTemplateKey());
 
 		if (ddmTemplate != null) {
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
@@ -108,7 +133,7 @@ public class JournalFeedStagedModelDataHandler
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to find DDM template with key " +
-						feed.getTemplateId());
+						feed.getDDMTemplateKey());
 			}
 		}
 
@@ -116,7 +141,7 @@ public class JournalFeedStagedModelDataHandler
 			DDMTemplateLocalServiceUtil.fetchTemplate(
 				feed.getGroupId(),
 				PortalUtil.getClassNameId(DDMStructure.class),
-				feed.getRendererTemplateId());
+				feed.getDDMRendererTemplateKey());
 
 		if (rendererDDMTemplate != null) {
 			Element rendererDDMTemplateElement =
@@ -131,7 +156,7 @@ public class JournalFeedStagedModelDataHandler
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to find DDM template with key " +
-						feed.getRendererTemplateId());
+						feed.getDDMRendererTemplateKey());
 			}
 		}
 
@@ -208,28 +233,24 @@ public class JournalFeedStagedModelDataHandler
 			autoFeedId = true;
 		}
 
-		StagedModelDataHandlerUtil.importReferenceStagedModels(
-			portletDataContext, feed, DDMStructure.class);
-
 		Map<String, String> ddmStructureKeys =
 			(Map<String, String>)portletDataContext.getNewPrimaryKeysMap(
 				DDMStructure.class + ".ddmStructureKey");
 
 		String parentDDMStructureKey = MapUtil.getString(
-			ddmStructureKeys, feed.getStructureId(), feed.getStructureId());
-
-		StagedModelDataHandlerUtil.importReferenceStagedModels(
-			portletDataContext, feed, DDMTemplate.class);
+			ddmStructureKeys, feed.getDDMStructureKey(),
+			feed.getDDMStructureKey());
 
 		Map<String, String> ddmTemplateKeys =
 			(Map<String, String>)portletDataContext.getNewPrimaryKeysMap(
 				DDMTemplate.class + ".ddmTemplateKey");
 
 		String parentDDMTemplateKey = MapUtil.getString(
-			ddmTemplateKeys, feed.getTemplateId(), feed.getTemplateId());
+			ddmTemplateKeys, feed.getDDMTemplateKey(),
+			feed.getDDMTemplateKey());
 		String parentRendererDDMTemplateKey = MapUtil.getString(
-			ddmTemplateKeys, feed.getRendererTemplateId(),
-			feed.getRendererTemplateId());
+			ddmTemplateKeys, feed.getDDMRendererTemplateKey(),
+			feed.getDDMRendererTemplateKey());
 
 		ServiceContext serviceContext = portletDataContext.createServiceContext(
 			feed);
@@ -248,11 +269,8 @@ public class JournalFeedStagedModelDataHandler
 
 		try {
 			if (portletDataContext.isDataStrategyMirror()) {
-				JournalFeed existingFeed =
-					JournalFeedLocalServiceUtil.
-						fetchJournalFeedByUuidAndGroupId(
-							feed.getUuid(),
-							portletDataContext.getScopeGroupId());
+				JournalFeed existingFeed = fetchStagedModelByUuidAndGroupId(
+					feed.getUuid(), portletDataContext.getScopeGroupId());
 
 				if (existingFeed == null) {
 					serviceContext.setUuid(feed.getUuid());
@@ -260,10 +278,9 @@ public class JournalFeedStagedModelDataHandler
 					importedFeed = JournalFeedLocalServiceUtil.addFeed(
 						userId, portletDataContext.getScopeGroupId(), feedId,
 						autoFeedId, feed.getName(), feed.getDescription(),
-						feed.getType(), parentDDMStructureKey,
-						parentDDMTemplateKey, parentRendererDDMTemplateKey,
-						feed.getDelta(), feed.getOrderByCol(),
-						feed.getOrderByType(),
+						parentDDMStructureKey, parentDDMTemplateKey,
+						parentRendererDDMTemplateKey, feed.getDelta(),
+						feed.getOrderByCol(), feed.getOrderByType(),
 						feed.getTargetLayoutFriendlyUrl(),
 						feed.getTargetPortletId(), feed.getContentField(),
 						feed.getFeedFormat(), feed.getFeedVersion(),
@@ -272,7 +289,7 @@ public class JournalFeedStagedModelDataHandler
 				else {
 					importedFeed = JournalFeedLocalServiceUtil.updateFeed(
 						existingFeed.getGroupId(), existingFeed.getFeedId(),
-						feed.getName(), feed.getDescription(), feed.getType(),
+						feed.getName(), feed.getDescription(),
 						parentDDMStructureKey, parentDDMTemplateKey,
 						parentRendererDDMTemplateKey, feed.getDelta(),
 						feed.getOrderByCol(), feed.getOrderByType(),
@@ -286,7 +303,7 @@ public class JournalFeedStagedModelDataHandler
 				importedFeed = JournalFeedLocalServiceUtil.addFeed(
 					userId, portletDataContext.getScopeGroupId(), feedId,
 					autoFeedId, feed.getName(), feed.getDescription(),
-					feed.getType(), parentDDMStructureKey, parentDDMTemplateKey,
+					parentDDMStructureKey, parentDDMTemplateKey,
 					parentRendererDDMTemplateKey, feed.getDelta(),
 					feed.getOrderByCol(), feed.getOrderByType(),
 					feed.getTargetLayoutFriendlyUrl(),
@@ -327,7 +344,7 @@ public class JournalFeedStagedModelDataHandler
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		JournalFeedStagedModelDataHandler.class);
 
 }

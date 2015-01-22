@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -101,7 +101,7 @@ if (publicLayoutSet.isLayoutSetPrototypeLinkEnabled() || privateLayoutSet.isLayo
 	%>
 
 	<aui:fieldset cssClass="default-language" label="default-language">
-		<aui:select disabled="<%= disabledLocaleInput %>"  label="" name="TypeSettingsProperties--languageId--">
+		<aui:select disabled="<%= disabledLocaleInput %>" label="" name="TypeSettingsProperties--languageId--" title="language">
 
 			<%
 			Locale siteDefaultLocale = PortalUtil.getSiteDefaultLocale(liveGroup.getGroupId());
@@ -156,18 +156,13 @@ if (publicLayoutSet.isLayoutSetPrototypeLinkEnabled() || privateLayoutSet.isLayo
 	</aui:fieldset>
 </aui:fieldset>
 
-<aui:script use="liferay-util-list-fields">
-	Liferay.provide(
-		window,
-		'<portlet:namespace />saveLocales',
-		function() {
-			document.<portlet:namespace />fm.<portlet:namespace /><%= PropsKeys.LOCALES %>.value = Liferay.Util.listSelect(document.<portlet:namespace />fm.<portlet:namespace />currentLanguageIds);
-		},
-		['liferay-util-list-fields']
-	);
-</aui:script>
-
 <aui:script>
 	Liferay.Util.toggleRadio('<portlet:namespace />customLocales', '<portlet:namespace />inheritLocalesFieldset', '<portlet:namespace />customLocalesFieldset');
 	Liferay.Util.toggleRadio('<portlet:namespace />inheritLocales', '<portlet:namespace />customLocalesFieldset', '<portlet:namespace />inheritLocalesFieldset');
+
+	function <portlet:namespace />saveLocales() {
+		var form = AUI.$(document.<portlet:namespace />fm);
+
+		form.fm('<%= PropsKeys.LOCALES %>').val(Liferay.Util.listSelect(form.fm('currentLanguageIds')));
+	}
 </aui:script>

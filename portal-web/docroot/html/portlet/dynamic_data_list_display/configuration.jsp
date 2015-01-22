@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -36,8 +36,9 @@ catch (NoSuchRecordSetException nsrse) {
 request.setAttribute("record_set_action.jsp-selRecordSet", selRecordSet);
 %>
 
-<liferay-portlet:actionURL portletConfiguration="true" var="configurationActionURL" />
-<liferay-portlet:renderURL portletConfiguration="true" varImpl="configurationRenderURL" />
+<liferay-portlet:actionURL portletConfiguration="<%= true %>" var="configurationActionURL" />
+
+<liferay-portlet:renderURL portletConfiguration="<%= true %>" varImpl="configurationRenderURL" />
 
 <aui:form action="<%= configurationActionURL %>" method="post" name="fm1">
 	<aui:input name="<%= Constants.CMD %>" type="hidden" />
@@ -144,7 +145,7 @@ request.setAttribute("record_set_action.jsp-selRecordSet", selRecordSet);
 				sb.append("selectRecordSet('");
 				sb.append(recordSet.getRecordSetId());
 				sb.append("','");
-				sb.append(recordSet.getName(locale));
+				sb.append(HtmlUtil.escapeJS(recordSet.getName(locale)));
 				sb.append("');");
 
 				String rowURL = sb.toString();
@@ -154,6 +155,7 @@ request.setAttribute("record_set_action.jsp-selRecordSet", selRecordSet);
 
 				<liferay-ui:search-container-column-jsp
 					align="right"
+					cssClass="entry-action"
 					path="/html/portlet/dynamic_data_lists/record_set_action.jsp"
 				/>
 			</liferay-ui:search-container-row>
@@ -177,9 +179,7 @@ request.setAttribute("record_set_action.jsp-selRecordSet", selRecordSet);
 	<aui:input name="preferences--spreadsheet--" type="hidden" value="<%= spreadsheet %>" />
 
 	<aui:fieldset>
-		<aui:field-wrapper label="portlet-id">
-			<liferay-ui:input-resource url="<%= portletResource %>" />
-		</aui:field-wrapper>
+		<aui:input name="portletId" type="resource" value="<%= portletResource %>" />
 	</aui:fieldset>
 
 	<aui:button-row>
@@ -188,31 +188,24 @@ request.setAttribute("record_set_action.jsp-selRecordSet", selRecordSet);
 </aui:form>
 
 <aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />selectRecordSet',
-		function(recordSetId, recordSetName) {
-			var A = AUI();
+	function <portlet:namespace />selectRecordSet(recordSetId, recordSetName) {
+		document.<portlet:namespace />fm.<portlet:namespace />recordSetId.value = recordSetId;
+		document.<portlet:namespace />fm.<portlet:namespace />displayDDMTemplateId.value = '';
+		document.<portlet:namespace />fm.<portlet:namespace />formDDMTemplateId.value = '';
 
-			document.<portlet:namespace />fm.<portlet:namespace />recordSetId.value = recordSetId;
-			document.<portlet:namespace />fm.<portlet:namespace />displayDDMTemplateId.value = "";
-			document.<portlet:namespace />fm.<portlet:namespace />formDDMTemplateId.value = "";
+		AUI.$('.displaying-record-set-id-holder').removeClass('hide');
+		AUI.$('.displaying-help-message-holder').addClass('hide');
 
-			A.one('.displaying-record-set-id-holder').show();
-			A.one('.displaying-help-message-holder').hide();
+		var displayRecordSetId = AUI.$('.displaying-record-set-id');
 
-			var displayRecordSetId = A.one('.displaying-record-set-id');
+		displayRecordSetId.html(recordSetName + ' (<liferay-ui:message key="modified" />)');
 
-			displayRecordSetId.html(recordSetName + ' (<liferay-ui:message key="modified" />)');
+		displayRecordSetId.addClass('modified');
 
-			displayRecordSetId.addClass('modified');
+		var dialog = Liferay.Util.getWindow();
 
-			var dialog = Liferay.Util.getWindow();
-
-			if (dialog) {
-				dialog.set('title', recordSetName + ' - <liferay-ui:message key="configuration" />');
-			}
-		},
-		['aui-base']
-	);
+		if (dialog) {
+			dialog.set('title', recordSetName + ' - <liferay-ui:message key="configuration" />');
+		}
+	}
 </aui:script>

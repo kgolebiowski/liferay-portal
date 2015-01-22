@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,11 @@
 
 package com.liferay.portlet.dynamicdatamapping.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -27,8 +29,10 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.impl.BaseModelImpl;
 import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
@@ -64,6 +68,7 @@ import java.util.TreeSet;
  * @generated
  */
 @JSON(strict = true)
+@ProviderType
 public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 	implements DDMTemplateModel {
 	/*
@@ -83,7 +88,9 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 			{ "modifiedDate", Types.TIMESTAMP },
 			{ "classNameId", Types.BIGINT },
 			{ "classPK", Types.BIGINT },
+			{ "sourceClassNameId", Types.BIGINT },
 			{ "templateKey", Types.VARCHAR },
+			{ "version", Types.VARCHAR },
 			{ "name", Types.VARCHAR },
 			{ "description", Types.VARCHAR },
 			{ "type_", Types.VARCHAR },
@@ -95,7 +102,7 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 			{ "smallImageId", Types.BIGINT },
 			{ "smallImageURL", Types.VARCHAR }
 		};
-	public static final String TABLE_SQL_CREATE = "create table DDMTemplate (uuid_ VARCHAR(75) null,templateId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,templateKey VARCHAR(75) null,name STRING null,description STRING null,type_ VARCHAR(75) null,mode_ VARCHAR(75) null,language VARCHAR(75) null,script TEXT null,cacheable BOOLEAN,smallImage BOOLEAN,smallImageId LONG,smallImageURL VARCHAR(75) null)";
+	public static final String TABLE_SQL_CREATE = "create table DDMTemplate (uuid_ VARCHAR(75) null,templateId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,sourceClassNameId LONG,templateKey VARCHAR(75) null,version VARCHAR(75) null,name STRING null,description STRING null,type_ VARCHAR(75) null,mode_ VARCHAR(75) null,language VARCHAR(75) null,script TEXT null,cacheable BOOLEAN,smallImage BOOLEAN,smallImageId LONG,smallImageURL VARCHAR(75) null)";
 	public static final String TABLE_SQL_DROP = "drop table DDMTemplate";
 	public static final String ORDER_BY_JPQL = " ORDER BY ddmTemplate.templateId ASC";
 	public static final String ORDER_BY_SQL = " ORDER BY DDMTemplate.templateId ASC";
@@ -111,17 +118,17 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portlet.dynamicdatamapping.model.DDMTemplate"),
 			true);
-	public static long CLASSNAMEID_COLUMN_BITMASK = 1L;
-	public static long CLASSPK_COLUMN_BITMASK = 2L;
-	public static long COMPANYID_COLUMN_BITMASK = 4L;
-	public static long GROUPID_COLUMN_BITMASK = 8L;
-	public static long LANGUAGE_COLUMN_BITMASK = 16L;
-	public static long MODE_COLUMN_BITMASK = 32L;
-	public static long SMALLIMAGEID_COLUMN_BITMASK = 64L;
-	public static long TEMPLATEKEY_COLUMN_BITMASK = 128L;
-	public static long TYPE_COLUMN_BITMASK = 256L;
-	public static long UUID_COLUMN_BITMASK = 512L;
-	public static long TEMPLATEID_COLUMN_BITMASK = 1024L;
+	public static final long CLASSNAMEID_COLUMN_BITMASK = 1L;
+	public static final long CLASSPK_COLUMN_BITMASK = 2L;
+	public static final long COMPANYID_COLUMN_BITMASK = 4L;
+	public static final long GROUPID_COLUMN_BITMASK = 8L;
+	public static final long LANGUAGE_COLUMN_BITMASK = 16L;
+	public static final long MODE_COLUMN_BITMASK = 32L;
+	public static final long SMALLIMAGEID_COLUMN_BITMASK = 64L;
+	public static final long TEMPLATEKEY_COLUMN_BITMASK = 128L;
+	public static final long TYPE_COLUMN_BITMASK = 256L;
+	public static final long UUID_COLUMN_BITMASK = 512L;
+	public static final long TEMPLATEID_COLUMN_BITMASK = 1024L;
 
 	/**
 	 * Converts the soap model instance into a normal model instance.
@@ -146,7 +153,9 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 		model.setModifiedDate(soapModel.getModifiedDate());
 		model.setClassNameId(soapModel.getClassNameId());
 		model.setClassPK(soapModel.getClassPK());
+		model.setSourceClassNameId(soapModel.getSourceClassNameId());
 		model.setTemplateKey(soapModel.getTemplateKey());
+		model.setVersion(soapModel.getVersion());
 		model.setName(soapModel.getName());
 		model.setDescription(soapModel.getDescription());
 		model.setType(soapModel.getType());
@@ -231,7 +240,9 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("classNameId", getClassNameId());
 		attributes.put("classPK", getClassPK());
+		attributes.put("sourceClassNameId", getSourceClassNameId());
 		attributes.put("templateKey", getTemplateKey());
+		attributes.put("version", getVersion());
 		attributes.put("name", getName());
 		attributes.put("description", getDescription());
 		attributes.put("type", getType());
@@ -311,10 +322,22 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 			setClassPK(classPK);
 		}
 
+		Long sourceClassNameId = (Long)attributes.get("sourceClassNameId");
+
+		if (sourceClassNameId != null) {
+			setSourceClassNameId(sourceClassNameId);
+		}
+
 		String templateKey = (String)attributes.get("templateKey");
 
 		if (templateKey != null) {
 			setTemplateKey(templateKey);
+		}
+
+		String version = (String)attributes.get("version");
+
+		if (version != null) {
+			setVersion(version);
 		}
 
 		String name = (String)attributes.get("name");
@@ -471,13 +494,19 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	@JSON
@@ -586,6 +615,17 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 
 	@JSON
 	@Override
+	public long getSourceClassNameId() {
+		return _sourceClassNameId;
+	}
+
+	@Override
+	public void setSourceClassNameId(long sourceClassNameId) {
+		_sourceClassNameId = sourceClassNameId;
+	}
+
+	@JSON
+	@Override
 	public String getTemplateKey() {
 		if (_templateKey == null) {
 			return StringPool.BLANK;
@@ -608,6 +648,22 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 
 	public String getOriginalTemplateKey() {
 		return GetterUtil.getString(_originalTemplateKey);
+	}
+
+	@JSON
+	@Override
+	public String getVersion() {
+		if (_version == null) {
+			return StringPool.BLANK;
+		}
+		else {
+			return _version;
+		}
+	}
+
+	@Override
+	public void setVersion(String version) {
+		_version = version;
 	}
 
 	@JSON
@@ -1037,19 +1093,28 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 			return StringPool.BLANK;
 		}
 
-		return LocalizationUtil.getDefaultLanguageId(xml);
+		Locale defaultLocale = LocaleUtil.getSiteDefault();
+
+		return LocalizationUtil.getDefaultLanguageId(xml, defaultLocale);
 	}
 
 	@Override
 	public void prepareLocalizedFieldsForImport() throws LocaleException {
-		prepareLocalizedFieldsForImport(null);
+		Locale defaultLocale = LocaleUtil.fromLanguageId(getDefaultLanguageId());
+
+		Locale[] availableLocales = LocaleUtil.fromLanguageIds(getAvailableLanguageIds());
+
+		Locale defaultImportLocale = LocalizationUtil.getDefaultImportLocale(DDMTemplate.class.getName(),
+				getPrimaryKey(), defaultLocale, availableLocales);
+
+		prepareLocalizedFieldsForImport(defaultImportLocale);
 	}
 
 	@Override
 	@SuppressWarnings("unused")
 	public void prepareLocalizedFieldsForImport(Locale defaultImportLocale)
 		throws LocaleException {
-		Locale defaultLocale = LocaleUtil.getDefault();
+		Locale defaultLocale = LocaleUtil.getSiteDefault();
 
 		String modelDefaultLanguageId = getDefaultLanguageId();
 
@@ -1097,7 +1162,9 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 		ddmTemplateImpl.setModifiedDate(getModifiedDate());
 		ddmTemplateImpl.setClassNameId(getClassNameId());
 		ddmTemplateImpl.setClassPK(getClassPK());
+		ddmTemplateImpl.setSourceClassNameId(getSourceClassNameId());
 		ddmTemplateImpl.setTemplateKey(getTemplateKey());
+		ddmTemplateImpl.setVersion(getVersion());
 		ddmTemplateImpl.setName(getName());
 		ddmTemplateImpl.setDescription(getDescription());
 		ddmTemplateImpl.setType(getType());
@@ -1253,12 +1320,22 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 
 		ddmTemplateCacheModel.classPK = getClassPK();
 
+		ddmTemplateCacheModel.sourceClassNameId = getSourceClassNameId();
+
 		ddmTemplateCacheModel.templateKey = getTemplateKey();
 
 		String templateKey = ddmTemplateCacheModel.templateKey;
 
 		if ((templateKey != null) && (templateKey.length() == 0)) {
 			ddmTemplateCacheModel.templateKey = null;
+		}
+
+		ddmTemplateCacheModel.version = getVersion();
+
+		String version = ddmTemplateCacheModel.version;
+
+		if ((version != null) && (version.length() == 0)) {
+			ddmTemplateCacheModel.version = null;
 		}
 
 		ddmTemplateCacheModel.name = getName();
@@ -1328,7 +1405,7 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(43);
+		StringBundler sb = new StringBundler(47);
 
 		sb.append("{uuid=");
 		sb.append(getUuid());
@@ -1350,8 +1427,12 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 		sb.append(getClassNameId());
 		sb.append(", classPK=");
 		sb.append(getClassPK());
+		sb.append(", sourceClassNameId=");
+		sb.append(getSourceClassNameId());
 		sb.append(", templateKey=");
 		sb.append(getTemplateKey());
+		sb.append(", version=");
+		sb.append(getVersion());
 		sb.append(", name=");
 		sb.append(getName());
 		sb.append(", description=");
@@ -1379,7 +1460,7 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 
 	@Override
 	public String toXmlString() {
-		StringBundler sb = new StringBundler(67);
+		StringBundler sb = new StringBundler(73);
 
 		sb.append("<model><model-name>");
 		sb.append("com.liferay.portlet.dynamicdatamapping.model.DDMTemplate");
@@ -1426,8 +1507,16 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 		sb.append(getClassPK());
 		sb.append("]]></column-value></column>");
 		sb.append(
+			"<column><column-name>sourceClassNameId</column-name><column-value><![CDATA[");
+		sb.append(getSourceClassNameId());
+		sb.append("]]></column-value></column>");
+		sb.append(
 			"<column><column-name>templateKey</column-name><column-value><![CDATA[");
 		sb.append(getTemplateKey());
+		sb.append("]]></column-value></column>");
+		sb.append(
+			"<column><column-name>version</column-name><column-value><![CDATA[");
+		sb.append(getVersion());
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>name</column-name><column-value><![CDATA[");
@@ -1475,8 +1564,8 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = DDMTemplate.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = DDMTemplate.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			DDMTemplate.class
 		};
 	private String _uuid;
@@ -1489,7 +1578,6 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 	private long _originalCompanyId;
 	private boolean _setOriginalCompanyId;
 	private long _userId;
-	private String _userUuid;
 	private String _userName;
 	private Date _createDate;
 	private Date _modifiedDate;
@@ -1499,8 +1587,10 @@ public class DDMTemplateModelImpl extends BaseModelImpl<DDMTemplate>
 	private long _classPK;
 	private long _originalClassPK;
 	private boolean _setOriginalClassPK;
+	private long _sourceClassNameId;
 	private String _templateKey;
 	private String _originalTemplateKey;
+	private String _version;
 	private String _name;
 	private String _nameCurrentLanguageId;
 	private String _description;

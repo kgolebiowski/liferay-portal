@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -340,7 +340,7 @@ public class RepositorySearchQueryBuilderImpl
 		BooleanClauseOccur booleanClauseOccur = getBooleanClauseOccur(occur);
 
 		if (query instanceof org.apache.lucene.search.TermQuery) {
-			Set<Term> terms = new HashSet<Term>();
+			Set<Term> terms = new HashSet<>();
 
 			query.extractTerms(terms);
 
@@ -455,7 +455,7 @@ public class RepositorySearchQueryBuilderImpl
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		RepositorySearchQueryBuilderImpl.class);
 
 	private Analyzer _analyzer;

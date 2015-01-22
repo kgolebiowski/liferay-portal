@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portalweb.portal.util.liferayselenium;
 
-import com.liferay.portalweb.portal.util.TestPropsValues;
+import com.liferay.portalweb.util.TestPropsValues;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,19 +27,20 @@ import org.openqa.selenium.remote.DesiredCapabilities;
  */
 public class ChromeWebDriverImpl extends BaseWebDriverImpl {
 
-	public ChromeWebDriverImpl(String projectDir, String browserURL) {
-		super(projectDir, browserURL, new ChromeDriver(_desiredCapabilities));
+	public ChromeWebDriverImpl(String projectDirName, String browserURL) {
+		super(
+			projectDirName, browserURL, new ChromeDriver(_desiredCapabilities));
 	}
 
-	private static DesiredCapabilities _desiredCapabilities = null;
+	private static final DesiredCapabilities _desiredCapabilities;
 
 	static {
 		_desiredCapabilities = DesiredCapabilities.chrome();
 
-		Map<String, Object> preferences = new HashMap<String, Object>();
+		Map<String, Object> preferences = new HashMap<>();
 
 		preferences.put(
-			"download.default_directory", TestPropsValues.OUTPUT_DIR);
+			"download.default_directory", TestPropsValues.OUTPUT_DIR_NAME);
 		preferences.put("download.prompt_for_download", false);
 
 		_desiredCapabilities.setCapability("chrome.prefs", preferences);

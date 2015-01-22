@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -70,8 +70,8 @@ public class PortletDataHandlerControl {
 		boolean disabled, String className, String referrerClassName) {
 
 		_namespace = namespace;
-		_controlLabel = controlLabel;
 		_controlName = controlName;
+		_controlLabel = controlLabel;
 		_disabled = disabled;
 		_className = className;
 		_referrerClassName = referrerClassName;
@@ -122,11 +122,11 @@ public class PortletDataHandlerControl {
 		_namespace = namespace;
 	}
 
-	private String _className;
-	private String _controlLabel;
-	private String _controlName;
-	private boolean _disabled;
+	private final String _className;
+	private final String _controlLabel;
+	private final String _controlName;
+	private final boolean _disabled;
 	private String _namespace;
-	private String _referrerClassName;
+	private final String _referrerClassName;
 
 }

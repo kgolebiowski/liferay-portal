@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -68,8 +68,7 @@ public class SPIAgentResponse extends SPIAgentSerializable {
 
 		removedSessionAttributeNames.removeAll(newSessionAttributes.keySet());
 
-		deltaSessionAttributes = new HashMap<String, Serializable>(
-			newSessionAttributes);
+		deltaSessionAttributes = new HashMap<>(newSessionAttributes);
 
 		for (String removedSessionAttributeName :
 				removedSessionAttributeNames) {
@@ -144,7 +143,7 @@ public class SPIAgentResponse extends SPIAgentSerializable {
 				sb.append(content.substring(0, index));
 				sb.append("<div class=\"alert alert-info\"><strong>");
 				sb.append("This portlet is from SPI ");
-				sb.append(PortalUtil.getPortalPort(false));
+				sb.append(PortalUtil.getPortalLocalPort(false));
 				sb.append("</strong></div>");
 				sb.append(content.substring(index));
 

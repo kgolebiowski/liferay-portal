@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -73,7 +73,7 @@ public class MemoryMultiValueMap<K extends Serializable, V extends Serializable>
 		Set<V> values = _map.get(key);
 
 		if (values == null) {
-			values = new HashSet<V>();
+			values = new HashSet<>();
 		}
 
 		values.add(value);
@@ -88,7 +88,7 @@ public class MemoryMultiValueMap<K extends Serializable, V extends Serializable>
 		Set<V> oldValues = _map.get(key);
 
 		if (oldValues == null) {
-			oldValues = new HashSet<V>();
+			oldValues = new HashSet<>();
 		}
 
 		oldValues.addAll(values);
@@ -111,6 +111,6 @@ public class MemoryMultiValueMap<K extends Serializable, V extends Serializable>
 		return value;
 	}
 
-	private Map<K, Set<V>> _map = new HashMap<K, Set<V>>();
+	private final Map<K, Set<V>> _map = new HashMap<>();
 
 }

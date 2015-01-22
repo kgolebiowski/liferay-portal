@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -161,7 +161,7 @@ public class EditProductEntryAction extends PortletAction {
 			UploadPortletRequest uploadPortletRequest, String imagePrefix)
 		throws Exception {
 
-		List<byte[]> images = new ArrayList<byte[]>();
+		List<byte[]> images = new ArrayList<>();
 
 		for (String name :
 				getSortedParameterNames(uploadPortletRequest, imagePrefix)) {
@@ -237,7 +237,7 @@ public class EditProductEntryAction extends PortletAction {
 			UploadPortletRequest uploadPortletRequest, String imagePrefix)
 		throws Exception {
 
-		List<String> parameterNames = new ArrayList<String>();
+		List<String> parameterNames = new ArrayList<>();
 
 		Enumeration<String> enu = uploadPortletRequest.getParameterNames();
 

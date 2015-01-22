@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,16 +22,19 @@ import com.liferay.portal.kernel.lar.PortletDataHandlerBoolean;
 import com.liferay.portal.kernel.lar.PortletDataHandlerControl;
 import com.liferay.portal.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.portal.kernel.lar.StagedModelType;
+import com.liferay.portal.kernel.lar.xstream.XStreamAliasRegistryUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portlet.wiki.model.WikiNode;
 import com.liferay.portlet.wiki.model.WikiPage;
+import com.liferay.portlet.wiki.model.impl.WikiNodeImpl;
+import com.liferay.portlet.wiki.model.impl.WikiPageImpl;
 import com.liferay.portlet.wiki.service.WikiNodeLocalServiceUtil;
+import com.liferay.portlet.wiki.service.WikiPageLocalServiceUtil;
 import com.liferay.portlet.wiki.service.permission.WikiPermission;
-import com.liferay.portlet.wiki.service.persistence.WikiNodeExportActionableDynamicQuery;
-import com.liferay.portlet.wiki.service.persistence.WikiPageExportActionableDynamicQuery;
 import com.liferay.portlet.wiki.util.WikiCacheThreadLocal;
 import com.liferay.portlet.wiki.util.WikiCacheUtil;
+import com.liferay.portlet.wiki.util.WikiConstants;
 
 import java.util.List;
 import java.util.Map;
@@ -64,6 +67,14 @@ public class WikiPortletDataHandler extends BasePortletDataHandler {
 				},
 				WikiPage.class.getName()));
 		setImportControls(getExportControls());
+
+		XStreamAliasRegistryUtil.register(WikiNodeImpl.class, "WikiNode");
+		XStreamAliasRegistryUtil.register(WikiPageImpl.class, "WikiPage");
+	}
+
+	@Override
+	public String getServiceName() {
+		return WikiConstants.SERVICE_NAME;
 	}
 
 	@Override
@@ -119,12 +130,14 @@ public class WikiPortletDataHandler extends BasePortletDataHandler {
 			"group-id", String.valueOf(portletDataContext.getScopeGroupId()));
 
 		ActionableDynamicQuery nodeActionableDynamicQuery =
-			new WikiNodeExportActionableDynamicQuery(portletDataContext);
+			WikiNodeLocalServiceUtil.getExportActionableDynamicQuery(
+				portletDataContext);
 
 		nodeActionableDynamicQuery.performActions();
 
 		ActionableDynamicQuery pageActionableDynamicQuery =
-			new WikiPageExportActionableDynamicQuery(portletDataContext);
+			WikiPageLocalServiceUtil.getExportActionableDynamicQuery(
+				portletDataContext);
 
 		pageActionableDynamicQuery.performActions();
 
@@ -182,12 +195,14 @@ public class WikiPortletDataHandler extends BasePortletDataHandler {
 		throws Exception {
 
 		ActionableDynamicQuery nodeActionableDynamicQuery =
-			new WikiNodeExportActionableDynamicQuery(portletDataContext);
+			WikiNodeLocalServiceUtil.getExportActionableDynamicQuery(
+				portletDataContext);
 
 		nodeActionableDynamicQuery.performCount();
 
 		ActionableDynamicQuery pageExportActionableDynamicQuery =
-			new WikiPageExportActionableDynamicQuery(portletDataContext);
+			WikiPageLocalServiceUtil.getExportActionableDynamicQuery(
+				portletDataContext);
 
 		pageExportActionableDynamicQuery.performCount();
 	}
@@ -202,9 +217,8 @@ public class WikiPortletDataHandler extends BasePortletDataHandler {
 			"hiddenNodes", null);
 
 		for (String hiddenNodeName : StringUtil.split(hiddenNodeNames)) {
-			WikiNode wikiNode =
-				WikiNodeLocalServiceUtil.getNode(
-					portletDataContext.getScopeGroupId(), hiddenNodeName);
+			WikiNode wikiNode = WikiNodeLocalServiceUtil.getNode(
+				portletDataContext.getScopeGroupId(), hiddenNodeName);
 
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
 				portletDataContext, portletId, wikiNode);
@@ -214,9 +228,8 @@ public class WikiPortletDataHandler extends BasePortletDataHandler {
 			"visibleNodes", null);
 
 		for (String visibleNodeName : StringUtil.split(visibleNodeNames)) {
-			WikiNode wikiNode =
-				WikiNodeLocalServiceUtil.getNode(
-					portletDataContext.getScopeGroupId(), visibleNodeName);
+			WikiNode wikiNode = WikiNodeLocalServiceUtil.getNode(
+				portletDataContext.getScopeGroupId(), visibleNodeName);
 
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
 				portletDataContext, portletId, wikiNode);

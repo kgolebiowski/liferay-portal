@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,9 +15,10 @@
 package com.liferay.portlet.shopping.service.permission;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.security.auth.PrincipalException;
 import com.liferay.portal.security.permission.ActionKeys;
+import com.liferay.portal.security.permission.BaseModelPermissionChecker;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.shopping.model.ShoppingCategory;
@@ -28,11 +29,16 @@ import com.liferay.portlet.shopping.service.ShoppingItemLocalServiceUtil;
 /**
  * @author Brian Wing Shun Chan
  */
-public class ShoppingItemPermission {
+@OSGiBeanProperties(
+	property = {
+		"model.class.name=com.liferay.portlet.shopping.model.ShoppingItem"
+	}
+)
+public class ShoppingItemPermission implements BaseModelPermissionChecker {
 
 	public static void check(
 			PermissionChecker permissionChecker, long itemId, String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (!contains(permissionChecker, itemId, actionId)) {
 			throw new PrincipalException();
@@ -42,7 +48,7 @@ public class ShoppingItemPermission {
 	public static void check(
 			PermissionChecker permissionChecker, ShoppingItem item,
 			String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (!contains(permissionChecker, item, actionId)) {
 			throw new PrincipalException();
@@ -51,7 +57,7 @@ public class ShoppingItemPermission {
 
 	public static boolean contains(
 			PermissionChecker permissionChecker, long itemId, String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingItem item = ShoppingItemLocalServiceUtil.getItem(itemId);
 
@@ -61,7 +67,7 @@ public class ShoppingItemPermission {
 	public static boolean contains(
 			PermissionChecker permissionChecker, ShoppingItem item,
 			String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (actionId.equals(ActionKeys.VIEW) &&
 			PropsValues.PERMISSIONS_VIEW_DYNAMIC_INHERITANCE) {
@@ -96,6 +102,15 @@ public class ShoppingItemPermission {
 		return permissionChecker.hasPermission(
 			item.getGroupId(), ShoppingItem.class.getName(), item.getItemId(),
 			actionId);
+	}
+
+	@Override
+	public void checkBaseModel(
+			PermissionChecker permissionChecker, long groupId, long primaryKey,
+			String actionId)
+		throws PortalException {
+
+		check(permissionChecker, primaryKey, actionId);
 	}
 
 }

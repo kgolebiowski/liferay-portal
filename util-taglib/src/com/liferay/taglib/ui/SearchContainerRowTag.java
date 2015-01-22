@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -152,7 +152,7 @@ public class SearchContainerRowTag<R>
 
 	public List<String> getHeaderNames() {
 		if (_headerNames == null) {
-			_headerNames = new ArrayList<String>();
+			_headerNames = new ArrayList<>();
 		}
 
 		return _headerNames;
@@ -172,7 +172,7 @@ public class SearchContainerRowTag<R>
 
 	public Map<String, String> getOrderableHeaders() {
 		if (_orderableHeaders == null) {
-			_orderableHeaders = new LinkedHashMap<String, String>();
+			_orderableHeaders = new LinkedHashMap<>();
 		}
 
 		return _orderableHeaders;
@@ -303,14 +303,16 @@ public class SearchContainerRowTag<R>
 			}
 		}
 
-		_resultRow = new ResultRow(rowId, model, primaryKey, _rowIndex, _bold);
+		_resultRow = new com.liferay.taglib.search.ResultRow(
+			rowId, model, primaryKey, _rowIndex, _bold);
 
 		pageContext.setAttribute(_indexVar, _rowIndex);
 		pageContext.setAttribute(_modelVar, model);
 		pageContext.setAttribute(_rowVar, _resultRow);
 	}
 
-	private static Pattern _friendlyURLPattern = Pattern.compile("[^a-z0-9_-]");
+	private static final Pattern _friendlyURLPattern = Pattern.compile(
+		"[^a-z0-9_-]");
 
 	private boolean _bold;
 	private String _className;

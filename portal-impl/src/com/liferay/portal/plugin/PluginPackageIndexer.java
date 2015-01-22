@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -41,6 +41,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 
 /**
@@ -56,6 +58,10 @@ public class PluginPackageIndexer extends BaseIndexer {
 	public static final String PORTLET_ID = "PluginPackageIndexer";
 
 	public PluginPackageIndexer() {
+		setCommitImmediately(true);
+		setDefaultSelectedFieldNames(
+			Field.COMPANY_ID, Field.CONTENT, Field.ENTRY_CLASS_NAME,
+			Field.ENTRY_CLASS_PK, Field.TITLE, Field.UID);
 		setStagingAware(false);
 	}
 
@@ -134,8 +140,7 @@ public class PluginPackageIndexer extends BaseIndexer {
 
 		document.addKeyword(
 			"license",
-			StringUtil.split(
-				ListUtil.toString(licenses, License.NAME_ACCESSOR)));
+			ListUtil.toArray(licenses, License.NAME_ACCESSOR));
 
 		document.addText("longDescription", longDescription);
 		document.addKeyword("moduleId", pluginPackage.getModuleId());
@@ -172,8 +177,8 @@ public class PluginPackageIndexer extends BaseIndexer {
 
 	@Override
 	protected Summary doGetSummary(
-		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		Document document, Locale locale, String snippet, PortletURL portletURL,
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		String title = document.get(Field.TITLE);
 
@@ -201,7 +206,8 @@ public class PluginPackageIndexer extends BaseIndexer {
 		Document document = getDocument(pluginPackage);
 
 		SearchEngineUtil.updateDocument(
-			getSearchEngineId(), CompanyConstants.SYSTEM, document);
+			getSearchEngineId(), CompanyConstants.SYSTEM, document,
+			isCommitImmediately());
 	}
 
 	@Override
@@ -211,9 +217,10 @@ public class PluginPackageIndexer extends BaseIndexer {
 	@Override
 	protected void doReindex(String[] ids) throws Exception {
 		SearchEngineUtil.deletePortletDocuments(
-			getSearchEngineId(), CompanyConstants.SYSTEM, PORTLET_ID);
+			getSearchEngineId(), CompanyConstants.SYSTEM, PORTLET_ID,
+			isCommitImmediately());
 
-		Collection<Document> documents = new ArrayList<Document>();
+		Collection<Document> documents = new ArrayList<>();
 
 		for (PluginPackage pluginPackage :
 				PluginPackageUtil.getAllAvailablePluginPackages()) {
@@ -224,7 +231,8 @@ public class PluginPackageIndexer extends BaseIndexer {
 		}
 
 		SearchEngineUtil.updateDocuments(
-			getSearchEngineId(), CompanyConstants.SYSTEM, documents);
+			getSearchEngineId(), CompanyConstants.SYSTEM, documents,
+			isCommitImmediately());
 	}
 
 	@Override

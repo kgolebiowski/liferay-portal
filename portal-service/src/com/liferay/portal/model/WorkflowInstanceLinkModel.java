@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -144,10 +143,9 @@ public interface WorkflowInstanceLinkModel extends AttachedModel,
 	 * Returns the user uuid of this workflow instance link.
 	 *
 	 * @return the user uuid of this workflow instance link
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this workflow instance link.
@@ -299,19 +297,20 @@ public interface WorkflowInstanceLinkModel extends AttachedModel,
 	public Object clone();
 
 	@Override
-	public int compareTo(WorkflowInstanceLink workflowInstanceLink);
+	public int compareTo(
+		com.liferay.portal.model.WorkflowInstanceLink workflowInstanceLink);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<WorkflowInstanceLink> toCacheModel();
+	public CacheModel<com.liferay.portal.model.WorkflowInstanceLink> toCacheModel();
 
 	@Override
-	public WorkflowInstanceLink toEscapedModel();
+	public com.liferay.portal.model.WorkflowInstanceLink toEscapedModel();
 
 	@Override
-	public WorkflowInstanceLink toUnescapedModel();
+	public com.liferay.portal.model.WorkflowInstanceLink toUnescapedModel();
 
 	@Override
 	public String toString();

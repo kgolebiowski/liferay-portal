@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -146,7 +146,7 @@ public class DefaultWorkflowInstance implements Serializable, WorkflowInstance {
 	}
 
 	private List<WorkflowInstance> _childrenWorkflowInstances =
-		new ArrayList<WorkflowInstance>();
+		new ArrayList<>();
 	private Date _endDate;
 	private WorkflowInstance _parentWorkflowInstance;
 	private Date _startDate;

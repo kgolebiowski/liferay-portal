@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -63,8 +63,8 @@ public class PortletContainerUtil {
 				throw new PortletContainerException(se);
 			}
 
-			List<LayoutTypePortlet> layoutTypePortlets =
-				new ArrayList<LayoutTypePortlet>(layouts.size());
+			List<LayoutTypePortlet> layoutTypePortlets = new ArrayList<>(
+				layouts.size());
 
 			for (Layout curLayout : layouts) {
 				LayoutTypePortlet layoutTypePortlet =
@@ -77,8 +77,7 @@ public class PortletContainerUtil {
 		}
 
 		if (layout.isTypePortlet()) {
-			List<LayoutTypePortlet> layoutTypePortlets =
-				new ArrayList<LayoutTypePortlet>(1);
+			List<LayoutTypePortlet> layoutTypePortlets = new ArrayList<>(1);
 
 			LayoutTypePortlet layoutTypePortlet =
 				(LayoutTypePortlet)layout.getLayoutType();

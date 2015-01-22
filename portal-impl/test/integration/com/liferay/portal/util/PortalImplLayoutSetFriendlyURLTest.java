@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,18 +14,25 @@
 
 package com.liferay.portal.util;
 
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.LayoutSet;
+import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutSetLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.theme.ThemeDisplay;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
 
 import java.lang.reflect.Field;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -35,6 +42,12 @@ import org.junit.Test;
 public class PortalImplLayoutSetFriendlyURLTest
 	extends PortalImplBaseURLTestCase {
 
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
+
 	@Test
 	public void testAccessFromVirtualHost() throws Exception {
 		Field field = ReflectionUtil.getDeclaredField(
@@ -42,18 +55,15 @@ public class PortalImplLayoutSetFriendlyURLTest
 
 		Object value = field.get(null);
 
-		try {
-			Group defaultGroup = GroupTestUtil.addGroup();
+		Group defaultGroup = GroupTestUtil.addGroup();
 
+		try {
 			field.set(null, defaultGroup.getName());
 
 			ThemeDisplay themeDisplay = initThemeDisplay(
-				company, group, layout, VIRTUAL_HOSTNAME);
+				company, group, publicLayout, LOCALHOST, VIRTUAL_HOSTNAME);
 
-			company.setVirtualHostname(LOCALHOST);
-
-			Layout layout = LayoutTestUtil.addLayout(
-				defaultGroup.getGroupId(), ServiceTestUtil.randomString());
+			Layout layout = LayoutTestUtil.addLayout(defaultGroup);
 
 			String friendlyURL = PortalUtil.getLayoutSetFriendlyURL(
 				layout.getLayoutSet(), themeDisplay);
@@ -62,6 +72,8 @@ public class PortalImplLayoutSetFriendlyURLTest
 		}
 		finally {
 			field.set(null, value);
+
+			GroupLocalServiceUtil.deleteGroup(defaultGroup);
 		}
 	}
 

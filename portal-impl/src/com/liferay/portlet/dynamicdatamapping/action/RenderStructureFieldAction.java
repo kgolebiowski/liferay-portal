@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,18 +14,24 @@
 
 package com.liferay.portlet.dynamicdatamapping.action;
 
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.portlet.dynamicdatamapping.util.DDMXSDUtil;
+import com.liferay.portlet.dynamicdatamapping.io.DDMFormJSONDeserializerUtil;
+import com.liferay.portlet.dynamicdatamapping.model.DDMForm;
+import com.liferay.portlet.dynamicdatamapping.model.DDMFormField;
+import com.liferay.portlet.dynamicdatamapping.render.DDMFormFieldRenderer;
+import com.liferay.portlet.dynamicdatamapping.render.DDMFormFieldRendererRegistryUtil;
+import com.liferay.portlet.dynamicdatamapping.render.DDMFormFieldRenderingContext;
+
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.JspFactory;
-import javax.servlet.jsp.PageContext;
 
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -44,32 +50,21 @@ public class RenderStructureFieldAction extends Action {
 		throws Exception {
 
 		try {
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
+			DDMFormField ddmFormField = getDDMFormField(request);
 
-			JspFactory jspFactory = JspFactory.getDefaultFactory();
+			DDMFormFieldRenderer ddmFormFieldRenderer =
+				DDMFormFieldRendererRegistryUtil.getDDMFormFieldRenderer(
+					ddmFormField.getType());
 
-			PageContext pageContext = jspFactory.getPageContext(
-				getServlet(), request, response, null, true, 0, true);
+			DDMFormFieldRenderingContext ddmFormFieldRenderingContext =
+				createDDMFormFieldRenderingContext(request, response);
 
-			long classNameId = ParamUtil.getLong(request, "classNameId");
-			long classPK = ParamUtil.getLong(request, "classPK");
-			String fieldName = ParamUtil.getString(request, "fieldName");
-			String namespace = ParamUtil.getString(request, "namespace");
-			String portletNamespace = ParamUtil.getString(
-				request, "portletNamespace");
-			boolean readOnly = ParamUtil.getBoolean(request, "readOnly");
-
-			request.setAttribute("aui:form:portletNamespace", portletNamespace);
-
-			String fieldHTML = DDMXSDUtil.getFieldHTMLByName(
-				pageContext, classNameId, classPK, fieldName, null,
-				portletNamespace, namespace, null, readOnly,
-				themeDisplay.getLocale());
+			String ddmFormFieldHTML = ddmFormFieldRenderer.render(
+				ddmFormField, ddmFormFieldRenderingContext);
 
 			response.setContentType(ContentTypes.TEXT_HTML);
 
-			ServletResponseUtil.write(response, fieldHTML);
+			ServletResponseUtil.write(response, ddmFormFieldHTML);
 
 			return null;
 		}
@@ -78,6 +73,48 @@ public class RenderStructureFieldAction extends Action {
 
 			return null;
 		}
+	}
+
+	protected DDMFormFieldRenderingContext createDDMFormFieldRenderingContext(
+		HttpServletRequest request, HttpServletResponse response) {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		String mode = ParamUtil.getString(request, "mode");
+		String namespace = ParamUtil.getString(request, "namespace");
+		String portletNamespace = ParamUtil.getString(
+			request, "portletNamespace");
+		boolean readOnly = ParamUtil.getBoolean(request, "readOnly");
+
+		DDMFormFieldRenderingContext ddmFormFieldRenderingContext =
+			new DDMFormFieldRenderingContext();
+
+		request.setAttribute("aui:form:portletNamespace", portletNamespace);
+
+		ddmFormFieldRenderingContext.setHttpServletRequest(request);
+		ddmFormFieldRenderingContext.setHttpServletResponse(response);
+		ddmFormFieldRenderingContext.setLocale(themeDisplay.getLocale());
+		ddmFormFieldRenderingContext.setMode(mode);
+		ddmFormFieldRenderingContext.setNamespace(namespace);
+		ddmFormFieldRenderingContext.setPortletNamespace(portletNamespace);
+		ddmFormFieldRenderingContext.setReadOnly(readOnly);
+
+		return ddmFormFieldRenderingContext;
+	}
+
+	protected DDMFormField getDDMFormField(HttpServletRequest request)
+		throws PortalException {
+
+		String definition = ParamUtil.getString(request, "definition");
+		String fieldName = ParamUtil.getString(request, "fieldName");
+
+		DDMForm ddmForm = DDMFormJSONDeserializerUtil.deserialize(definition);
+
+		Map<String, DDMFormField> ddmFormFieldsMap =
+			ddmForm.getDDMFormFieldsMap(true);
+
+		return ddmFormFieldsMap.get(fieldName);
 	}
 
 }

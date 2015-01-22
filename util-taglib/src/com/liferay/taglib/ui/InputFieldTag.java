@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,6 +25,10 @@ import javax.servlet.http.HttpServletRequest;
  * @author Brian Wing Shun Chan
  */
 public class InputFieldTag extends IncludeTag {
+
+	public void setAutoComplete(boolean autoComplete) {
+		_autoComplete = autoComplete;
+	}
 
 	public void setAutoFocus(boolean autoFocus) {
 		_autoFocus = autoFocus;
@@ -96,6 +100,7 @@ public class InputFieldTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		_autoComplete = true;
 		_autoFocus = false;
 		_autoSize = false;
 		_bean = null;
@@ -135,6 +140,9 @@ public class InputFieldTag extends IncludeTag {
 		}
 
 		request.setAttribute(
+			"liferay-ui:input-field:autoComplete",
+			String.valueOf(_autoComplete));
+		request.setAttribute(
 			"liferay-ui:input-field:autoFocus", String.valueOf(_autoFocus));
 		request.setAttribute(
 			"liferay-ui:input-field:autoSize", String.valueOf(_autoSize));
@@ -165,6 +173,7 @@ public class InputFieldTag extends IncludeTag {
 
 	private static final String _PAGE = "/html/taglib/ui/input_field/page.jsp";
 
+	private boolean _autoComplete = true;
 	private boolean _autoFocus;
 	private boolean _autoSize;
 	private Object _bean;

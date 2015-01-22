@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,15 @@
 
 package com.liferay.portal.layoutconfiguration.util.velocity;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.PortletContainerUtil;
+import com.liferay.portal.kernel.portlet.PortletJSONUtil;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
+import com.liferay.portal.kernel.settings.ModifiableSettings;
+import com.liferay.portal.kernel.settings.Settings;
+import com.liferay.portal.kernel.settings.SettingsFactoryUtil;
+import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -41,13 +47,13 @@ import javax.servlet.http.HttpServletResponse;
  * @author Ivica Cardic
  * @author Brian Wing Shun Chan
  * @author Shuyang Zhou
+ * @author Oliver Teichmann
  */
 public class TemplateProcessor implements ColumnProcessor {
 
 	public TemplateProcessor(
-			HttpServletRequest request, HttpServletResponse response,
-			String portletId)
-		throws SystemException {
+		HttpServletRequest request, HttpServletResponse response,
+		String portletId) {
 
 		_request = request;
 		_response = response;
@@ -59,12 +65,14 @@ public class TemplateProcessor implements ColumnProcessor {
 			_portlet = PortletLocalServiceUtil.getPortletById(
 				themeDisplay.getCompanyId(), portletId);
 		}
+		else {
+			_portlet = null;
+		}
 
 		_portletAjaxRender = GetterUtil.getBoolean(
 			request.getAttribute(WebKeys.PORTLET_AJAX_RENDER));
 
-		_portletRenderers = new TreeMap<Integer, List<PortletRenderer>>(
-			_renderWeightComparator);
+		_portletRenderers = new TreeMap<>(_renderWeightComparator);
 	}
 
 	public Map<Integer, List<PortletRenderer>> getPortletRenderers() {
@@ -142,7 +150,7 @@ public class TemplateProcessor implements ColumnProcessor {
 					renderWeight);
 
 				if (portletRenderers == null) {
-					portletRenderers = new ArrayList<PortletRenderer>();
+					portletRenderers = new ArrayList<>();
 
 					_portletRenderers.put(renderWeight, portletRenderers);
 				}
@@ -193,9 +201,18 @@ public class TemplateProcessor implements ColumnProcessor {
 		Portlet portlet = PortletLocalServiceUtil.getPortletById(
 			themeDisplay.getCompanyId(), portletId);
 
+		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+
+		PortletJSONUtil.populatePortletJSONObject(
+			_request, StringPool.BLANK, portlet, jsonObject);
+
 		try {
+			PortletJSONUtil.writeHeaderPaths(_response, jsonObject);
+
 			PortletContainerUtil.render(
 				_request, bufferCacheServletResponse, portlet);
+
+			PortletJSONUtil.writeFooterPaths(_response, jsonObject);
 
 			return bufferCacheServletResponse.getString();
 		}
@@ -204,14 +221,50 @@ public class TemplateProcessor implements ColumnProcessor {
 		}
 	}
 
-	private static RenderWeightComparator _renderWeightComparator =
+	@Override
+	public String processPortlet(
+			String portletId, Map<String, ?> defaultSettingsMap)
+		throws Exception {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)_request.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		Settings settings = SettingsFactoryUtil.getPortletInstanceSettings(
+			themeDisplay.getLayout(), portletId);
+
+		ModifiableSettings modifiableSettings =
+			settings.getModifiableSettings();
+
+		for (Map.Entry<String, ?> entry : defaultSettingsMap.entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+
+			if (value instanceof String) {
+				modifiableSettings.setValue(key, (String)value);
+			}
+			else if (value instanceof String[]) {
+				modifiableSettings.setValues(key, (String[])value);
+			}
+			else {
+				throw new IllegalArgumentException(
+					"Key " + key + " has unsupported value of type " +
+						ClassUtil.getClassName(value.getClass()));
+			}
+		}
+
+		modifiableSettings.store();
+
+		return processPortlet(portletId);
+	}
+
+	private static final RenderWeightComparator _renderWeightComparator =
 		new RenderWeightComparator();
 
-	private Portlet _portlet;
-	private boolean _portletAjaxRender;
-	private Map<Integer, List<PortletRenderer>> _portletRenderers;
-	private HttpServletRequest _request;
-	private HttpServletResponse _response;
+	private final Portlet _portlet;
+	private final boolean _portletAjaxRender;
+	private final Map<Integer, List<PortletRenderer>> _portletRenderers;
+	private final HttpServletRequest _request;
+	private final HttpServletResponse _response;
 
 	private static class RenderWeightComparator implements Comparator<Integer> {
 

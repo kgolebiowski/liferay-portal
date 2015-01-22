@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -47,9 +47,9 @@ public class DoOperationAction extends BaseJMXManageAction<Object> {
 		}
 	}
 
-	private ObjectName _objectName;
-	private String _operationName;
-	private Object[] _parameters;
-	private String[] _signature;
+	private final ObjectName _objectName;
+	private final String _operationName;
+	private final Object[] _parameters;
+	private final String[] _signature;
 
 }

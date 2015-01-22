@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -38,7 +38,7 @@ public class EnvironmentClassLoader
 		if (_SECURITY_ENABLED && (_id != null) && _id.startsWith("web-app:") &&
 			!_id.endsWith("/ROOT")) {
 
-			return new ArrayList<Permission>();
+			return new ArrayList<>();
 		}
 
 		return super.getPermissions();
@@ -58,6 +58,6 @@ public class EnvironmentClassLoader
 	private static final boolean _SECURITY_ENABLED =
 		(System.getSecurityManager() != null);
 
-	private String _id;
+	private final String _id;
 
 }

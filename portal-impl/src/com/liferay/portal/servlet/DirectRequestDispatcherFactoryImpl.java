@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -62,7 +62,7 @@ public class DirectRequestDispatcherFactoryImpl
 		return getRequestDispatcher(servletContext, path);
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public RequestDispatcher getRequestDispatcher(
 			ServletContext servletContext, RequestDispatcher requestDispatcher);
@@ -124,10 +124,10 @@ public class DirectRequestDispatcherFactoryImpl
 		return _pacl.getRequestDispatcher(servletContext, requestDispatcher);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DirectRequestDispatcherFactoryImpl.class);
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
 	private static class NoPACL implements PACL {
 

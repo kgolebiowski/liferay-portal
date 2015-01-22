@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -41,6 +41,5 @@ viewPageActivitiesURL.setParameter("struts_action", "/wiki/view_page_activities"
 <liferay-ui:tabs
 	names="activities,versions"
 	param="tabs3"
-	url0="<%= viewPageActivitiesURL.toString() %>"
-	url1="<%= viewPageHistoryURL.toString() %>"
+	urls="<%= new String[] {viewPageActivitiesURL.toString(), viewPageHistoryURL.toString()} %>"
 />

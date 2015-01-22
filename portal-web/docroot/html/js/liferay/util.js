@@ -1,10 +1,9 @@
-;(function(A, Liferay) {
+;(function(A, $, _, Liferay) {
 	A.use('aui-base-lang');
 
 	var Lang = A.Lang;
 
 	var AArray = A.Array;
-	var AObject = A.Object;
 	var AString = A.Lang.String;
 	var Browser = Liferay.Browser;
 
@@ -15,46 +14,15 @@
 
 	var EVENT_CLICK = 'click';
 
-	var htmlEscapedValues = [];
-	var htmlUnescapedValues = [];
-
-	var MAP_HTML_CHARS_ESCAPED = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&#034;',
-		'\'': '&#039;',
-		'/': '&#047;',
-		'`': '&#096;'
-	};
-
-	var MAP_HTML_CHARS_UNESCAPED = {};
-
-	AObject.each(
-		MAP_HTML_CHARS_ESCAPED,
-		function(item, index) {
-			MAP_HTML_CHARS_UNESCAPED[item] = index;
-
-			htmlEscapedValues.push(item);
-			htmlUnescapedValues.push(index);
-		}
-	);
-
-	var REGEX_DASH = /-([a-z])/gi;
-
-	var STR_LEFT_SQUARE_BRACKET = '[';
-
 	var STR_RIGHT_SQUARE_BRACKET = ']';
-
-	var REGEX_HTML_ESCAPE = new RegExp(STR_LEFT_SQUARE_BRACKET + htmlUnescapedValues.join('') + STR_RIGHT_SQUARE_BRACKET, 'g');
-
-	var REGEX_HTML_UNESCAPE = new RegExp(htmlEscapedValues.join('|'), 'gi');
 
 	var SRC_HIDE_LINK = {
 		src: 'hideLink'
 	};
 
 	var STR_CHECKED = 'checked';
+
+	var REGEX_PORTLET_ID = /^(?:p_p_id)?_(.*)_.*$/;
 
 	var Window = {
 		_map: {}
@@ -63,120 +31,19 @@
 	var Util = {
 		submitCountdown: 0,
 
-		actsAsAspect: function(object) {
-			object.yield = null;
-			object.rv = {};
-
-			object.before = function(method, f) {
-				var original = eval('this.' + method);
-
-				this[method] = function() {
-					f.apply(this, arguments);
-
-					return original.apply(this, arguments);
-				};
-			};
-
-			object.after = function(method, f) {
-				var original = eval('this.' + method);
-
-				this[method] = function() {
-					this.rv[method] = original.apply(this, arguments);
-
-					return f.apply(this, arguments);
-				};
-			};
-
-			object.around = function(method, f) {
-				var original = eval('this.' + method);
-
-				this[method] = function() {
-					this.yield = original;
-
-					return f.apply(this, arguments);
-				};
-			};
-		},
-
 		addInputCancel: function() {
 			A.use(
 				'aui-button-search-cancel',
 				function(A) {
 					new A.ButtonSearchCancel(
 						{
-							trigger: 'input[type=password], input[type=search], input.clearable, input.search-query',
-							zIndex: Liferay.zIndex.WINDOW + 100
+							trigger: 'input[type=password], input[type=search], input.clearable, input.search-query'
 						}
 					);
 				}
 			);
 
 			Util.addInputCancel = function(){};
-		},
-
-		addInputFocus: function() {
-			A.use(
-				'aui-base',
-				function(A) {
-					var handleFocus = function(event) {
-						var target = event.target;
-
-						var tagName = target.get('tagName');
-
-						if (tagName) {
-							tagName = tagName.toLowerCase();
-						}
-
-						var nodeType = target.get('type');
-
-						if (((tagName == 'input') && (/text|password/).test(nodeType)) ||
-							(tagName == 'textarea')) {
-
-							var action = 'addClass';
-
-							if (/blur|focusout/.test(event.type)) {
-								action = 'removeClass';
-							}
-
-							target[action]('focus');
-						}
-					};
-
-					A.on('focus', handleFocus, document);
-					A.on('blur', handleFocus, document);
-				}
-			);
-
-			Util.addInputFocus = function(){};
-		},
-
-		addInputType: function(el) {
-			Util.addInputType = Lang.emptyFn;
-
-			if (Browser.isIe() && Browser.getMajorVersion() < 7) {
-				Util.addInputType = function(el) {
-					var item;
-
-					if (el) {
-						el = A.one(el);
-					}
-					else {
-						el = A.one(document.body);
-					}
-
-					var defaultType = 'text';
-
-					el.all('input').each(
-						function(item, index, collection) {
-							var type = item.get('type') || defaultType;
-
-							item.addClass(type);
-						}
-					);
-				};
-			}
-
-			return Util.addInputType(el);
 		},
 
 		addParams: function(params, url) {
@@ -197,6 +64,7 @@
 
 				if (loc.indexOf('#') > -1) {
 					var locationPieces = loc.split('#');
+
 					loc = locationPieces[0];
 					anchorHash = locationPieces[1];
 				}
@@ -223,23 +91,6 @@
 			}
 		},
 
-		camelize: function(value, separator) {
-			var regex = REGEX_DASH;
-
-			if (separator) {
-				regex = new RegExp(separator + '([a-z])', 'gi');
-			}
-
-			value = value.replace(
-				regex,
-				function(match0, match1) {
-					return match1.toUpperCase();
-				}
-			);
-
-			return value;
-		},
-
 		checkTab: function(box) {
 			if ((document.all) && (event.keyCode == 9)) {
 				box.selection = document.selection.createRange();
@@ -253,10 +104,6 @@
 			}
 		},
 
-		clamp: function(value, min, max) {
-			return Math.min(Math.max(value, min), max);
-		},
-
 		disableEsc: function() {
 			if ((document.all) && (event.keyCode == 27)) {
 				event.returnValue = false;
@@ -264,14 +111,14 @@
 		},
 
 		disableFormButtons: function(inputs, form) {
-			inputs.set('disabled', true);
+			inputs.attr('disabled', true);
 			inputs.setStyle('opacity', 0.5);
 
 			if (A.UA.gecko) {
 				A.getWin().on(
 					'unload',
 					function(event) {
-						inputs.set('disabled', false);
+						inputs.attr('disabled', false);
 					}
 				);
 			}
@@ -282,12 +129,8 @@
 
 			document.body.style.cursor = 'auto';
 
-			inputs.set('disabled', false);
+			inputs.attr('disabled', false);
 			inputs.setStyle('opacity', 1);
-		},
-
-		endsWith: function(str, x) {
-			return (str.lastIndexOf(x) === (str.length - x.length));
 		},
 
 		escapeCDATA: function(str) {
@@ -308,38 +151,6 @@
 			);
 		},
 
-		escapeHTML: function(str, preventDoubleEscape, entities) {
-			var result;
-
-			var regex = REGEX_HTML_ESCAPE;
-
-			var entitiesList = [];
-
-			var entitiesValues;
-
-			if (Lang.isObject(entities)) {
-				entitiesValues = [];
-
-				AObject.each(
-					entities,
-					function(item, index) {
-						entitiesList.push(index);
-
-						entitiesValues.push(item);
-					}
-				);
-
-				regex = new RegExp(STR_LEFT_SQUARE_BRACKET + AString.escapeRegEx(entitiesList.join('')) + STR_RIGHT_SQUARE_BRACKET, 'g');
-			}
-			else {
-				entities = MAP_HTML_CHARS_ESCAPED;
-
-				entitiesValues = htmlEscapedValues;
-			}
-
-			return str.replace(regex, A.bind('_escapeHTML', Util, !!preventDoubleEscape, entities, entitiesValues));
-		},
-
 		getAttributes: function(el, attributeGetter) {
 			var instance = this;
 
@@ -352,15 +163,15 @@
 
 				result = {};
 
-				var isGetterString = Lang.isString(attributeGetter);
 				var isGetterFn = Lang.isFunction(attributeGetter);
+				var isGetterString = Lang.isString(attributeGetter);
 
 				var attrs = el.attributes;
 				var length = attrs.length;
 
 				while (length--) {
 					var attr = attrs[length];
-					var name = attr.nodeName;
+					var name = attr.nodeName.toLowerCase();
 					var value = attr.nodeValue;
 
 					if (isGetterString) {
@@ -392,6 +203,25 @@
 			return columnId;
 		},
 
+		getGeolocation: function(success, fallback, options) {
+			if (success && navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(
+					function(position) {
+						success(
+							position.coords.latitude,
+							position.coords.longitude,
+							position
+						);
+					},
+					fallback,
+					options
+				);
+			}
+			else if (fallback) {
+				fallback();
+			}
+		},
+
 		getOpener: function() {
 			var openingWindow = Window._opener;
 
@@ -413,10 +243,7 @@
 		},
 
 		getPortletId: function(portletId) {
-			portletId = portletId.replace(/^p_p_id_/i, '');
-			portletId = portletId.replace(/_$/, '');
-
-			return portletId;
+			return String(portletId).replace(REGEX_PORTLET_ID, '$1');
 		},
 
 		getPortletNamespace: function(portletId) {
@@ -465,22 +292,6 @@
 			return topWindow;
 		},
 
-		getWindow: function(id) {
-			if (!id) {
-				id = Util.getWindowName();
-			}
-
-			return Util.getTop().Liferay.Util.Window.getById(id);
-		},
-
-		getWindowName: function() {
-			return window.name || Window._name || '';
-		},
-
-		getWindowWidth: function() {
-			return (window.innerWidth > 0) ? window.innerWidth : screen.width;
-		},
-
 		getURLWithSessionId: function(url) {
 			if (!themeDisplay.isAddSessionIdToURL()) {
 				return url;
@@ -518,12 +329,69 @@
 			return url + sessionId;
 		},
 
-		isArray: function(object) {
-			return !!(window.Array && object.constructor == window.Array);
+		getWindow: function(id) {
+			if (!id) {
+				id = Util.getWindowName();
+			}
+
+			return Util.getTop().Liferay.Util.Window.getById(id);
 		},
 
-		isEditorPresent: function(editorImpl) {
-			return Liferay.EDITORS && Liferay.EDITORS[editorImpl];
+		getWindowName: function() {
+			return window.name || Window._name || '';
+		},
+
+		getWindowWidth: function() {
+			return (window.innerWidth > 0) ? window.innerWidth : screen.width;
+		},
+
+		inBrowserView: function(node, win, nodeRegion) {
+			var DOM = A.DOM;
+
+			var viewable = false;
+
+			node = A.one(node);
+
+			if (node) {
+				if (!nodeRegion) {
+					nodeRegion = node.get('region');
+				}
+
+				if (!win) {
+					win = window;
+				}
+
+				var winRegion = DOM.viewportRegion(win);
+
+				viewable = (
+					nodeRegion.bottom <= winRegion.bottom &&
+					nodeRegion.left >= winRegion.left &&
+					nodeRegion.right <= winRegion.right &&
+					nodeRegion.top >= winRegion.top
+				);
+
+				if (viewable) {
+					var frameEl = win.frameElement;
+
+					if (frameEl) {
+						var frameXY = DOM.getXY(frameEl);
+
+						var xOffset = frameXY[0] - DOM.docScrollX(win);
+
+						nodeRegion.left += xOffset;
+						nodeRegion.right += xOffset;
+
+						var yOffset = frameXY[1] - DOM.docScrollY(win);
+
+						nodeRegion.top += yOffset;
+						nodeRegion.bottom += yOffset;
+
+						viewable = Util.inBrowserView(node, win.parent, nodeRegion);
+					}
+				}
+			}
+
+			return viewable;
 		},
 
 		isPhone: function() {
@@ -536,6 +404,62 @@
 			var instance = this;
 
 			return (instance.getWindowWidth() < Liferay.BREAKPOINTS.TABLET);
+		},
+
+		listCheckboxesExcept: function(form, except, name, checked) {
+			if (form._node) {
+				form = form.getDOM();
+			}
+
+			var selector = 'input[type=checkbox]';
+
+			if (name) {
+				selector += '[name=' + name + ']';
+			}
+
+			return _.reduce(
+				$(form).find(selector),
+				function(prev, item, index) {
+					item = $(item);
+
+					var val = item.val();
+
+					if (val && (item.attr('name') != except) && (item.prop('checked') == checked) && !item.prop('disabled')) {
+						prev.push(val);
+					}
+
+					return prev;
+				},
+				[]
+			).join();
+		},
+
+		listCheckedExcept: function(form, except, name) {
+			return Util.listCheckboxesExcept(form, except, name, true);
+		},
+
+		listSelect: function(select, delimeter) {
+			if (select._node) {
+				select = select.getDOM();
+			}
+
+			return _.reduce(
+				$(select).find('option'),
+				function(prev, item, index) {
+					var val = $(item).val();
+
+					if (val) {
+						prev.push(val);
+					}
+
+					return prev;
+				},
+				[]
+			).join(delimeter || ',');
+		},
+
+		listUncheckedExcept: function(form, except, name) {
+			return Util.listCheckboxesExcept(form, except, name, false);
 		},
 
 		ns: function(namespace, obj) {
@@ -553,7 +477,7 @@
 
 				A.Object.each(
 					obj,
-					function(item, index, collection) {
+					function(item, index) {
 						index = ns(namespace, index);
 
 						value[index] = item;
@@ -601,10 +525,6 @@
 			return (Math.ceil(Math.random() * (new Date()).getTime()));
 		},
 
-		randomMinMax: function(min, max) {
-			return (Math.round(Math.random() * (max - min))) + min;
-		},
-
 		selectAndCopy: function(el) {
 			el.focus();
 			el.select();
@@ -614,18 +534,6 @@
 
 				textRange.execCommand('copy');
 			}
-		},
-
-		setBox: function(oldBox, newBox) {
-			for (var i = oldBox.length - 1; i > -1; i--) {
-				oldBox.options[i] = null;
-			}
-
-			for (i = 0; i < newBox.length; i++) {
-				oldBox.options[i] = new Option(newBox[i].value, i);
-			}
-
-			oldBox.options[0].selected = true;
 		},
 
 		setCursorPosition: function(el, position) {
@@ -660,7 +568,10 @@
 
 		showCapsLock: function(event, span) {
 			var keyCode = event.keyCode ? event.keyCode : event.which;
-			var shiftKey = event.shiftKey ? event.shiftKey : ((keyCode == 16) ? true : false);
+
+			var shiftKeyCode = ((keyCode == 16) ? true : false);
+
+			var shiftKey = event.shiftKey ? event.shiftKey : shiftKeyCode;
 
 			if (((keyCode >= 65 && keyCode <= 90) && !shiftKey) ||
 				((keyCode >= 97 && keyCode <= 122) && shiftKey)) {
@@ -687,42 +598,6 @@
 			return 0;
 		},
 
-		startsWith: function(str, x) {
-			return (str.indexOf(x) === 0);
-		},
-
-		textareaTabs: function(event) {
-			var el = event.currentTarget.getDOM();
-			var pressedKey = event.keyCode;
-
-			if (event.isKey('TAB')) {
-				event.halt();
-
-				var oldscroll = el.scrollTop;
-
-				if (el.setSelectionRange) {
-					var caretPos = el.selectionStart + 1;
-					var elValue = el.value;
-
-					el.value = elValue.substring(0, el.selectionStart) + '\t' + elValue.substring(el.selectionEnd, elValue.length);
-
-					setTimeout(
-						function() {
-							el.focus();
-							el.setSelectionRange(caretPos, caretPos);
-						}, 0);
-
-				}
-				else {
-					document.selection.createRange().text = '\t';
-				}
-
-				el.scrollTop = oldscroll;
-
-				return false;
-			}
-		},
-
 		toCharCode: A.cached(
 			function(name) {
 				var buffer = [];
@@ -739,40 +614,6 @@
 			return parseInt(value, 10) || 0;
 		},
 
-		uncamelize: function(value, separator) {
-			separator = separator || ' ';
-
-			value = value.replace(/([a-zA-Z][a-zA-Z])([A-Z])([a-z])/g, '$1' + separator + '$2$3');
-			value = value.replace(/([a-z])([A-Z])/g, '$1' + separator + '$2');
-
-			return value;
-		},
-
-		unescapeHTML: function(str, entities) {
-			var regex = REGEX_HTML_UNESCAPE;
-
-			var entitiesMap = MAP_HTML_CHARS_UNESCAPED;
-
-			if (entities) {
-				var entitiesValues = [];
-
-				entitiesMap = {};
-
-				AObject.each(
-					entities,
-					function(item, index) {
-						entitiesMap[item] = index;
-
-						entitiesValues.push(item);
-					}
-				);
-
-				regex = new RegExp(entitiesValues.join('|'), 'gi');
-			}
-
-			return str.replace(regex, A.bind('_unescapeHTML', Util, entitiesMap));
-		},
-
 		_defaultPreviewArticleFn: function(event) {
 			var instance = this;
 
@@ -781,7 +622,7 @@
 			Liferay.Util.openWindow(
 				{
 					cache: false,
-					title: Liferay.Util.escapeHTML(event.title),
+					title: event.title,
 					uri: event.uri
 				}
 			);
@@ -838,35 +679,6 @@
 
 				form.attr('target', '');
 			}
-		},
-
-		_escapeHTML: function(preventDoubleEscape, entities, entitiesValues, match) {
-			var result;
-
-			if (preventDoubleEscape) {
-				var arrayArgs = AArray(arguments);
-
-				var length = arrayArgs.length;
-
-				var string = arrayArgs[length - 1];
-				var offset = arrayArgs[length - 2];
-
-				var nextSemicolonIndex = string.indexOf(';', offset);
-
-				if (nextSemicolonIndex >= 0) {
-					var entity = string.substring(offset, nextSemicolonIndex + 1);
-
-					if (AArray.indexOf(entitiesValues, entity) >= 0) {
-						result = match;
-					}
-				}
-			}
-
-			if (!result) {
-				result = entities[match];
-			}
-
-			return result;
 		},
 
 		_getEditableInstance: function(title) {
@@ -937,13 +749,7 @@
 
 				return value;
 			}
-		),
-
-		_unescapeHTML: function(entities, match) {
-			return entities[match];
-		},
-
-		MAP_HTML_CHARS_ESCAPED: MAP_HTML_CHARS_ESCAPED
+		)
 	};
 
 	Liferay.provide(
@@ -1024,19 +830,6 @@
 
 	Liferay.provide(
 		Util,
-		'check',
-		function(form, name, checked) {
-			var checkbox = A.one(form[name]);
-
-			if (checkbox) {
-				checkbox.set(STR_CHECKED, checked);
-			}
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
 		'checkAll',
 		function(form, name, allBox, selectClassName) {
 			var selector;
@@ -1050,10 +843,18 @@
 
 			form = A.one(form);
 
-			form.all(selector).set(STR_CHECKED, A.one(allBox).get(STR_CHECKED));
+			var allBoxChecked = A.one(allBox).get(STR_CHECKED);
+
+			form.all(selector).each(
+				function(item, index) {
+					if (!item.attr('disabled')) {
+						item.attr(STR_CHECKED, allBoxChecked);
+					}
+				}
+			);
 
 			if (selectClassName) {
-				form.all(selectClassName).toggleClass('info', A.one(allBox).get(STR_CHECKED));
+				form.all(selectClassName).toggleClass('info', allBoxChecked);
 			}
 		},
 		['aui-base']
@@ -1074,7 +875,7 @@
 			}
 
 			inputs.each(
-				function(item, index, collection) {
+				function(item, index) {
 					if (!item.compareTo(allBox) && (arrayIndexOf(name, item.attr('name')) > -1)) {
 						totalBoxes++;
 
@@ -1085,81 +886,7 @@
 				}
 			);
 
-			allBox.set(STR_CHECKED, (totalBoxes == totalOn));
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
-		'createFlyouts',
-		function(options) {
-			options = options || {};
-
-			var flyout = A.one(options.container);
-			var containers = [];
-
-			if (flyout) {
-				var lis = flyout.all('li');
-
-				lis.each(
-					function(item, index, collection) {
-						var childUL = item.one('ul');
-
-						if (childUL) {
-							childUL.hide();
-
-							item.addClass('lfr-flyout');
-							item.addClass('has-children lfr-flyout-has-children');
-						}
-					}
-				);
-
-				var hideTask = A.debounce(
-					function(event) {
-						showTask.cancel();
-
-						var li = event.currentTarget;
-
-						if (li.hasClass('has-children')) {
-							var childUL = event.currentTarget.one('> ul');
-
-							if (childUL) {
-								childUL.hide();
-
-								if (options.mouseOut) {
-									options.mouseOut.apply(event.currentTarget, [event]);
-								}
-							}
-						}
-					},
-					300
-				);
-
-				var showTask = A.debounce(
-					function(event) {
-						hideTask.cancel();
-
-						var li = event.currentTarget;
-
-						if (li.hasClass('has-children')) {
-							var childUL = event.currentTarget.one('> ul');
-
-							if (childUL) {
-								childUL.show();
-
-								if (options.mouseOver) {
-									options.mouseOver.apply(event.currentTarget, [event]);
-								}
-							}
-						}
-					},
-					0
-				);
-
-				lis.on('mouseenter', showTask, 'li');
-				lis.on('mouseleave', hideTask, 'li');
-			}
+			allBox.attr(STR_CHECKED, (totalBoxes == totalOn));
 		},
 		['aui-base']
 	);
@@ -1191,56 +918,11 @@
 
 					Event.purgeElement(el, false);
 
-					item.href = 'javascript:;';
-					item.disabled = true;
 					item.action = '';
+					item.disabled = true;
+					item.href = 'javascript:;';
 					item.onsubmit = emptyFnFalse;
 				}
-			}
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
-		'disableSelectBoxes',
-		function(toggleBoxId, value, selectBoxId) {
-			var selectBox = A.one('#' + selectBoxId);
-			var toggleBox = A.one('#' + toggleBoxId);
-
-			if (selectBox && toggleBox) {
-				var dynamicValue = Lang.isFunction(value);
-
-				var disabled = function() {
-					var currentValue = selectBox.val();
-
-					var visible = (value == currentValue);
-
-					if (dynamicValue) {
-						visible = value(currentValue, value);
-					}
-
-					toggleBox.set('disabled', !visible);
-				};
-
-				disabled();
-
-				selectBox.on('change', disabled);
-			}
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
-		'disableTextareaTabs',
-		function(textarea) {
-			textarea = A.one(textarea);
-
-			if (textarea && textarea.attr('textareatabs') != 'enabled') {
-				textarea.attr('textareatabs', 'disabled');
-
-				textarea.detach('keydown', Util.textareaTabs);
 			}
 		},
 		['aui-base']
@@ -1255,16 +937,16 @@
 
 			if (checkBox && toggleBox) {
 				if (checkBox.get(STR_CHECKED) && checkDisabled) {
-					toggleBox.set('disabled', true);
+					toggleBox.attr('disabled', true);
 				}
 				else {
-					toggleBox.set('disabled', false);
+					toggleBox.attr('disabled', false);
 				}
 
 				checkBox.on(
 					EVENT_CLICK,
 					function() {
-						toggleBox.set('disabled', !toggleBox.get('disabled'));
+						toggleBox.attr('disabled', !toggleBox.get('disabled'));
 					}
 				);
 			}
@@ -1274,25 +956,8 @@
 
 	Liferay.provide(
 		Util,
-		'enableTextareaTabs',
-		function(textarea) {
-			textarea = A.one(textarea);
-
-			if (textarea && textarea.attr('textareatabs') != 'enabled') {
-				textarea.attr('textareatabs', 'disabled');
-
-				textarea.on('keydown', Util.textareaTabs);
-			}
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
 		'focusFormField',
 		function(el, caretPosition) {
-			Util.addInputFocus();
-
 			var interacting = false;
 
 			var clickHandle = A.getDoc().on(
@@ -1304,14 +969,12 @@
 				}
 			);
 
-			if (!interacting) {
-				el = A.one(el);
+			if (el.jquery) {
+				el = el[0];
+			}
 
-				try {
-					el.focus();
-				}
-				catch (e) {
-				}
+			if (!interacting && Util.inBrowserView(el)) {
+				A.one(el).focus();
 			}
 		},
 		['aui-base']
@@ -1357,7 +1020,7 @@
 				selectedOption = options.item(selectedIndex);
 
 				options.each(
-					function(item, index, collection) {
+					function(item, index) {
 						if (item.get('selected')) {
 							toBox.append(item);
 						}
@@ -1365,7 +1028,7 @@
 				);
 			}
 
-			if (selectedOption && selectedOption.text() != '' && sort == true) {
+			if (selectedOption && selectedOption.text() !== '' && sort === true) {
 				Util.sortBox(toBox);
 			}
 		},
@@ -1399,8 +1062,15 @@
 
 			ddmURL.setParameter('classNameId', config.classNameId);
 			ddmURL.setParameter('classPK', config.classPK);
+			ddmURL.setParameter('sourceClassNameId', config.sourceClassNameId);
 			ddmURL.setParameter('eventName', config.eventName);
 			ddmURL.setParameter('groupId', config.groupId);
+			ddmURL.setParameter('mode', config.mode);
+			ddmURL.setParameter('portletResourceNamespace', config.portletResourceNamespace);
+
+			if ('redirect' in config) {
+				ddmURL.setParameter('redirect', config.redirect);
+			}
 
 			if ('refererPortletName' in config) {
 				ddmURL.setParameter('refererPortletName', config.refererPortletName);
@@ -1412,8 +1082,12 @@
 
 			ddmURL.setParameter('scopeTitle', config.title);
 
-			if ('showGlobalScope' in config) {
-				ddmURL.setParameter('showGlobalScope', config.showGlobalScope);
+			if ('showAncestorScopes' in config) {
+				ddmURL.setParameter('showAncestorScopes', config.showAncestorScopes);
+			}
+
+			if ('showBackURL' in config) {
+				ddmURL.setParameter('showBackURL', config.showBackURL);
 			}
 
 			if ('showHeader' in config) {
@@ -1428,6 +1102,8 @@
 				ddmURL.setParameter('showToolbar', config.showToolbar);
 			}
 
+			ddmURL.setParameter('structureAvailableFields', config.structureAvailableFields);
+
 			if (config.struts_action) {
 				ddmURL.setParameter('struts_action', config.struts_action);
 			}
@@ -1437,7 +1113,7 @@
 
 			ddmURL.setParameter('templateId', config.templateId);
 
-			ddmURL.setPortletId(166);
+			ddmURL.setPortletId(Liferay.PortletKeys.DYNAMIC_DATA_MAPPING);
 			ddmURL.setWindowState('pop_up');
 
 			config.uri = ddmURL.toString();
@@ -1535,33 +1211,17 @@
 
 	Liferay.provide(
 		Util,
-		'removeFolderSelection',
-		function(folderIdString, folderNameString, namespace) {
-			A.byIdNS(namespace, folderIdString).val(0);
+		'removeEntitySelection',
+		function(entityIdString, entityNameString, removeEntityButton, namespace) {
+			A.byIdNS(namespace, entityIdString).val(0);
 
-			A.byIdNS(namespace, folderNameString).val('');
+			A.byIdNS(namespace, entityNameString).val('');
 
-			Liferay.Util.toggleDisabled(A.byIdNS(namespace, 'removeFolderButton'), true);
+			Liferay.Util.toggleDisabled(removeEntityButton, true);
+
+			Liferay.fire('entitySelectionRemoved');
 		},
 		['aui-base', 'liferay-node']
-	);
-
-	Liferay.provide(
-		Util,
-		'removeItem',
-		function(box, value) {
-			box = A.one(box);
-
-			var selectedIndex = box.get('selectedIndex');
-
-			if (!value) {
-				box.all('option').item(selectedIndex).remove(true);
-			}
-			else {
-				box.all('option[value=' + value + STR_RIGHT_SQUARE_BRACKET).item(selectedIndex).remove(true);
-			}
-		},
-		['aui-base']
 	);
 
 	Liferay.provide(
@@ -1573,7 +1233,7 @@
 			var selectedIndex = box.get('selectedIndex');
 
 			if (selectedIndex == -1) {
-				box.set('selectedIndex', 0);
+				box.attr('selectedIndex', 0);
 			}
 			else {
 				var selectedItems = box.all(':selected');
@@ -1582,11 +1242,14 @@
 
 				var length = selectedItems.size();
 
+				var item;
+				var itemIndex;
+
 				if (down) {
 					while (length--) {
-						var item = selectedItems.item(length);
+						item = selectedItems.item(length);
 
-						var itemIndex = item.get('index');
+						itemIndex = item.get('index');
 
 						var referenceNode = box.get('firstChild');
 
@@ -1603,11 +1266,11 @@
 				}
 				else {
 					for (var i = 0; i < length; i++) {
-						var item = selectedItems.item(i);
+						item = selectedItems.item(i);
 
-						var itemIndex = item.get('index');
+						itemIndex = item.get('index');
 
-						if (itemIndex == 0) {
+						if (itemIndex === 0) {
 							box.append(item);
 						}
 						else {
@@ -1617,96 +1280,7 @@
 				}
 			}
 		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
-		'resizeTextarea',
-		function(elString, usingRichEditor) {
-			var el = A.one('#' + elString);
-
-			if (!el) {
-				el = A.one('textarea[name=' + elString + STR_RIGHT_SQUARE_BRACKET);
-			}
-
-			if (el) {
-				var pageBody = A.getBody();
-
-				var diff;
-
-				var resize = function(event) {
-					var pageBodyHeight = pageBody.get('winHeight');
-
-					if (usingRichEditor) {
-						try {
-							if (el.get('nodeName').toLowerCase() != 'iframe') {
-								el = window[elString];
-							}
-						}
-						catch (e) {
-						}
-					}
-
-					if (!diff) {
-						var buttonRow = pageBody.one('.button-holder');
-						var templateEditor = pageBody.one('.lfr-template-editor');
-
-						if (buttonRow && templateEditor) {
-							var region = templateEditor.getXY();
-
-							diff = (buttonRow.outerHeight(true) + region[1]) + 25;
-						}
-						else {
-							diff = 170;
-						}
-					}
-
-					el = A.one(el);
-
-					var styles = {
-						width: '98%'
-					};
-
-					if (event) {
-						styles.height = (pageBodyHeight - diff);
-					}
-
-					if (usingRichEditor) {
-						if (!el || !A.DOM.inDoc(el)) {
-							A.on(
-								'available',
-								function(event) {
-									el = A.one(window[elString]);
-
-									if (el) {
-										el.setStyles(styles);
-									}
-								},
-								'#' + elString + '_cp'
-							);
-
-							return;
-						}
-					}
-
-					if (el) {
-						el.setStyles(styles);
-					}
-				};
-
-				resize();
-
-				var dialog = Liferay.Util.getWindow();
-
-				if (dialog) {
-					var resizeEventHandle = dialog.iframe.after('resizeiframe:heightChange', resize);
-
-					A.getWin().on('unload', resizeEventHandle.detach, resizeEventHandle);
-				}
-			}
-		},
-		['aui-base']
+		['aui-base', 'aui-selector']
 	);
 
 	Liferay.provide(
@@ -1762,15 +1336,72 @@
 				dialog.show();
 			}
 			else {
+				var destroyDialog = function(event) {
+					var dialogId = config.id;
+
+					var dialogWindow = Util.getWindow(dialogId);
+
+					if (dialogWindow && Util.getPortletId(dialogId) === event.portletId) {
+						dialogWindow.destroy();
+
+						Liferay.detach('destroyPortlet', destroyDialog);
+					}
+				};
+
 				Util.openWindow(
 					config,
 					function(dialogWindow) {
 						eventHandles.push(dialogWindow.after(['destroy', 'visibleChange'], detachSelectionOnHideFn));
+
+						Liferay.on('destroyPortlet', destroyDialog);
+					}
+				);
+			}
+
+		},
+		['aui-base', 'liferay-util-window']
+	);
+
+	Liferay.provide(
+		Util,
+		'selectEntityHandler',
+		function(container, selectEventName, disableButton) {
+			var containerNode = A.one(container);
+
+			var openingLiferay = Util.getOpener().Liferay;
+
+			if (containerNode) {
+				var selectorButtons = containerNode.all('.selector-button');
+
+				containerNode.delegate(
+					'click',
+					function(event) {
+						var currentTarget = event.currentTarget;
+
+						if (disableButton !== false) {
+							selectorButtons.attr('disabled', false);
+
+							currentTarget.attr('disabled', true);
+						}
+
+						var result = Util.getAttributes(currentTarget, 'data-');
+
+						openingLiferay.fire(selectEventName, result);
+
+						Util.getWindow().hide();
+					},
+					'.selector-button'
+				);
+
+				openingLiferay.on(
+					'entitySelectionRemoved',
+					function(event) {
+						selectorButtons.attr('disabled', false);
 					}
 				);
 			}
 		},
-		['aui-base', 'liferay-util-window']
+		['aui-base']
 	);
 
 	Liferay.provide(
@@ -1794,19 +1425,6 @@
 
 	Liferay.provide(
 		Util,
-		'setSelectedValue',
-		function(col, value) {
-			var option = A.one(col).one('option[value=' + value + STR_RIGHT_SQUARE_BRACKET);
-
-			if (option) {
-				option.set('selected', true);
-			}
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		Util,
 		'sortBox',
 		function(box) {
 			var newBox = [];
@@ -1825,7 +1443,7 @@
 
 			A.each(
 				newBox,
-				function(item, index, collection) {
+				function(item, index) {
 					boxObj.append('<option value="' + item[0] + '">' + item[1] + '</option>');
 				}
 			);
@@ -1839,30 +1457,6 @@
 			}
 		},
 		['aui-base']
-	);
-
-	/**
-	 * OPTIONS
-	 *
-	 * Required
-	 * uri {string}: The url to open that sets the editor.
-	 */
-
-	Liferay.provide(
-		Util,
-		'switchEditor',
-		function(options) {
-			var uri = options.uri;
-
-			var windowName = Liferay.Util.getWindowName();
-
-			var dialog = Liferay.Util.getWindow(windowName);
-
-			if (dialog) {
-				dialog.iframe.set('uri', uri);
-			}
-		},
-		['aui-io']
 	);
 
 	Liferay.provide(
@@ -1894,7 +1488,7 @@
 						if (toggleChildCheckboxes) {
 							var childCheckboxes = toggleBox.all('input[type=checkbox]');
 
-							childCheckboxes.set(STR_CHECKED, checkBox.get(STR_CHECKED));
+							childCheckboxes.attr(STR_CHECKED, checkBox.get(STR_CHECKED));
 						}
 					}
 				);
@@ -1934,35 +1528,56 @@
 
 				docBody.addClass(currentClass);
 
+				Liferay.fire(
+					'toggleControls',
+					{
+						enabled: (Liferay._editControlsState === 'visible')
+					}
+				);
+
 				trigger.on(
-					EVENT_CLICK,
+					'tap',
 					function(event) {
 						if (icon) {
-							icon.toggleClass(iconVisibleClass).toggleClass(iconHiddenClass);
+							icon.toggleClass(iconVisibleClass);
+							icon.toggleClass(iconHiddenClass);
 						}
 
-						docBody.toggleClass(visibleClass).toggleClass(hiddenClass);
+						docBody.toggleClass(visibleClass);
+						docBody.toggleClass(hiddenClass);
 
 						Liferay._editControlsState = (docBody.hasClass(visibleClass) ? 'visible' : 'hidden');
 
 						Liferay.Store('liferay_toggle_controls', Liferay._editControlsState);
+
+						Liferay.fire(
+							'toggleControls',
+							{
+								enabled: (Liferay._editControlsState === 'visible'),
+								src: 'ui'
+							}
+						);
 					}
 				);
 			}
 		},
-		['liferay-store']
+		['event-tap', 'liferay-store']
 	);
 
 	Liferay.provide(
 		Util,
 		'toggleDisabled',
 		function(button, state) {
+			if (button.jquery) {
+				button = button.get();
+			}
+
 			if (!A.instanceOf(button, A.NodeList)) {
 				button = A.all(button);
 			}
 
 			button.each(
-				function(item, index, collection) {
+				function(item, index) {
 					item.attr('disabled', state);
 
 					item.toggleClass('disabled', state);
@@ -2060,31 +1675,6 @@
 				);
 			}
 		},
-		['aui-base', 'liferay-util-list-fields']
-	);
-
-	Liferay.provide(
-		Util,
-		'updateCheckboxValue',
-		function(checkbox) {
-			checkbox = A.one(checkbox);
-
-			if (checkbox) {
-				var checked = checkbox.attr(STR_CHECKED);
-
-				var value = 'false';
-
-				if (checked) {
-					value = checkbox.val();
-
-					if (value == 'false') {
-						value = 'true';
-					}
-				}
-
-				checkbox.previous().val(value);
-			}
-		},
 		['aui-base']
 	);
 
@@ -2093,11 +1683,15 @@
 		'submitForm',
 		function(form, action, singleSubmit, validate) {
 			if (!Util._submitLocked) {
+				if (form.jquery) {
+					form = form[0];
+				}
+
 				Liferay.fire(
 					'submitForm',
 					{
-						form: A.one(form),
 						action: action,
+						form: A.one(form),
 						singleSubmit: singleSubmit,
 						validate: validate !== false
 					}
@@ -2184,7 +1778,11 @@
 		BAD_REQUEST: 400,
 		INTERNAL_SERVER_ERROR: 500,
 		OK: 200,
-		SC_DUPLICATE_FILE_EXCEPTION: 490
+		SC_DUPLICATE_FILE_EXCEPTION: 490,
+		SC_FILE_ANTIVIRUS_EXCEPTION: 494,
+		SC_FILE_EXTENSION_EXCEPTION: 491,
+		SC_FILE_NAME_EXCEPTION: 492,
+		SC_FILE_SIZE_EXCEPTION: 493
 	};
 
 	// 0-200: Theme Developer
@@ -2203,4 +1801,4 @@
 		MENU: 5000,
 		TOOLTIP: 10000
 	};
-})(AUI(), Liferay);
+})(AUI(), AUI.$, AUI._, Liferay);

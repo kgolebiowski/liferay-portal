@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.repository.model.Folder;
+import com.liferay.portal.kernel.repository.model.RepositoryModelOperation;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portlet.expando.model.ExpandoBridge;
 
@@ -65,20 +66,25 @@ public class FolderProxyBean
 	@Override
 	public boolean containsPermission(
 			PermissionChecker permissionChecker, String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return _folder.containsPermission(permissionChecker, actionId);
 	}
 
 	@Override
-	public List<Long> getAncestorFolderIds()
-		throws PortalException, SystemException {
+	public void execute(RepositoryModelOperation repositoryModelOperation)
+		throws PortalException {
 
+		repositoryModelOperation.execute(this);
+	}
+
+	@Override
+	public List<Long> getAncestorFolderIds() throws PortalException {
 		return _folder.getAncestorFolderIds();
 	}
 
 	@Override
-	public List<Folder> getAncestors() throws PortalException, SystemException {
+	public List<Folder> getAncestors() throws PortalException {
 		List<Folder> folders = _folder.getAncestors();
 
 		return toFolderProxyBeans(folders);
@@ -153,7 +159,7 @@ public class FolderProxyBean
 	}
 
 	@Override
-	public Folder getParentFolder() throws PortalException, SystemException {
+	public Folder getParentFolder() throws PortalException {
 		Folder folder = _folder.getParentFolder();
 
 		return newFolderProxyBean(folder);
@@ -195,7 +201,7 @@ public class FolderProxyBean
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
+	public String getUserUuid() {
 		return _folder.getUserUuid();
 	}
 
@@ -328,6 +334,6 @@ public class FolderProxyBean
 		return newFolderProxyBean(folder);
 	}
 
-	private Folder _folder;
+	private final Folder _folder;
 
 }

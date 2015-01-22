@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,24 @@
 
 package com.liferay.portal.tools.sourceformatter.dependencies;
 
+import com.liferay.util.bridges.mvc.ActionCommand;
+
+import org.osgi.service.component.annotations.Component;
+
 /**
  * @author Hugo Huijser
  */
+@Component(
+	immediate = true,
+	property = {
+		"action.command.name=rss",
+		"javax.portlet.name=com_liferay_social_activities_portlet_SocialActivitiesPortlet"
+	},
+	service = ActionCommand.class
+)
 public class ExceedMaxLineLength {
 
-	public static final String TEST = "This is very long line and therefore it will exceed the maximum allowed line length";
+	public static final String TEST =
+		"This is very long line and therefore it will exceed the maximum allowed line length";
 
 }

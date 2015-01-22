@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,8 +18,8 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.OSDetector;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portalweb.portal.util.RuntimeVariables;
-import com.liferay.portalweb.portal.util.TestPropsValues;
+import com.liferay.portalweb.util.RuntimeVariables;
+import com.liferay.portalweb.util.TestPropsValues;
 
 import com.thoughtworks.selenium.CommandProcessor;
 import com.thoughtworks.selenium.Selenium;
@@ -32,10 +32,35 @@ import java.lang.reflect.Field;
 public abstract class BaseSeleniumImpl
 	extends SeleniumWrapper implements LiferaySelenium {
 
-	public BaseSeleniumImpl(String projectDir, Selenium selenium) {
+	public BaseSeleniumImpl(String projectDirName, Selenium selenium) {
 		super(selenium);
 
-		_projectDir = projectDir;
+		String dependenciesDirName =
+			"portal-web//test//functional//com//liferay//portalweb//" +
+				"dependencies//";
+
+		String outputDirName = TestPropsValues.OUTPUT_DIR_NAME;
+
+		String sikuliImagesDirName = dependenciesDirName + "sikuli//linux//";
+
+		if (OSDetector.isWindows()) {
+			dependenciesDirName = StringUtil.replace(
+				dependenciesDirName, "//", "\\");
+
+			outputDirName = StringUtil.replace(outputDirName, "//", "\\");
+
+			projectDirName = StringUtil.replace(projectDirName, "//", "\\");
+
+			sikuliImagesDirName = StringUtil.replace(
+				sikuliImagesDirName, "//", "\\");
+			sikuliImagesDirName = StringUtil.replace(
+				sikuliImagesDirName, "linux", "windows");
+		}
+
+		_dependenciesDirName = dependenciesDirName;
+		_outputDirName = outputDirName;
+		_projectDirName = projectDirName;
+		_sikuliImagesDirName = sikuliImagesDirName;
 
 		initCommandProcessor();
 
@@ -43,8 +68,18 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public void antCommand(String fileName, String target) throws Exception {
+		LiferaySeleniumHelper.antCommand(this, fileName, target);
+	}
+
+	@Override
 	public void assertAlert(String pattern) throws Exception {
 		LiferaySeleniumHelper.assertAlert(this, pattern);
+	}
+
+	@Override
+	public void assertAlertNotPresent() throws Exception {
+		LiferaySeleniumHelper.assertAlertNotPresent(this);
 	}
 
 	@Override
@@ -55,6 +90,16 @@ public abstract class BaseSeleniumImpl
 	@Override
 	public void assertConfirmation(String pattern) throws Exception {
 		LiferaySeleniumHelper.assertConfirmation(this, pattern);
+	}
+
+	@Override
+	public void assertConsoleTextNotPresent(String text) throws Exception {
+		LiferaySeleniumHelper.assertConsoleTextNotPresent(text);
+	}
+
+	@Override
+	public void assertConsoleTextPresent(String text) throws Exception {
+		LiferaySeleniumHelper.assertConsoleTextPresent(text);
 	}
 
 	@Override
@@ -80,7 +125,18 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
-	public void assertJavaScriptErrors() throws Exception {
+	public void assertHTMLSourceTextNotPresent(String value) throws Exception {
+		LiferaySeleniumHelper.assertHTMLSourceTextNotPresent(this, value);
+	}
+
+	@Override
+	public void assertHTMLSourceTextPresent(String value) throws Exception {
+		LiferaySeleniumHelper.assertHTMLSourceTextPresent(this, value);
+	}
+
+	@Override
+	public void assertJavaScriptErrors(String ignoreJavaScriptError)
+		throws Exception {
 	}
 
 	@Override
@@ -95,6 +151,16 @@ public abstract class BaseSeleniumImpl
 	@Override
 	public void assertLocation(String pattern) {
 		LiferaySeleniumHelper.assertLocation(this, pattern);
+	}
+
+	@Override
+	public void assertNoJavaScriptExceptions() throws Exception {
+		LiferaySeleniumHelper.assertNoJavaScriptExceptions();
+	}
+
+	@Override
+	public void assertNoLiferayExceptions() throws Exception {
+		LiferaySeleniumHelper.assertNoLiferayExceptions();
 	}
 
 	@Override
@@ -244,6 +310,11 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public String getDependenciesDirName() {
+		return _dependenciesDirName;
+	}
+
+	@Override
 	public String getEmailBody(String index) throws Exception {
 		return LiferaySeleniumHelper.getEmailBody(index);
 	}
@@ -276,13 +347,23 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public String getOutputDirName() {
+		return _outputDirName;
+	}
+
+	@Override
 	public String getPrimaryTestSuiteName() {
 		return _primaryTestSuiteName;
 	}
 
 	@Override
-	public String getProjectDir() {
-		return _projectDir;
+	public String getProjectDirName() {
+		return _projectDirName;
+	}
+
+	@Override
+	public String getSikuliImagesDirName() {
+		return _sikuliImagesDirName;
 	}
 
 	@Override
@@ -299,6 +380,21 @@ public abstract class BaseSeleniumImpl
 	@Override
 	public boolean isElementNotPresent(String locator) {
 		return LiferaySeleniumHelper.isElementNotPresent(this, locator);
+	}
+
+	@Override
+	public boolean isElementPresentAfterWait(String locator) throws Exception {
+		return LiferaySeleniumHelper.isElementPresentAfterWait(this, locator);
+	}
+
+	@Override
+	public boolean isHTMLSourceTextPresent(String value) throws Exception {
+		return LiferaySeleniumHelper.isHTMLSourceTextPresent(this, value);
+	}
+
+	@Override
+	public boolean isMobileDeviceEnabled() {
+		return LiferaySeleniumHelper.isMobileDeviceEnabled();
 	}
 
 	@Override
@@ -342,6 +438,11 @@ public abstract class BaseSeleniumImpl
 	@Override
 	public boolean isSelectedLabel(String selectLocator, String pattern) {
 		return pattern.equals(getSelectedLabel(selectLocator));
+	}
+
+	@Override
+	public boolean isTCatEnabled() {
+		return LiferaySeleniumHelper.isTCatEnabled();
 	}
 
 	@Override
@@ -400,6 +501,10 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public void mouseRelease() {
+	}
+
+	@Override
 	public void paste(String location) {
 		super.type(location, _clipBoard);
 	}
@@ -425,12 +530,12 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
-	public void saveScreenshot(String fileName) throws Exception {
+	public void saveScreenshot() throws Exception {
 		if (!TestPropsValues.SAVE_SCREENSHOT) {
 			return;
 		}
 
-		LiferaySeleniumHelper.saveScreenshot(this, fileName);
+		LiferaySeleniumHelper.saveScreenshot(this);
 	}
 
 	@Override
@@ -451,9 +556,28 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public void saveScreenshotBeforeAction(boolean actionFailed)
+		throws Exception {
+
+		if (!TestPropsValues.SAVE_SCREENSHOT) {
+			return;
+		}
+
+		LiferaySeleniumHelper.saveScreenshotBeforeAction(this, actionFailed);
+	}
+
+	@Override
+	public void scrollWebElementIntoView(String locator) throws Exception {
+	}
+
+	@Override
 	public void selectAndWait(String selectLocator, String optionLocator) {
 		super.select(selectLocator, optionLocator);
 		super.waitForPageToLoad("30000");
+	}
+
+	@Override
+	public void sendActionDescriptionLogger(String description) {
 	}
 
 	@Override
@@ -474,7 +598,16 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public void sendKeysAceEditor(String locator, String value) {
+		LiferaySeleniumHelper.typeAceEditor(this, locator, value);
+	}
+
+	@Override
 	public void sendLogger(String id, String status) {
+	}
+
+	@Override
+	public void sendMacroDescriptionLogger(String description) {
 	}
 
 	@Override
@@ -513,11 +646,93 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public void setWindowSize(String coordString) {
+	}
+
+	@Override
+	public void sikuliAssertElementNotPresent(String image) throws Exception {
+		LiferaySeleniumHelper.sikuliAssertElementNotPresent(this, image);
+	}
+
+	@Override
+	public void sikuliAssertElementPresent(String image) throws Exception {
+		LiferaySeleniumHelper.sikuliAssertElementPresent(this, image);
+	}
+
+	@Override
+	public void sikuliClick(String image) throws Exception {
+		LiferaySeleniumHelper.sikuliClick(this, image);
+	}
+
+	@Override
+	public void sikuliDragAndDrop(String image, String coordString)
+		throws Exception {
+
+		LiferaySeleniumHelper.sikuliDragAndDrop(this, image, coordString);
+	}
+
+	@Override
+	public void sikuliLeftMouseDown() throws Exception {
+		LiferaySeleniumHelper.sikuliLeftMouseDown(this);
+	}
+
+	@Override
+	public void sikuliLeftMouseUp() throws Exception {
+		LiferaySeleniumHelper.sikuliLeftMouseUp(this);
+	}
+
+	@Override
+	public void sikuliMouseMove(String image) throws Exception {
+		LiferaySeleniumHelper.sikuliMouseMove(this, image);
+	}
+
+	@Override
+	public void sikuliRightMouseDown() throws Exception {
+		LiferaySeleniumHelper.sikuliRightMouseDown(this);
+	}
+
+	@Override
+	public void sikuliRightMouseUp() throws Exception {
+		LiferaySeleniumHelper.sikuliRightMouseUp(this);
+	}
+
+	@Override
+	public void sikuliType(String image, String value) throws Exception {
+		LiferaySeleniumHelper.sikuliType(this, image, value);
+	}
+
+	@Override
+	public void sikuliUploadCommonFile(String image, String value)
+		throws Exception {
+
+		LiferaySeleniumHelper.sikuliUploadCommonFile(this, image, value);
+	}
+
+	@Override
+	public void sikuliUploadTCatFile(String image, String value)
+		throws Exception {
+
+		LiferaySeleniumHelper.sikuliUploadTCatFile(this, image, value);
+	}
+
+	@Override
+	public void sikuliUploadTempFile(String image, String value)
+		throws Exception {
+
+		LiferaySeleniumHelper.sikuliUploadTempFile(this, image, value);
+	}
+
+	@Override
 	public void startLogger() {
 	}
 
 	@Override
 	public void stopLogger() {
+	}
+
+	@Override
+	public void typeAceEditor(String locator, String value) {
+		LiferaySeleniumHelper.typeAceEditor(this, locator, value);
 	}
 
 	@Override
@@ -531,16 +746,13 @@ public abstract class BaseSeleniumImpl
 	}
 
 	@Override
+	public void typeScreen(String value) {
+		LiferaySeleniumHelper.typeScreen(value);
+	}
+
+	@Override
 	public void uploadCommonFile(String location, String value) {
-		String dependenciesDir =
-			"portal-web//test//functional//com//liferay//portalweb//" +
-				"dependencies//";
-
-		if (OSDetector.isWindows()) {
-			dependenciesDir = StringUtil.replace(dependenciesDir, "//", "\\");
-		}
-
-		super.type(location, _projectDir + dependenciesDir + value);
+		super.type(location, _projectDirName + _dependenciesDirName + value);
 	}
 
 	@Override
@@ -552,7 +764,7 @@ public abstract class BaseSeleniumImpl
 
 	@Override
 	public void uploadTempFile(String location, String value) {
-		super.type(location, TestPropsValues.OUTPUT_DIR + value);
+		super.type(location, TestPropsValues.OUTPUT_DIR_NAME + value);
 	}
 
 	@Override
@@ -715,12 +927,15 @@ public abstract class BaseSeleniumImpl
 	}
 
 	private static final String _OUTPUT_SCREENSHOTS_DIR =
-		TestPropsValues.OUTPUT_DIR + "screenshots/";
+		TestPropsValues.OUTPUT_DIR_NAME + "screenshots/";
 
 	private String _clipBoard = "";
 	private CommandProcessor _commandProcessor;
+	private final String _dependenciesDirName;
+	private final String _outputDirName;
 	private String _primaryTestSuiteName;
-	private String _projectDir;
+	private final String _projectDirName;
+	private final String _sikuliImagesDirName;
 	private String _timeout = "90000";
 
 }

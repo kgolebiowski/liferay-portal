@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -69,7 +69,7 @@ public class PythonExecutor extends BaseScriptingExecutor {
 			return null;
 		}
 
-		Map<String, Object> outputObjects = new HashMap<String, Object>();
+		Map<String, Object> outputObjects = new HashMap<>();
 
 		for (String outputName : outputNames) {
 			outputObjects.put(
@@ -114,7 +114,7 @@ public class PythonExecutor extends BaseScriptingExecutor {
 	private static final String _LANGUAGE = "python";
 
 	private volatile boolean _initialized;
-	private PortalCache<String, PyCode> _portalCache =
+	private final PortalCache<String, PyCode> _portalCache =
 		SingleVMPoolUtil.getCache(_CACHE_NAME);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,6 +16,11 @@ package com.liferay.portal.search.lucene;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
+import com.liferay.portal.kernel.nio.intraband.rpc.IntrabandRPCUtil;
+import com.liferay.portal.kernel.process.ProcessCallable;
+import com.liferay.portal.kernel.resiliency.mpi.MPIHelperUtil;
+import com.liferay.portal.kernel.resiliency.spi.SPI;
 import com.liferay.portal.kernel.resiliency.spi.SPIUtil;
 import com.liferay.portal.kernel.search.SearchEngineUtil;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -30,10 +35,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -73,11 +77,35 @@ public class IndexAccessorImpl implements IndexAccessor {
 	public IndexAccessorImpl(long companyId) {
 		_companyId = companyId;
 
-		if (!SPIUtil.isSPI()) {
-			_checkLuceneDir();
-			_initIndexWriter();
-			_initCommitScheduler();
+		_path = PropsValues.LUCENE_DIR + _companyId + StringPool.SLASH;
+
+		IndexSearcherManager indexSearcherManager = null;
+
+		try {
+			if (!SPIUtil.isSPI()) {
+				_checkLuceneDir();
+				_initIndexWriter();
+				_initCommitScheduler();
+
+				indexSearcherManager = new IndexSearcherManager(_indexWriter);
+			}
+			else {
+				indexSearcherManager = new IndexSearcherManager(getLuceneDir());
+			}
 		}
+		catch (IOException ioe) {
+			_log.error(
+				"Unable to initialize index searcher manager for company " +
+					_companyId,
+				ioe);
+		}
+
+		_indexSearcherManager = indexSearcherManager;
+	}
+
+	@Override
+	public IndexSearcher acquireIndexSearcher() throws IOException {
+		return _indexSearcherManager.acquire();
 	}
 
 	@Override
@@ -112,10 +140,18 @@ public class IndexAccessorImpl implements IndexAccessor {
 		}
 
 		try {
+			_indexSearcherManager.close();
+
 			_indexWriter.close();
+
+			_directory.close();
 		}
 		catch (Exception e) {
 			_log.error("Closing Lucene writer failed for " + _companyId, e);
+		}
+
+		if (_scheduledExecutorService != null) {
+			_scheduledExecutorService.shutdownNow();
 		}
 	}
 
@@ -146,7 +182,13 @@ public class IndexAccessorImpl implements IndexAccessor {
 
 	@Override
 	public void dumpIndex(OutputStream outputStream) throws IOException {
-		_dumpIndexDeletionPolicy.dump(outputStream, _indexWriter, _commitLock);
+		try {
+			_dumpIndexDeletionPolicy.dump(
+				outputStream, _indexWriter, _commitLock);
+		}
+		finally {
+			_indexSearcherManager.invalidate();
+		}
 	}
 
 	@Override
@@ -161,12 +203,16 @@ public class IndexAccessorImpl implements IndexAccessor {
 
 	@Override
 	public Directory getLuceneDir() {
+		if (_directory != null) {
+			return _directory;
+		}
+
 		if (_log.isDebugEnabled()) {
 			_log.debug("Lucene store type " + PropsValues.LUCENE_STORE_TYPE);
 		}
 
 		if (PropsValues.LUCENE_STORE_TYPE.equals(_LUCENE_STORE_TYPE_FILE)) {
-			return _getLuceneDirFile();
+			_directory = _getLuceneDirFile();
 		}
 		else if (PropsValues.LUCENE_STORE_TYPE.equals(
 					_LUCENE_STORE_TYPE_JDBC)) {
@@ -175,55 +221,68 @@ public class IndexAccessorImpl implements IndexAccessor {
 				"Store type JDBC is no longer supported in favor of SOLR");
 		}
 		else if (PropsValues.LUCENE_STORE_TYPE.equals(_LUCENE_STORE_TYPE_RAM)) {
-			return _getLuceneDirRam();
+			_directory = new RAMDirectory();
 		}
 		else {
 			throw new RuntimeException(
 				"Invalid store type " + PropsValues.LUCENE_STORE_TYPE);
 		}
+
+		return _directory;
+	}
+
+	@Override
+	public void invalidate() {
+		_indexSearcherManager.invalidate();
 	}
 
 	@Override
 	public void loadIndex(InputStream inputStream) throws IOException {
 		File tempFile = FileUtil.createTempFile();
 
-		Directory tempDirectory = FSDirectory.open(tempFile);
+		try (Directory tempDirectory = FSDirectory.open(tempFile)) {
+			IndexCommitSerializationUtil.deserializeIndex(
+				inputStream, tempDirectory);
 
-		IndexCommitSerializationUtil.deserializeIndex(
-			inputStream, tempDirectory);
+			_deleteDirectory();
 
-		_deleteDirectory();
+			try (IndexReader indexReader = IndexReader.open(
+					tempDirectory, false)) {
 
-		IndexReader indexReader = IndexReader.open(tempDirectory, false);
+				if (indexReader.numDocs() > 0) {
+					try (IndexSearcher indexSearcher = new IndexSearcher(
+							indexReader)) {
 
-		IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+						TopDocs topDocs = indexSearcher.search(
+							new MatchAllDocsQuery(), indexReader.numDocs());
 
-		try {
-			TopDocs topDocs = indexSearcher.search(
-				new MatchAllDocsQuery(), indexReader.numDocs());
+						ScoreDoc[] scoreDocs = topDocs.scoreDocs;
 
-			ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+						for (ScoreDoc scoreDoc : scoreDocs) {
+							Document document = indexSearcher.doc(scoreDoc.doc);
 
-			for (ScoreDoc scoreDoc : scoreDocs) {
-				Document document = indexSearcher.doc(scoreDoc.doc);
+							addDocument(document);
+						}
+					}
+					catch (IllegalArgumentException iae) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(iae.getMessage());
+						}
+					}
+				}
 
-				addDocument(document);
+				indexReader.flush();
 			}
 		}
-		catch (IllegalArgumentException iae) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(iae.getMessage());
-			}
-		}
-
-		indexSearcher.close();
-
-		indexReader.flush();
-		indexReader.close();
-
-		tempDirectory.close();
 
 		FileUtil.deltree(tempFile);
+	}
+
+	@Override
+	public void releaseIndexSearcher(IndexSearcher indexSearcher)
+		throws IOException {
+
+		_indexSearcherManager.release(indexSearcher);
 	}
 
 	@Override
@@ -239,6 +298,25 @@ public class IndexAccessorImpl implements IndexAccessor {
 		}
 
 		_write(term, document);
+	}
+
+	private static void _invalidate(long companyId) {
+		for (SPI spi : MPIHelperUtil.getSPIs()) {
+			try {
+				RegistrationReference registrationReference =
+					spi.getRegistrationReference();
+
+				IntrabandRPCUtil.execute(
+					registrationReference,
+					new InvalidateProcessCallable(companyId));
+			}
+			catch (Exception e) {
+				_log.error(
+					"Unable to invalidate SPI " + spi + " for company " +
+						companyId,
+					e);
+			}
+		}
 	}
 
 	private void _checkLuceneDir() {
@@ -267,16 +345,14 @@ public class IndexAccessorImpl implements IndexAccessor {
 	}
 
 	private void _deleteAll() {
-		String path = _getPath();
-
 		try {
 			_indexWriter.deleteAll();
 
-			_indexWriter.commit();
+			_doCommit();
 		}
 		catch (Exception e) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to delete index in directory " + path);
+				_log.warn("Unable to delete index in directory " + _path);
 			}
 		}
 	}
@@ -312,28 +388,26 @@ public class IndexAccessorImpl implements IndexAccessor {
 			}
 			finally {
 				_commitLock.unlock();
+
+				_indexSearcherManager.invalidate();
+
+				_invalidate(_companyId);
 			}
 		}
 
 		_batchCount = 0;
 	}
 
-	private FSDirectory _getDirectory(String path) throws IOException {
-		if (PropsValues.LUCENE_STORE_TYPE_FILE_FORCE_MMAP) {
-			return new MMapDirectory(new File(path));
-		}
-		else {
-			return FSDirectory.open(new File(path));
-		}
-	}
-
 	private Directory _getLuceneDirFile() {
 		Directory directory = null;
 
-		String path = _getPath();
-
 		try {
-			directory = _getDirectory(path);
+			if (PropsValues.LUCENE_STORE_TYPE_FILE_FORCE_MMAP) {
+				directory = new MMapDirectory(new File(_path));
+			}
+			else {
+				directory = FSDirectory.open(new File(_path));
+			}
 		}
 		catch (IOException ioe) {
 			if (directory != null) {
@@ -343,20 +417,6 @@ public class IndexAccessorImpl implements IndexAccessor {
 				catch (Exception e) {
 				}
 			}
-		}
-
-		return directory;
-	}
-
-	private Directory _getLuceneDirRam() {
-		String path = _getPath();
-
-		Directory directory = _ramDirectories.get(path);
-
-		if (directory == null) {
-			directory = new RAMDirectory();
-
-			_ramDirectories.put(path, directory);
 		}
 
 		return directory;
@@ -396,11 +456,6 @@ public class IndexAccessorImpl implements IndexAccessor {
 			classLoader, PropsValues.LUCENE_MERGE_SCHEDULER);
 	}
 
-	private String _getPath() {
-		return PropsValues.LUCENE_DIR.concat(String.valueOf(_companyId)).concat(
-			StringPool.SLASH);
-	}
-
 	private void _initCommitScheduler() {
 		if ((PropsValues.LUCENE_COMMIT_BATCH_SIZE <= 0) ||
 			(PropsValues.LUCENE_COMMIT_TIME_INTERVAL <= 0)) {
@@ -408,7 +463,7 @@ public class IndexAccessorImpl implements IndexAccessor {
 			return;
 		}
 
-		ScheduledExecutorService scheduledExecutorService =
+		_scheduledExecutorService =
 			Executors.newSingleThreadScheduledExecutor();
 
 		Runnable runnable = new Runnable() {
@@ -427,7 +482,7 @@ public class IndexAccessorImpl implements IndexAccessor {
 
 		};
 
-		scheduledExecutorService.scheduleWithFixedDelay(
+		_scheduledExecutorService.scheduleWithFixedDelay(
 			runnable, 0, PropsValues.LUCENE_COMMIT_TIME_INTERVAL,
 			TimeUnit.MILLISECONDS);
 	}
@@ -457,7 +512,7 @@ public class IndexAccessorImpl implements IndexAccessor {
 					_log.debug("Creating missing index");
 				}
 
-				_doCommit();
+				_indexWriter.commit();
 			}
 		}
 		catch (Exception e) {
@@ -488,15 +543,43 @@ public class IndexAccessorImpl implements IndexAccessor {
 
 	private static final String _LUCENE_STORE_TYPE_RAM = "ram";
 
-	private static Log _log = LogFactoryUtil.getLog(IndexAccessorImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		IndexAccessorImpl.class);
 
 	private volatile int _batchCount;
-	private Lock _commitLock = new ReentrantLock();
+	private final Lock _commitLock = new ReentrantLock();
 	private long _companyId;
-	private DumpIndexDeletionPolicy _dumpIndexDeletionPolicy =
+	private Directory _directory;
+	private final DumpIndexDeletionPolicy _dumpIndexDeletionPolicy =
 		new DumpIndexDeletionPolicy();
+	private final IndexSearcherManager _indexSearcherManager;
 	private IndexWriter _indexWriter;
-	private Map<String, Directory> _ramDirectories =
-		new ConcurrentHashMap<String, Directory>();
+	private final String _path;
+	private ScheduledExecutorService _scheduledExecutorService;
+
+	private static class InvalidateProcessCallable
+		implements ProcessCallable<Serializable> {
+
+		public InvalidateProcessCallable(long companyId) {
+			_companyId = companyId;
+		}
+
+		@Override
+		public Serializable call() {
+			IndexAccessor indexAccessor = LuceneHelperUtil.getIndexAccessor(
+				_companyId);
+
+			indexAccessor.invalidate();
+
+			_invalidate(_companyId);
+
+			return null;
+		}
+
+		private static final long serialVersionUID = 1L;
+
+		private final long _companyId;
+
+	}
 
 }

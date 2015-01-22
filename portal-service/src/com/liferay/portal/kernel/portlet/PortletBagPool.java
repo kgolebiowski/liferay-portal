@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -52,7 +52,7 @@ public class PortletBagPool {
 	}
 
 	private PortletBagPool() {
-		_portletBagPool = new ConcurrentHashMap<String, PortletBag>();
+		_portletBagPool = new ConcurrentHashMap<>();
 	}
 
 	private PortletBag _get(String portletId) {
@@ -71,8 +71,8 @@ public class PortletBagPool {
 		_portletBagPool.clear();
 	}
 
-	private static PortletBagPool _instance = new PortletBagPool();
+	private static final PortletBagPool _instance = new PortletBagPool();
 
-	private Map<String, PortletBag> _portletBagPool;
+	private final Map<String, PortletBag> _portletBagPool;
 
 }

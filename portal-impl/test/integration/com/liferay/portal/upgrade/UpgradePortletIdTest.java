@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,8 +15,8 @@
 package com.liferay.portal.upgrade;
 
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
-import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.LayoutTypePortlet;
@@ -35,16 +35,14 @@ import com.liferay.portal.service.ResourceActionLocalServiceUtil;
 import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
 import com.liferay.portal.service.ResourcePermissionServiceUtil;
 import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
 import com.liferay.portal.service.permission.PortletPermissionUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalCallbackAwareExecutionTestListener;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.upgrade.util.UpgradePortletId;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.LayoutTestUtil;
 import com.liferay.portal.util.PortletKeys;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,24 +50,30 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Raymond Augé
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalCallbackAwareExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class UpgradePortletIdTest extends UpgradePortletId {
 
-	@Before
-	public void setUp() throws Exception {
-		FinderCacheUtil.clearCache();
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
+
+	@BeforeClass
+	public static void setUpClass() throws PortalException {
+		for (String portletId : _PORTLET_IDS) {
+			Portlet portlet = PortletLocalServiceUtil.getPortletById(
+				TestPropsValues.getCompanyId(), portletId);
+
+			PortletLocalServiceUtil.destroyPortlet(portlet);
+		}
 	}
 
 	@After
@@ -109,8 +113,7 @@ public class UpgradePortletIdTest extends UpgradePortletId {
 	protected Layout addLayout() throws Exception {
 		Group group = GroupTestUtil.addGroup();
 
-		return LayoutTestUtil.addLayout(
-			group.getGroupId(), ServiceTestUtil.randomString(), false);
+		return LayoutTestUtil.addLayout(group, false);
 	}
 
 	protected void addPortletPreferences(Layout layout, String portletId)
@@ -128,7 +131,7 @@ public class UpgradePortletIdTest extends UpgradePortletId {
 		LayoutTypePortlet layoutTypePortlet =
 			(LayoutTypePortlet)layout.getLayoutType();
 
-		Map<Long, String[]> roleIdsToActionIds = new HashMap<Long, String[]>();
+		Map<Long, String[]> roleIdsToActionIds = new HashMap<>();
 
 		Role role = RoleLocalServiceUtil.getRole(
 			TestPropsValues.getCompanyId(), RoleConstants.GUEST);
@@ -245,8 +248,7 @@ public class UpgradePortletIdTest extends UpgradePortletId {
 			return new String[][] {
 				new String[] {_PORTLET_IDS[0], _PORTLET_IDS[0] + "_test"},
 				new String[] {_PORTLET_IDS[1], _PORTLET_IDS[1] + "_test"},
-				new String[] {_PORTLET_IDS[2], _PORTLET_IDS[2] + "_test"},
-				new String[] {_PORTLET_IDS[3], _PORTLET_IDS[3] + "_test"}
+				new String[] {_PORTLET_IDS[2], _PORTLET_IDS[2] + "_test"}
 			};
 		}
 
@@ -264,9 +266,7 @@ public class UpgradePortletIdTest extends UpgradePortletId {
 
 	private static final String _INSTANCE_ID = "_INSTANCE_LhZwzy867qfr";
 
-	private static final String[] _PORTLET_IDS = {
-		"7", "20", "47", "71"
-	};
+	private static final String[] _PORTLET_IDS = {"20", "47", "71"};
 
 	private boolean _testInstanceable = true;
 

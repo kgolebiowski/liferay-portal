@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -289,7 +289,7 @@ public class BooleanQueryImpl extends BaseBooleanQueryImpl {
 		List<org.apache.lucene.search.BooleanClause> luceneBooleanClauses =
 			_booleanQuery.clauses();
 
-		List<BooleanClause> booleanClauses = new ArrayList<BooleanClause>(
+		List<BooleanClause> booleanClauses = new ArrayList<>(
 			luceneBooleanClauses.size());
 
 		for (int i = 0; i < luceneBooleanClauses.size(); i++) {
@@ -321,6 +321,6 @@ public class BooleanQueryImpl extends BaseBooleanQueryImpl {
 		return _booleanQuery.toString();
 	}
 
-	private org.apache.lucene.search.BooleanQuery _booleanQuery;
+	private final org.apache.lucene.search.BooleanQuery _booleanQuery;
 
 }

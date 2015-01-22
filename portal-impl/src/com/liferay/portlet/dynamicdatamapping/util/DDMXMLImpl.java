@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -32,8 +32,10 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XMLSchema;
 import com.liferay.portal.kernel.xml.XPath;
-import com.liferay.portlet.dynamicdatamapping.StructureXsdException;
+import com.liferay.portlet.dynamicdatamapping.StructureDefinitionException;
+import com.liferay.portlet.dynamicdatamapping.StructureDuplicateElementException;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
+import com.liferay.portlet.dynamicdatamapping.model.DDMStructureConstants;
 import com.liferay.portlet.dynamicdatamapping.storage.Field;
 import com.liferay.portlet.dynamicdatamapping.storage.FieldConstants;
 import com.liferay.portlet.dynamicdatamapping.storage.Fields;
@@ -43,9 +45,11 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * @author Bruno Basto
@@ -55,7 +59,7 @@ import java.util.Locale;
 public class DDMXMLImpl implements DDMXML {
 
 	@Override
-	public String formatXML(Document document) throws SystemException {
+	public String formatXML(Document document) {
 		try {
 			return document.formattedString(_XML_INDENT);
 		}
@@ -65,7 +69,7 @@ public class DDMXMLImpl implements DDMXML {
 	}
 
 	@Override
-	public String formatXML(String xml) throws SystemException {
+	public String formatXML(String xml) {
 
 		// This is only supposed to format your xml, however, it will also
 		// unwantingly change &#169; and other characters like it into their
@@ -88,7 +92,7 @@ public class DDMXMLImpl implements DDMXML {
 
 	@Override
 	public Fields getFields(DDMStructure structure, String xml)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return getFields(structure, null, xml, null);
 	}
@@ -97,7 +101,7 @@ public class DDMXMLImpl implements DDMXML {
 	public Fields getFields(
 			DDMStructure structure, XPath xPath, String xml,
 			List<String> fieldNames)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Document document = null;
 
@@ -174,9 +178,7 @@ public class DDMXMLImpl implements DDMXML {
 	}
 
 	@Override
-	public String getXML(Document document, Fields fields)
-		throws SystemException {
-
+	public String getXML(Document document, Fields fields) {
 		Element rootElement = null;
 
 		try {
@@ -211,7 +213,7 @@ public class DDMXMLImpl implements DDMXML {
 	}
 
 	@Override
-	public String getXML(Fields fields) throws SystemException {
+	public String getXML(Fields fields) {
 		return getXML(null, fields);
 	}
 
@@ -221,9 +223,8 @@ public class DDMXMLImpl implements DDMXML {
 
 	@Override
 	public String updateXMLDefaultLocale(
-			String xml, Locale contentDefaultLocale,
-			Locale contentNewDefaultLocale)
-		throws SystemException {
+		String xml, Locale contentDefaultLocale,
+		Locale contentNewDefaultLocale) {
 
 		try {
 			if (LocaleUtil.equals(
@@ -280,14 +281,22 @@ public class DDMXMLImpl implements DDMXML {
 		try {
 			Document document = SAXReaderUtil.read(xml, _xmlSchema);
 
+			validate(document);
+
 			return document.asXML();
+		}
+		catch (StructureDefinitionException sde) {
+			throw sde;
+		}
+		catch (StructureDuplicateElementException sdee) {
+			throw sdee;
 		}
 		catch (Exception e) {
 			if (_log.isDebugEnabled()) {
 				_log.debug("Invalid XML content " + e.getMessage(), e);
 			}
 
-			throw new StructureXsdException();
+			throw new StructureDefinitionException();
 		}
 	}
 
@@ -376,6 +385,31 @@ public class DDMXMLImpl implements DDMXML {
 		dynamicContentElement.addCDATA(valueString.trim());
 	}
 
+	protected void validate(Document document) throws Exception {
+		XPath xPathSelector = SAXReaderUtil.createXPath("//dynamic-element");
+
+		List<Node> nodes = xPathSelector.selectNodes(document);
+
+		Set<String> elementNames = new HashSet<>();
+
+		for (Node node : nodes) {
+			Element element = (Element)node;
+
+			String name = StringUtil.toLowerCase(
+				element.attributeValue("name"));
+
+			if (name.startsWith(DDMStructureConstants.XSD_NAME_RESERVED)) {
+				throw new StructureDefinitionException();
+			}
+
+			if (elementNames.contains(name)) {
+				throw new StructureDuplicateElementException();
+			}
+
+			elementNames.add(name);
+		}
+	}
+
 	private static final String _AVAILABLE_LOCALES = "available-locales";
 
 	private static final String _DEFAULT_LOCALE = "default-locale";
@@ -386,7 +420,7 @@ public class DDMXMLImpl implements DDMXML {
 
 	private static final String _XML_INDENT = "  ";
 
-	private static Log _log = LogFactoryUtil.getLog(DDMXMLImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(DDMXMLImpl.class);
 
 	private XMLSchema _xmlSchema;
 

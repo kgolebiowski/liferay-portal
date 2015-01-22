@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portlet.usergroupsadmin.util;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.search.BaseIndexer;
 import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.Document;
@@ -28,7 +27,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.UserGroup;
 import com.liferay.portal.service.UserGroupLocalServiceUtil;
-import com.liferay.portal.service.persistence.UserGroupActionableDynamicQuery;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portal.util.PropsValues;
 
@@ -36,10 +34,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 
 /**
@@ -52,6 +51,9 @@ public class UserGroupIndexer extends BaseIndexer {
 	public static final String PORTLET_ID = PortletKeys.USER_GROUPS_ADMIN;
 
 	public UserGroupIndexer() {
+		setCommitImmediately(true);
+		setDefaultSelectedFieldNames(
+			Field.COMPANY_ID, Field.UID, Field.USER_GROUP_ID);
 		setIndexerEnabled(PropsValues.USER_GROUPS_INDEXER_ENABLED);
 		setPermissionAware(true);
 		setStagingAware(false);
@@ -123,8 +125,8 @@ public class UserGroupIndexer extends BaseIndexer {
 
 	@Override
 	protected Summary doGetSummary(
-		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		Document document, Locale locale, String snippet, PortletURL portletURL,
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		String title = document.get("name");
 
@@ -141,14 +143,7 @@ public class UserGroupIndexer extends BaseIndexer {
 
 	@Override
 	protected void doReindex(Object obj) throws Exception {
-		if (obj instanceof List<?>) {
-			List<UserGroup> userGroups = (List<UserGroup>)obj;
-
-			for (UserGroup userGroup : userGroups) {
-				doReindex(userGroup);
-			}
-		}
-		else if (obj instanceof Long) {
+		if (obj instanceof Long) {
 			long userGroupId = (Long)obj;
 
 			UserGroup userGroup = UserGroupLocalServiceUtil.getUserGroup(
@@ -159,8 +154,7 @@ public class UserGroupIndexer extends BaseIndexer {
 		else if (obj instanceof long[]) {
 			long[] userGroupIds = (long[])obj;
 
-			Map<Long, Collection<Document>> documentsMap =
-				new HashMap<Long, Collection<Document>>();
+			Map<Long, Collection<Document>> documentsMap = new HashMap<>();
 
 			for (long userGroupId : userGroupIds) {
 				UserGroup userGroup = UserGroupLocalServiceUtil.fetchUserGroup(
@@ -177,7 +171,7 @@ public class UserGroupIndexer extends BaseIndexer {
 				Collection<Document> documents = documentsMap.get(companyId);
 
 				if (documents == null) {
-					documents = new ArrayList<Document>();
+					documents = new ArrayList<>();
 
 					documentsMap.put(companyId, documents);
 				}
@@ -192,7 +186,8 @@ public class UserGroupIndexer extends BaseIndexer {
 				Collection<Document> documents = entry.getValue();
 
 				SearchEngineUtil.updateDocuments(
-					getSearchEngineId(), companyId, documents);
+					getSearchEngineId(), companyId, documents,
+					isCommitImmediately());
 			}
 		}
 		else if (obj instanceof UserGroup) {
@@ -201,7 +196,8 @@ public class UserGroupIndexer extends BaseIndexer {
 			Document document = getDocument(userGroup);
 
 			SearchEngineUtil.updateDocument(
-				getSearchEngineId(), userGroup.getCompanyId(), document);
+				getSearchEngineId(), userGroup.getCompanyId(), document,
+				isCommitImmediately());
 		}
 	}
 
@@ -224,24 +220,26 @@ public class UserGroupIndexer extends BaseIndexer {
 		return PORTLET_ID;
 	}
 
-	protected void reindexUserGroups(long companyId)
-		throws PortalException, SystemException {
-
-		ActionableDynamicQuery actionableDynamicQuery =
-			new UserGroupActionableDynamicQuery() {
-
-			@Override
-			protected void performAction(Object object) throws PortalException {
-				UserGroup userGroup = (UserGroup)object;
-
-				Document document = getDocument(userGroup);
-
-				addDocument(document);
-			}
-
-		};
+	protected void reindexUserGroups(long companyId) throws PortalException {
+		final ActionableDynamicQuery actionableDynamicQuery =
+			UserGroupLocalServiceUtil.getActionableDynamicQuery();
 
 		actionableDynamicQuery.setCompanyId(companyId);
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod() {
+
+				@Override
+				public void performAction(Object object)
+					throws PortalException {
+
+					UserGroup userGroup = (UserGroup)object;
+
+					Document document = getDocument(userGroup);
+
+					actionableDynamicQuery.addDocument(document);
+				}
+
+			});
 		actionableDynamicQuery.setSearchEngineId(getSearchEngineId());
 
 		actionableDynamicQuery.performActions();

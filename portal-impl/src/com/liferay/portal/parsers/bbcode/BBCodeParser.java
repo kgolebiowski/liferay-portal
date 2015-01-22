@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -52,10 +52,10 @@ public class BBCodeParser {
 	}
 
 	public List<BBCodeItem> parse(String text) {
-		List<BBCodeItem> bbCodeItems = new ArrayList<BBCodeItem>();
+		List<BBCodeItem> bbCodeItems = new ArrayList<>();
 
 		BBCodeLexer bbCodeLexer = new BBCodeLexer(text);
-		Stack<String> tags = new Stack<String>();
+		Stack<String> tags = new Stack<>();
 		IntegerWrapper marker = new IntegerWrapper();
 
 		BBCodeToken bbCodeToken = null;
@@ -194,8 +194,8 @@ public class BBCodeParser {
 		bbCodeItems.add(bbCodeItem);
 	}
 
-	private Set<String> _blockElements;
-	private Set<String> _inlineElements;
-	private Set<String> _selfCloseElements;
+	private final Set<String> _blockElements;
+	private final Set<String> _inlineElements;
+	private final Set<String> _selfCloseElements;
 
 }

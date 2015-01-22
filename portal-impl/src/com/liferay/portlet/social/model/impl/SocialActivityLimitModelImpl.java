@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,16 +14,20 @@
 
 package com.liferay.portlet.social.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.impl.BaseModelImpl;
 import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -51,6 +55,7 @@ import java.util.Map;
  * @see com.liferay.portlet.social.model.SocialActivityLimitModel
  * @generated
  */
+@ProviderType
 public class SocialActivityLimitModelImpl extends BaseModelImpl<SocialActivityLimit>
 	implements SocialActivityLimitModel {
 	/*
@@ -86,13 +91,13 @@ public class SocialActivityLimitModelImpl extends BaseModelImpl<SocialActivityLi
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portlet.social.model.SocialActivityLimit"),
 			true);
-	public static long ACTIVITYCOUNTERNAME_COLUMN_BITMASK = 1L;
-	public static long ACTIVITYTYPE_COLUMN_BITMASK = 2L;
-	public static long CLASSNAMEID_COLUMN_BITMASK = 4L;
-	public static long CLASSPK_COLUMN_BITMASK = 8L;
-	public static long GROUPID_COLUMN_BITMASK = 16L;
-	public static long USERID_COLUMN_BITMASK = 32L;
-	public static long ACTIVITYLIMITID_COLUMN_BITMASK = 64L;
+	public static final long ACTIVITYCOUNTERNAME_COLUMN_BITMASK = 1L;
+	public static final long ACTIVITYTYPE_COLUMN_BITMASK = 2L;
+	public static final long CLASSNAMEID_COLUMN_BITMASK = 4L;
+	public static final long CLASSPK_COLUMN_BITMASK = 8L;
+	public static final long GROUPID_COLUMN_BITMASK = 16L;
+	public static final long USERID_COLUMN_BITMASK = 32L;
+	public static final long ACTIVITYLIMITID_COLUMN_BITMASK = 64L;
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(com.liferay.portal.util.PropsUtil.get(
 				"lock.expiration.time.com.liferay.portlet.social.model.SocialActivityLimit"));
 
@@ -268,13 +273,19 @@ public class SocialActivityLimitModelImpl extends BaseModelImpl<SocialActivityLi
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	public long getOriginalUserId() {
@@ -649,8 +660,8 @@ public class SocialActivityLimitModelImpl extends BaseModelImpl<SocialActivityLi
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = SocialActivityLimit.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = SocialActivityLimit.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			SocialActivityLimit.class
 		};
 	private long _activityLimitId;
@@ -659,7 +670,6 @@ public class SocialActivityLimitModelImpl extends BaseModelImpl<SocialActivityLi
 	private boolean _setOriginalGroupId;
 	private long _companyId;
 	private long _userId;
-	private String _userUuid;
 	private long _originalUserId;
 	private boolean _setOriginalUserId;
 	private long _classNameId;

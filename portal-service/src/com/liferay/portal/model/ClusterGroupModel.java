@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -176,19 +176,19 @@ public interface ClusterGroupModel extends BaseModel<ClusterGroup>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(ClusterGroup clusterGroup);
+	public int compareTo(com.liferay.portal.model.ClusterGroup clusterGroup);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<ClusterGroup> toCacheModel();
+	public CacheModel<com.liferay.portal.model.ClusterGroup> toCacheModel();
 
 	@Override
-	public ClusterGroup toEscapedModel();
+	public com.liferay.portal.model.ClusterGroup toEscapedModel();
 
 	@Override
-	public ClusterGroup toUnescapedModel();
+	public com.liferay.portal.model.ClusterGroup toUnescapedModel();
 
 	@Override
 	public String toString();

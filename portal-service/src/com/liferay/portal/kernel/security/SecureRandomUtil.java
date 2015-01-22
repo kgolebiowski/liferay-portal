@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -112,6 +112,7 @@ public class SecureRandomUtil {
 	private static final int _MIN_BUFFER_SIZE = 1024;
 
 	private static final byte[] _bytes;
+	private static long _gapSeed;
 	private static final AtomicInteger _index = new AtomicInteger();
 	private static final Random _random = new SecureRandom();
 	private static final AtomicBoolean _reloadingFlag = new AtomicBoolean();
@@ -133,7 +134,5 @@ public class SecureRandomUtil {
 
 		_gapSeed = _random.nextLong();
 	}
-
-	private static long _gapSeed;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -155,19 +155,20 @@ public interface WikiPageResourceModel extends BaseModel<WikiPageResource> {
 	public Object clone();
 
 	@Override
-	public int compareTo(WikiPageResource wikiPageResource);
+	public int compareTo(
+		com.liferay.portlet.wiki.model.WikiPageResource wikiPageResource);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<WikiPageResource> toCacheModel();
+	public CacheModel<com.liferay.portlet.wiki.model.WikiPageResource> toCacheModel();
 
 	@Override
-	public WikiPageResource toEscapedModel();
+	public com.liferay.portlet.wiki.model.WikiPageResource toEscapedModel();
 
 	@Override
-	public WikiPageResource toUnescapedModel();
+	public com.liferay.portlet.wiki.model.WikiPageResource toUnescapedModel();
 
 	@Override
 	public String toString();

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -154,9 +154,9 @@ public class RestrictedByteBufferCacheServletResponse
 		}
 	}
 
-	private static ByteBuffer _emptyByteBuffer = ByteBuffer.allocate(0);
+	private static final ByteBuffer _emptyByteBuffer = ByteBuffer.allocate(0);
 
-	private int _cacheCapacity;
+	private final int _cacheCapacity;
 	private PrintWriter _printWriter;
 	private RestrictedByteArrayCacheOutputStream
 		_restrictedByteArrayCacheOutputStream;
@@ -168,6 +168,7 @@ public class RestrictedByteBufferCacheServletResponse
 		public void beforeFlush() throws IOException {
 			finishResponse();
 		}
+
 	}
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -48,14 +48,14 @@ public class PermissionThreadLocal {
 		_permissionChecker.set(permissionChecker);
 	}
 
-	private static ThreadLocal<Boolean> _addResource =
-		new AutoResetThreadLocal<Boolean>(
+	private static final ThreadLocal<Boolean> _addResource =
+		new AutoResetThreadLocal<>(
 			PermissionThreadLocal.class + "._addResource", true);
-	private static ThreadLocal<Boolean> _flushEnabled =
-		new AutoResetThreadLocal<Boolean>(
+	private static final ThreadLocal<Boolean> _flushEnabled =
+		new AutoResetThreadLocal<>(
 			PermissionThreadLocal.class + "._flushEnabled", true);
 
-	private static ThreadLocal<PermissionChecker> _permissionChecker =
+	private static final ThreadLocal<PermissionChecker> _permissionChecker =
 		new AutoResetThreadLocal<PermissionChecker>(
 			PermissionThreadLocal.class + "._permissionChecker") {
 

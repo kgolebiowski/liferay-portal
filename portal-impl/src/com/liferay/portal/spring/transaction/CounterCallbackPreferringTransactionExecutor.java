@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -38,14 +38,6 @@ public class CounterCallbackPreferringTransactionExecutor
 	private class CounterCallbackPreferringTransactionCallback
 		implements TransactionCallback<Object> {
 
-		private CounterCallbackPreferringTransactionCallback(
-			TransactionAttribute transactionAttribute,
-			MethodInvocation methodInvocation) {
-
-			_transactionAttribute = transactionAttribute;
-			_methodInvocation = methodInvocation;
-		}
-
 		@Override
 		public Object doInTransaction(TransactionStatus transactionStatus) {
 			try {
@@ -66,8 +58,16 @@ public class CounterCallbackPreferringTransactionExecutor
 			}
 		}
 
-		private MethodInvocation _methodInvocation;
-		private TransactionAttribute _transactionAttribute;
+		private CounterCallbackPreferringTransactionCallback(
+			TransactionAttribute transactionAttribute,
+			MethodInvocation methodInvocation) {
+
+			_transactionAttribute = transactionAttribute;
+			_methodInvocation = methodInvocation;
+		}
+
+		private final MethodInvocation _methodInvocation;
+		private final TransactionAttribute _transactionAttribute;
 
 	}
 

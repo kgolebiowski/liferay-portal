@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -145,10 +144,9 @@ public interface UserGroupModel extends BaseModel<UserGroup>, MVCCModel,
 	 * Returns the user uuid of this user group.
 	 *
 	 * @return the user uuid of this user group
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this user group.
@@ -309,19 +307,19 @@ public interface UserGroupModel extends BaseModel<UserGroup>, MVCCModel,
 	public Object clone();
 
 	@Override
-	public int compareTo(UserGroup userGroup);
+	public int compareTo(com.liferay.portal.model.UserGroup userGroup);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<UserGroup> toCacheModel();
+	public CacheModel<com.liferay.portal.model.UserGroup> toCacheModel();
 
 	@Override
-	public UserGroup toEscapedModel();
+	public com.liferay.portal.model.UserGroup toEscapedModel();
 
 	@Override
-	public UserGroup toUnescapedModel();
+	public com.liferay.portal.model.UserGroup toUnescapedModel();
 
 	@Override
 	public String toString();

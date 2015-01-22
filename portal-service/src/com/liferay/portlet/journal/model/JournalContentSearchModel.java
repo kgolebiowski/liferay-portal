@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -204,19 +204,20 @@ public interface JournalContentSearchModel extends BaseModel<JournalContentSearc
 	public Object clone();
 
 	@Override
-	public int compareTo(JournalContentSearch journalContentSearch);
+	public int compareTo(
+		com.liferay.portlet.journal.model.JournalContentSearch journalContentSearch);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<JournalContentSearch> toCacheModel();
+	public CacheModel<com.liferay.portlet.journal.model.JournalContentSearch> toCacheModel();
 
 	@Override
-	public JournalContentSearch toEscapedModel();
+	public com.liferay.portlet.journal.model.JournalContentSearch toEscapedModel();
 
 	@Override
-	public JournalContentSearch toUnescapedModel();
+	public com.liferay.portlet.journal.model.JournalContentSearch toUnescapedModel();
 
 	@Override
 	public String toString();

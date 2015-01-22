@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -102,9 +102,8 @@ public class SelectorIntraband extends BaseIntraband {
 
 		selectableChannel.configureBlocking(false);
 
-		FutureTask<RegistrationReference> registerFutureTask =
-			new FutureTask<RegistrationReference>(
-				new RegisterCallable(selectableChannel, selectableChannel));
+		FutureTask<RegistrationReference> registerFutureTask = new FutureTask<>(
+			new RegisterCallable(selectableChannel, selectableChannel));
 
 		registerQueue.offer(registerFutureTask);
 
@@ -225,7 +224,7 @@ public class SelectorIntraband extends BaseIntraband {
 	protected final Thread pollingThread = threadFactory.newThread(
 		new PollingJob());
 	protected final Queue<FutureTask<RegistrationReference>> registerQueue =
-		new ConcurrentLinkedQueue<FutureTask<RegistrationReference>>();
+		new ConcurrentLinkedQueue<>();
 	protected final Selector selector = Selector.open();
 
 	protected class RegisterCallable
@@ -362,7 +361,8 @@ public class SelectorIntraband extends BaseIntraband {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SelectorIntraband.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SelectorIntraband.class);
 
 	private class PollingJob implements Runnable {
 

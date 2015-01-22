@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,17 +14,11 @@
 
 package com.liferay.portlet.ratings.service.impl;
 
-import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.asset.model.AssetEntry;
 import com.liferay.portlet.blogs.model.BlogsEntry;
 import com.liferay.portlet.blogs.model.BlogsStatsUser;
@@ -46,7 +40,7 @@ public class RatingsEntryLocalServiceImpl
 
 	@Override
 	public void deleteEntry(long userId, String className, long classPK)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		// Entry
 
@@ -84,8 +78,8 @@ public class RatingsEntryLocalServiceImpl
 	}
 
 	@Override
-	public RatingsEntry fetchEntry(long userId, String className, long classPK)
-		throws SystemException {
+	public RatingsEntry fetchEntry(
+		long userId, String className, long classPK) {
 
 		long classNameId = classNameLocalService.getClassNameId(className);
 
@@ -95,8 +89,7 @@ public class RatingsEntryLocalServiceImpl
 
 	@Override
 	public List<RatingsEntry> getEntries(
-			long userId, String className, List<Long> classPKs)
-		throws SystemException {
+		long userId, String className, List<Long> classPKs) {
 
 		long classNameId = classNameLocalService.getClassNameId(className);
 
@@ -104,9 +97,7 @@ public class RatingsEntryLocalServiceImpl
 	}
 
 	@Override
-	public List<RatingsEntry> getEntries(String className, long classPK)
-		throws SystemException {
-
+	public List<RatingsEntry> getEntries(String className, long classPK) {
 		long classNameId = classNameLocalService.getClassNameId(className);
 
 		return ratingsEntryPersistence.findByC_C(classNameId, classPK);
@@ -114,8 +105,7 @@ public class RatingsEntryLocalServiceImpl
 
 	@Override
 	public List<RatingsEntry> getEntries(
-			String className, long classPK, double score)
-		throws SystemException {
+		String className, long classPK, double score) {
 
 		long classNameId = classNameLocalService.getClassNameId(className);
 
@@ -123,9 +113,7 @@ public class RatingsEntryLocalServiceImpl
 	}
 
 	@Override
-	public int getEntriesCount(String className, long classPK, double score)
-		throws SystemException {
-
+	public int getEntriesCount(String className, long classPK, double score) {
 		long classNameId = classNameLocalService.getClassNameId(className);
 
 		return ratingsEntryPersistence.countByC_C_S(
@@ -134,7 +122,7 @@ public class RatingsEntryLocalServiceImpl
 
 	@Override
 	public RatingsEntry getEntry(long userId, String className, long classPK)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		long classNameId = classNameLocalService.getClassNameId(className);
 
@@ -146,7 +134,7 @@ public class RatingsEntryLocalServiceImpl
 	public RatingsEntry updateEntry(
 			long userId, String className, long classPK, double score,
 			ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		// Entry
 
@@ -156,7 +144,7 @@ public class RatingsEntryLocalServiceImpl
 		double oldScore = 0;
 		Date now = new Date();
 
-		validate(className, score);
+		validate(score);
 
 		RatingsEntry entry = ratingsEntryPersistence.fetchByU_C_C(
 			userId, classNameId, classPK);
@@ -264,18 +252,8 @@ public class RatingsEntryLocalServiceImpl
 		return entry;
 	}
 
-	protected void validate(String className, double score)
-		throws PortalException {
-
-		Filter filter = new Filter(className);
-
-		double maxScore = GetterUtil.getInteger(
-			PropsUtil.get(PropsKeys.RATINGS_MAX_SCORE, filter),
-			PropsValues.RATINGS_DEFAULT_NUMBER_OF_STARS);
-		double minScore = GetterUtil.getInteger(
-			PropsUtil.get(PropsKeys.RATINGS_MIN_SCORE, filter));
-
-		if ((score < minScore) || (score > maxScore)) {
+	protected void validate(double score) throws PortalException {
+		if ((score > 1) || (score < 0)) {
 			throw new EntryScoreException();
 		}
 	}

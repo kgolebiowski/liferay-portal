@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,8 +15,9 @@
 package com.liferay.portlet.shopping.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.settings.LocalizedValuesMap;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PwdGenerator;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.User;
@@ -47,6 +48,7 @@ import com.liferay.portlet.shopping.ShippingPhoneException;
 import com.liferay.portlet.shopping.ShippingStateException;
 import com.liferay.portlet.shopping.ShippingStreetException;
 import com.liferay.portlet.shopping.ShippingZipException;
+import com.liferay.portlet.shopping.ShoppingSettings;
 import com.liferay.portlet.shopping.model.ShoppingCart;
 import com.liferay.portlet.shopping.model.ShoppingCartItem;
 import com.liferay.portlet.shopping.model.ShoppingItem;
@@ -56,11 +58,9 @@ import com.liferay.portlet.shopping.model.ShoppingOrderConstants;
 import com.liferay.portlet.shopping.model.ShoppingOrderItem;
 import com.liferay.portlet.shopping.model.impl.ShoppingCartItemImpl;
 import com.liferay.portlet.shopping.service.base.ShoppingOrderLocalServiceBaseImpl;
-import com.liferay.portlet.shopping.util.ShoppingPreferences;
 import com.liferay.portlet.shopping.util.ShoppingUtil;
 import com.liferay.portlet.shopping.util.comparator.OrderDateComparator;
 import com.liferay.util.CreditCard;
-import com.liferay.util.PwdGenerator;
 
 import java.util.Currency;
 import java.util.Date;
@@ -75,7 +75,7 @@ public class ShoppingOrderLocalServiceImpl
 
 	@Override
 	public ShoppingOrder addLatestOrder(long userId, long groupId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		// Order
 
@@ -92,7 +92,7 @@ public class ShoppingOrderLocalServiceImpl
 			shoppingOrderPersistence.findByG_U_PPPS(
 				groupId, userId, ShoppingOrderConstants.STATUS_CHECKOUT, 0, 1);
 
-		if (pastOrders.size() > 0) {
+		if (!pastOrders.isEmpty()) {
 			ShoppingOrder pastOrder = pastOrders.get(0);
 
 			order = shoppingOrderPersistence.create(orderId);
@@ -154,7 +154,7 @@ public class ShoppingOrderLocalServiceImpl
 			String number, String ppTxnId, String ppPaymentStatus,
 			double ppPaymentGross, String ppReceiverEmail, String ppPayerEmail,
 			boolean updateInventory, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		// Order
 
@@ -180,6 +180,10 @@ public class ShoppingOrderLocalServiceImpl
 			for (ShoppingOrderItem orderItem : orderItems) {
 				ShoppingItem item = shoppingItemLocalService.getItem(
 					ShoppingUtil.getItemId(orderItem.getItemId()));
+
+				if (item.isInfiniteStock()) {
+					continue;
+				}
 
 				if (!item.isFields()) {
 					int quantity =
@@ -226,9 +230,7 @@ public class ShoppingOrderLocalServiceImpl
 	}
 
 	@Override
-	public void deleteOrder(long orderId)
-		throws PortalException, SystemException {
-
+	public void deleteOrder(long orderId) throws PortalException {
 		ShoppingOrder order = shoppingOrderPersistence.findByPrimaryKey(
 			orderId);
 
@@ -236,8 +238,7 @@ public class ShoppingOrderLocalServiceImpl
 	}
 
 	@Override
-	public void deleteOrder(ShoppingOrder order)
-		throws PortalException, SystemException {
+	public void deleteOrder(ShoppingOrder order) throws PortalException {
 
 		// Order
 
@@ -260,9 +261,7 @@ public class ShoppingOrderLocalServiceImpl
 	}
 
 	@Override
-	public void deleteOrders(long groupId)
-		throws PortalException, SystemException {
-
+	public void deleteOrders(long groupId) throws PortalException {
 		List<ShoppingOrder> orders = shoppingOrderPersistence.findByGroupId(
 			groupId);
 
@@ -273,55 +272,40 @@ public class ShoppingOrderLocalServiceImpl
 
 	@Override
 	public ShoppingOrder getLatestOrder(long userId, long groupId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		List<ShoppingOrder> orders = shoppingOrderPersistence.findByG_U_PPPS(
-			groupId, userId, ShoppingOrderConstants.STATUS_LATEST, 0, 1);
-
-		ShoppingOrder order = null;
-
-		if (orders.size() == 1) {
-			order = orders.get(0);
-		}
-		else {
-			order = shoppingOrderLocalService.addLatestOrder(userId, groupId);
-		}
-
-		return order;
+		return shoppingOrderPersistence.findByG_U_PPPS_First(
+			groupId, userId, ShoppingOrderConstants.STATUS_LATEST, null);
 	}
 
 	@Override
-	public ShoppingOrder getOrder(long orderId)
-		throws PortalException, SystemException {
-
+	public ShoppingOrder getOrder(long orderId) throws PortalException {
 		return shoppingOrderPersistence.findByPrimaryKey(orderId);
 	}
 
 	@Override
-	public ShoppingOrder getOrder(String number)
-		throws PortalException, SystemException {
-
+	public ShoppingOrder getOrder(String number) throws PortalException {
 		return shoppingOrderPersistence.findByNumber(number);
 	}
 
 	@Override
 	public ShoppingOrder getPayPalTxnIdOrder(String ppTxnId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return shoppingOrderPersistence.findByPPTxnId(ppTxnId);
 	}
 
 	@Override
 	public ShoppingOrder saveLatestOrder(ShoppingCart cart)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Map<ShoppingCartItem, Integer> items = cart.getItems();
 		Date now = new Date();
 
-		ShoppingPreferences shoppingPrefs = ShoppingPreferences.getInstance(
-			cart.getCompanyId(), cart.getGroupId());
+		ShoppingSettings shoppingSettings = ShoppingSettings.getInstance(
+			cart.getGroupId());
 
-		if (!ShoppingUtil.meetsMinOrder(shoppingPrefs, items)) {
+		if (!ShoppingUtil.meetsMinOrder(shoppingSettings, items)) {
 			throw new CartMinOrderException();
 		}
 
@@ -371,7 +355,7 @@ public class ShoppingOrderLocalServiceImpl
 			ShoppingUtil.calculateAlternativeShipping(
 				items, cart.getAltShipping()));
 		order.setAltShipping(
-			shoppingPrefs.getAlternativeShippingName(cart.getAltShipping()));
+			shoppingSettings.getAlternativeShippingName(cart.getAltShipping()));
 		order.setRequiresShipping(requiresShipping);
 		order.setInsure(cart.isInsure());
 		order.setInsurance(ShoppingUtil.calculateInsurance(items));
@@ -389,12 +373,11 @@ public class ShoppingOrderLocalServiceImpl
 
 	@Override
 	public List<ShoppingOrder> search(
-			long groupId, long companyId, long userId, String number,
-			String billingFirstName, String billingLastName,
-			String billingEmailAddress, String shippingFirstName,
-			String shippingLastName, String shippingEmailAddress,
-			String ppPaymentStatus, boolean andOperator, int start, int end)
-		throws SystemException {
+		long groupId, long companyId, long userId, String number,
+		String billingFirstName, String billingLastName,
+		String billingEmailAddress, String shippingFirstName,
+		String shippingLastName, String shippingEmailAddress,
+		String ppPaymentStatus, boolean andOperator, int start, int end) {
 
 		OrderDateComparator obc = new OrderDateComparator(false);
 
@@ -407,12 +390,11 @@ public class ShoppingOrderLocalServiceImpl
 
 	@Override
 	public int searchCount(
-			long groupId, long companyId, long userId, String number,
-			String billingFirstName, String billingLastName,
-			String billingEmailAddress, String shippingFirstName,
-			String shippingLastName, String shippingEmailAddress,
-			String ppPaymentStatus, boolean andOperator)
-		throws SystemException {
+		long groupId, long companyId, long userId, String number,
+		String billingFirstName, String billingLastName,
+		String billingEmailAddress, String shippingFirstName,
+		String shippingLastName, String shippingEmailAddress,
+		String ppPaymentStatus, boolean andOperator) {
 
 		return shoppingOrderFinder.countByG_C_U_N_PPPS(
 			groupId, companyId, userId, number, billingFirstName,
@@ -424,7 +406,7 @@ public class ShoppingOrderLocalServiceImpl
 	@Override
 	public void sendEmail(
 			long orderId, String emailType, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingOrder order = shoppingOrderPersistence.findByPrimaryKey(
 			orderId);
@@ -436,89 +418,22 @@ public class ShoppingOrderLocalServiceImpl
 	public void sendEmail(
 			ShoppingOrder order, String emailType,
 			ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		ShoppingPreferences shoppingPrefs = ShoppingPreferences.getInstance(
-			order.getCompanyId(), order.getGroupId());
+		ShoppingSettings shoppingSettings = ShoppingSettings.getInstance(
+			order.getGroupId());
 
 		if (emailType.equals("confirmation") &&
-			shoppingPrefs.getEmailOrderConfirmationEnabled()) {
+			shoppingSettings.isEmailOrderConfirmationEnabled()) {
 		}
 		else if (emailType.equals("shipping") &&
-				 shoppingPrefs.getEmailOrderShippingEnabled()) {
+				 shoppingSettings.isEmailOrderShippingEnabled()) {
 		}
 		else {
 			return;
 		}
 
-		User user = userPersistence.findByPrimaryKey(order.getUserId());
-
-		Currency currency = Currency.getInstance(shoppingPrefs.getCurrencyId());
-
-		String billingAddress =
-			order.getBillingFirstName() + " " + order.getBillingLastName() +
-				"<br>" +
-			order.getBillingEmailAddress() + "<br>" +
-			order.getBillingStreet() + "<br>" +
-			order.getBillingCity() + "<br>" +
-			order.getBillingState() + "<br>" +
-			order.getBillingZip() + "<br>" +
-			order.getBillingCountry() + "<br>" +
-			order.getBillingPhone() + "<br>";
-
-		String shippingAddress =
-			order.getShippingFirstName() + " " + order.getShippingLastName() +
-				"<br>" +
-			order.getShippingEmailAddress() + "<br>" +
-			order.getShippingStreet() + "<br>" +
-			order.getShippingCity() + "<br>" +
-			order.getShippingState() + "<br>" +
-			order.getShippingZip() + "<br>" +
-			order.getShippingCountry() + "<br>" +
-			order.getShippingPhone() + "<br>";
-
-		double total = ShoppingUtil.calculateTotal(order);
-
-		String fromName = shoppingPrefs.getEmailFromName(order.getCompanyId());
-		String fromAddress = shoppingPrefs.getEmailFromAddress(
-			order.getCompanyId());
-
-		String toName = user.getFullName();
-		String toAddress = user.getEmailAddress();
-
-		String subject = null;
-		String body = null;
-
-		if (emailType.equals("confirmation")) {
-			subject = shoppingPrefs.getEmailOrderConfirmationSubject();
-			body = shoppingPrefs.getEmailOrderConfirmationBody();
-		}
-		else if (emailType.equals("shipping")) {
-			subject = shoppingPrefs.getEmailOrderShippingSubject();
-			body = shoppingPrefs.getEmailOrderShippingBody();
-		}
-
-		SubscriptionSender subscriptionSender = new SubscriptionSender();
-
-		subscriptionSender.setBody(body);
-		subscriptionSender.setCompanyId(order.getCompanyId());
-		subscriptionSender.setContextAttributes(
-			"[$ORDER_BILLING_ADDRESS$]", billingAddress, "[$ORDER_CURRENCY$]",
-			currency.getSymbol(), "[$ORDER_NUMBER$]", order.getNumber(),
-			"[$ORDER_SHIPPING_ADDRESS$]", shippingAddress, "[$ORDER_TOTAL$]",
-			total);
-		subscriptionSender.setFrom(fromAddress, fromName);
-		subscriptionSender.setHtmlFormat(true);
-		subscriptionSender.setMailId("shopping_order", order.getOrderId());
-		subscriptionSender.setPortletId(PortletKeys.SHOPPING);
-		subscriptionSender.setScopeGroupId(order.getGroupId());
-		subscriptionSender.setServiceContext(serviceContext);
-		subscriptionSender.setSubject(subject);
-		subscriptionSender.setUserId(order.getUserId());
-
-		subscriptionSender.addRuntimeSubscribers(toAddress, toName);
-
-		subscriptionSender.flushNotificationsAsync();
+		notifyUser(order, emailType, shoppingSettings, serviceContext);
 
 		if (emailType.equals("confirmation") && order.isSendOrderEmail()) {
 			order.setSendOrderEmail(false);
@@ -545,7 +460,7 @@ public class ShoppingOrderLocalServiceImpl
 			String shippingZip, String shippingCountry, String shippingPhone,
 			String ccName, String ccType, String ccNumber, int ccExpMonth,
 			int ccExpYear, String ccVerNumber, String comments)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingOrder order = getLatestOrder(userId, groupId);
 
@@ -563,7 +478,7 @@ public class ShoppingOrderLocalServiceImpl
 	public ShoppingOrder updateOrder(
 			long orderId, String ppTxnId, String ppPaymentStatus,
 			double ppPaymentGross, String ppReceiverEmail, String ppPayerEmail)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingOrder order = shoppingOrderPersistence.findByPrimaryKey(
 			orderId);
@@ -592,16 +507,16 @@ public class ShoppingOrderLocalServiceImpl
 			String shippingState, String shippingZip, String shippingCountry,
 			String shippingPhone, String ccName, String ccType, String ccNumber,
 			int ccExpMonth, int ccExpYear, String ccVerNumber, String comments)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingOrder order = shoppingOrderPersistence.findByPrimaryKey(
 			orderId);
 
-		ShoppingPreferences shoppingPrefs = ShoppingPreferences.getInstance(
-			order.getCompanyId(), order.getGroupId());
+		ShoppingSettings shoppingSettings = ShoppingSettings.getInstance(
+			order.getGroupId());
 
 		validate(
-			shoppingPrefs, billingFirstName, billingLastName,
+			shoppingSettings, billingFirstName, billingLastName,
 			billingEmailAddress, billingStreet, billingCity, billingState,
 			billingZip, billingCountry, billingPhone, shipToBilling,
 			shippingFirstName, shippingLastName, shippingEmailAddress,
@@ -660,7 +575,7 @@ public class ShoppingOrderLocalServiceImpl
 		return order;
 	}
 
-	protected String getNumber() throws SystemException {
+	protected String getNumber() {
 		String number = PwdGenerator.getPassword(
 			12, PwdGenerator.KEY1, PwdGenerator.KEY2);
 
@@ -673,8 +588,87 @@ public class ShoppingOrderLocalServiceImpl
 		return number;
 	}
 
+	protected void notifyUser(
+			ShoppingOrder order, String emailType,
+			ShoppingSettings shoppingSettings, ServiceContext serviceContext)
+		throws PortalException {
+
+		User user = userPersistence.findByPrimaryKey(order.getUserId());
+
+		Currency currency = Currency.getInstance(
+			shoppingSettings.getCurrencyId());
+
+		String billingAddress =
+			order.getBillingFirstName() + " " + order.getBillingLastName() +
+				"<br>" +
+			order.getBillingEmailAddress() + "<br>" +
+			order.getBillingStreet() + "<br>" +
+			order.getBillingCity() + "<br>" +
+			order.getBillingState() + "<br>" +
+			order.getBillingZip() + "<br>" +
+			order.getBillingCountry() + "<br>" +
+			order.getBillingPhone() + "<br>";
+
+		String shippingAddress =
+			order.getShippingFirstName() + " " + order.getShippingLastName() +
+				"<br>" +
+			order.getShippingEmailAddress() + "<br>" +
+			order.getShippingStreet() + "<br>" +
+			order.getShippingCity() + "<br>" +
+			order.getShippingState() + "<br>" +
+			order.getShippingZip() + "<br>" +
+			order.getShippingCountry() + "<br>" +
+			order.getShippingPhone() + "<br>";
+
+		double total = ShoppingUtil.calculateTotal(order);
+
+		String fromName = shoppingSettings.getEmailFromName();
+		String fromAddress = shoppingSettings.getEmailFromAddress();
+
+		String toName = user.getFullName();
+		String toAddress = user.getEmailAddress();
+
+		LocalizedValuesMap subjectLocalizedValuesMap = null;
+		LocalizedValuesMap bodyLocalizedValuesMap = null;
+
+		if (emailType.equals("confirmation")) {
+			subjectLocalizedValuesMap =
+				shoppingSettings.getEmailOrderConfirmationSubject();
+			bodyLocalizedValuesMap =
+				shoppingSettings.getEmailOrderConfirmationBody();
+		}
+		else if (emailType.equals("shipping")) {
+			subjectLocalizedValuesMap =
+				shoppingSettings.getEmailOrderShippingSubject();
+			bodyLocalizedValuesMap =
+				shoppingSettings.getEmailOrderShippingBody();
+		}
+
+		SubscriptionSender subscriptionSender = new SubscriptionSender();
+
+		subscriptionSender.setCompanyId(order.getCompanyId());
+		subscriptionSender.setContextAttributes(
+			"[$ORDER_BILLING_ADDRESS$]", billingAddress, "[$ORDER_CURRENCY$]",
+			currency.getSymbol(), "[$ORDER_NUMBER$]", order.getNumber(),
+			"[$ORDER_SHIPPING_ADDRESS$]", shippingAddress, "[$ORDER_TOTAL$]",
+			total);
+		subscriptionSender.setFrom(fromAddress, fromName);
+		subscriptionSender.setHtmlFormat(true);
+		subscriptionSender.setLocalizedBodyMap(bodyLocalizedValuesMap);
+		subscriptionSender.setLocalizedSubjectMap(subjectLocalizedValuesMap);
+		subscriptionSender.setMailId("shopping_order", order.getOrderId());
+		subscriptionSender.setPortletId(PortletKeys.SHOPPING);
+		subscriptionSender.setScopeGroupId(order.getGroupId());
+		subscriptionSender.setServiceContext(serviceContext);
+		subscriptionSender.setUserId(order.getUserId());
+
+		subscriptionSender.addRuntimeSubscribers(toAddress, toName);
+
+		subscriptionSender.flushNotificationsAsync();
+	}
+
 	protected void validate(
-			ShoppingPreferences shoppingPrefs, String billingFirstName,
+			ShoppingSettings shoppingSettings, String billingFirstName,
 			String billingLastName, String billingEmailAddress,
 			String billingStreet, String billingCity, String billingState,
 			String billingZip, String billingCountry, String billingPhone,
@@ -744,8 +738,8 @@ public class ShoppingOrderLocalServiceImpl
 			}
 		}
 
-		if (!shoppingPrefs.usePayPal() &&
-			(shoppingPrefs.getCcTypes().length > 0)) {
+		if (!shoppingSettings.usePayPal() &&
+			(shoppingSettings.getCcTypes().length > 0)) {
 
 			if (Validator.isNull(ccName)) {
 				throw new CCNameException();

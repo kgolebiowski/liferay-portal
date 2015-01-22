@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -154,19 +154,20 @@ public interface UserGroupGroupRoleModel extends BaseModel<UserGroupGroupRole>,
 	public Object clone();
 
 	@Override
-	public int compareTo(UserGroupGroupRole userGroupGroupRole);
+	public int compareTo(
+		com.liferay.portal.model.UserGroupGroupRole userGroupGroupRole);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<UserGroupGroupRole> toCacheModel();
+	public CacheModel<com.liferay.portal.model.UserGroupGroupRole> toCacheModel();
 
 	@Override
-	public UserGroupGroupRole toEscapedModel();
+	public com.liferay.portal.model.UserGroupGroupRole toEscapedModel();
 
 	@Override
-	public UserGroupGroupRole toUnescapedModel();
+	public com.liferay.portal.model.UserGroupGroupRole toUnescapedModel();
 
 	@Override
 	public String toString();

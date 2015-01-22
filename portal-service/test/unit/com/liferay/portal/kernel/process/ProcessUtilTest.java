@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,8 +14,11 @@
 
 package com.liferay.portal.kernel.process;
 
+import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
+import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.util.ObjectValuePair;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,8 +54,8 @@ import org.junit.Test;
 public class ProcessUtilTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@After
 	public void tearDown() throws Exception {
@@ -63,14 +66,14 @@ public class ProcessUtilTest {
 
 			executorService.awaitTermination(10, TimeUnit.SECONDS);
 
-			_nullOutExecutorService();
+			_nullOutThreadPoolExecutor();
 		}
 	}
 
 	@Test
 	public void testConcurrentCreateExecutorService() throws Exception {
 		final AtomicReference<ExecutorService> atomicReference =
-			new AtomicReference<ExecutorService>();
+			new AtomicReference<>();
 
 		Thread thread = new Thread() {
 
@@ -78,7 +81,7 @@ public class ProcessUtilTest {
 			public void run() {
 				try {
 					ExecutorService executorService =
-						_invokeGetExecutorService();
+						_invokeGetThreadPoolExecutor();
 
 					atomicReference.set(executorService);
 				}
@@ -96,14 +99,14 @@ public class ProcessUtilTest {
 
 			while (thread.getState() != Thread.State.BLOCKED);
 
-			executorService = _invokeGetExecutorService();
+			executorService = _invokeGetThreadPoolExecutor();
 		}
 
 		thread.join();
 
 		Assert.assertSame(executorService, atomicReference.get());
 
-		_invokeGetExecutorService();
+		_invokeGetThreadPoolExecutor();
 	}
 
 	@Test
@@ -119,7 +122,7 @@ public class ProcessUtilTest {
 
 		// Idle destroy
 
-		ExecutorService executorService = _invokeGetExecutorService();
+		ExecutorService executorService = _invokeGetThreadPoolExecutor();
 
 		Assert.assertNotNull(executorService);
 		Assert.assertNotNull(_getExecutorService());
@@ -130,7 +133,7 @@ public class ProcessUtilTest {
 
 		// Busy destroy
 
-		executorService = _invokeGetExecutorService();
+		executorService = _invokeGetThreadPoolExecutor();
 
 		Assert.assertNotNull(executorService);
 		Assert.assertNotNull(_getExecutorService());
@@ -158,7 +161,7 @@ public class ProcessUtilTest {
 
 		// Concurrent destroy
 
-		_invokeGetExecutorService();
+		_invokeGetThreadPoolExecutor();
 
 		final ProcessUtil referenceProcessUtil = processUtil;
 
@@ -181,7 +184,7 @@ public class ProcessUtilTest {
 
 		thread.join();
 
-		_invokeGetExecutorService();
+		_invokeGetThreadPoolExecutor();
 
 		processUtil.destroy();
 
@@ -193,32 +196,63 @@ public class ProcessUtilTest {
 	}
 
 	@Test
-	public void testEchoLogging() throws Exception {
-		List<LogRecord> logRecords = JDKLoggerTestUtil.configureJDKLogger(
+	public void testEcho() throws Exception {
+
+		// Logging
+
+		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
 			LoggingOutputProcessor.class.getName(), Level.INFO);
 
-		Future<?> future = ProcessUtil.execute(
-			ProcessUtil.LOGGING_OUTPUT_PROCESSOR,
-			_buildArguments(Echo.class, "2"));
+		try {
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
-		future.get();
+			Future<ObjectValuePair<Void, Void>> loggingFuture =
+				ProcessUtil.execute(
+					ProcessUtil.LOGGING_OUTPUT_PROCESSOR,
+					_buildArguments(Echo.class, "2"));
 
-		future.cancel(true);
+			loggingFuture.get();
 
-		List<String> messageRecords = new ArrayList<String>();
+			loggingFuture.cancel(true);
 
-		for (LogRecord logRecord : logRecords) {
-			messageRecords.add(logRecord.getMessage());
+			List<String> messageRecords = new ArrayList<>();
+
+			for (LogRecord logRecord : logRecords) {
+				messageRecords.add(logRecord.getMessage());
+			}
+
+			Assert.assertTrue(
+				messageRecords.contains(Echo.buildMessage(false, 0)));
+			Assert.assertTrue(
+				messageRecords.contains(Echo.buildMessage(false, 1)));
+			Assert.assertTrue(
+				messageRecords.contains(Echo.buildMessage(true, 0)));
+			Assert.assertTrue(
+				messageRecords.contains(Echo.buildMessage(true, 1)));
+		}
+		finally {
+			captureHandler.close();
 		}
 
-		Assert.assertTrue(
-			messageRecords.contains("{stdErr}" + Echo.class.getName() + "0"));
-		Assert.assertTrue(
-			messageRecords.contains("{stdErr}" + Echo.class.getName() + "1"));
-		Assert.assertTrue(
-			messageRecords.contains("{stdOut}" + Echo.class.getName() + "0"));
-		Assert.assertTrue(
-			messageRecords.contains("{stdOut}" + Echo.class.getName() + "1"));
+		// Collector
+
+		Future<ObjectValuePair<byte[], byte[]>> collectorFuture =
+			ProcessUtil.execute(
+				ProcessUtil.COLLECTOR_OUTPUT_PROCESSOR,
+				_buildArguments(Echo.class, "2"));
+
+		ObjectValuePair<byte[], byte[]> objectValuePair = collectorFuture.get();
+
+		collectorFuture.cancel(true);
+
+		Assert.assertEquals(
+			Echo.buildMessage(true, 0) + "\n" + Echo.buildMessage(true, 1) +
+				"\n",
+			new String(objectValuePair.getKey()));
+		Assert.assertEquals(
+			Echo.buildMessage(false, 0) + "\n" + Echo.buildMessage(false, 1) +
+				"\n",
+			new String(objectValuePair.getValue()));
 	}
 
 	@Test
@@ -235,10 +269,17 @@ public class ProcessUtilTest {
 		catch (ExecutionException ee) {
 			Throwable throwable = ee.getCause();
 
-			Assert.assertEquals(ProcessException.class, throwable.getClass());
+			Assert.assertSame(
+				TerminationProcessException.class, throwable.getClass());
 			Assert.assertEquals(
 				"Subprocess terminated with exit code " + ErrorExit.EXIT_CODE,
 				throwable.getMessage());
+
+			TerminationProcessException terminationProcessException =
+				(TerminationProcessException)throwable;
+
+			Assert.assertEquals(
+				ErrorExit.EXIT_CODE, terminationProcessException.getExitCode());
 		}
 	}
 
@@ -283,7 +324,7 @@ public class ProcessUtilTest {
 
 	@Test
 	public void testExecuteAfterShutdown() throws Exception {
-		ExecutorService executorService = _invokeGetExecutorService();
+		ExecutorService executorService = _invokeGetThreadPoolExecutor();
 
 		executorService.shutdown();
 
@@ -460,7 +501,7 @@ public class ProcessUtilTest {
 	private static String[] _buildArguments(
 		Class<?> clazz, String... arguments) {
 
-		List<String> argumentsList = new ArrayList<String>();
+		List<String> argumentsList = new ArrayList<>();
 
 		argumentsList.add("java");
 		argumentsList.add("-cp");
@@ -471,27 +512,27 @@ public class ProcessUtilTest {
 		return argumentsList.toArray(new String[argumentsList.size()]);
 	}
 
-	private static ExecutorService _getExecutorService() throws Exception {
-		Field field = ProcessUtil.class.getDeclaredField("_executorService");
+	private static ThreadPoolExecutor _getExecutorService() throws Exception {
+		Field field = ProcessUtil.class.getDeclaredField("_threadPoolExecutor");
 
 		field.setAccessible(true);
 
-		return (ExecutorService)field.get(null);
+		return (ThreadPoolExecutor)field.get(null);
 	}
 
-	private static ExecutorService _invokeGetExecutorService()
+	private static ThreadPoolExecutor _invokeGetThreadPoolExecutor()
 		throws Exception {
 
 		Method method = ProcessUtil.class.getDeclaredMethod(
-			"_getExecutorService");
+			"_getThreadPoolExecutor");
 
 		method.setAccessible(true);
 
-		return (ExecutorService)method.invoke(method);
+		return (ThreadPoolExecutor)method.invoke(method);
 	}
 
-	private static void _nullOutExecutorService() throws Exception {
-		Field field = ProcessUtil.class.getDeclaredField("_executorService");
+	private static void _nullOutThreadPoolExecutor() throws Exception {
+		Field field = ProcessUtil.class.getDeclaredField("_threadPoolExecutor");
 
 		field.setAccessible(true);
 
@@ -537,19 +578,27 @@ public class ProcessUtilTest {
 			_countDownLatch.await();
 		}
 
-		private CountDownLatch _countDownLatch;
+		private final CountDownLatch _countDownLatch;
 
 	}
 
 	private static class Echo {
+
+		public static String buildMessage(boolean stdOut, int number) {
+			if (stdOut) {
+				return "{stdOut}" + Echo.class.getName() + number;
+			}
+
+			return "{stdErr}" + Echo.class.getName() + number;
+		}
 
 		@SuppressWarnings("unused")
 		public static void main(String[] arguments) {
 			int times = Integer.parseInt(arguments[0]);
 
 			for (int i = 0; i < times; i++) {
-				System.err.println("{stdErr}" + Echo.class.getName() + i);
-				System.out.println("{stdOut}" + Echo.class.getName() + i);
+				System.err.println(buildMessage(false, i));
+				System.out.println(buildMessage(true, i));
 			}
 		}
 

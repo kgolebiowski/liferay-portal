@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,29 +15,22 @@
 --%>
 
 <aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />openDocument',
-		function(webDavUrl) {
-			var A = AUI();
+	function <portlet:namespace />openDocument(webDavURL) {
+		Liferay.Util.openDocument(
+			webDavURL,
+			null,
+			function(exception) {
+				var errorMessage = _.sub(
+					'<%= UnicodeLanguageUtil.get(request, "cannot-open-the-requested-document-due-to-the-following-reason") %>',
+					exception.message
+				);
 
-			Liferay.Util.openDocument(
-				webDavUrl,
-				null,
-				function(exception) {
-					var errorMessage = A.Lang.sub(
-						'<%= UnicodeLanguageUtil.get(pageContext, "cannot-open-the-requested-document-due-to-the-following-reason") %>',
-						[exception.message]
-					);
+				var openMSOfficeError = AUI.$('#<portlet:namespace />openMSOfficeError');
 
-					var openMSOfficeError = A.one('#<portlet:namespace />openMSOfficeError');
+				openMSOfficeError.html(errorMessage);
 
-					openMSOfficeError.html(errorMessage);
-
-					openMSOfficeError.show();
-				}
-			);
-		},
-		['aui-base']
-	);
+				openMSOfficeError.removeClass('hide');
+			}
+		);
+	}
 </aui:script>

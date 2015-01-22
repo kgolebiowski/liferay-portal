@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -44,12 +44,12 @@ if (queryLogicIndex >= 0) {
 %>
 
 <div class="field-row form-inline query-row">
-	<aui:select inlineField="<%= true %>" label="" name='<%= "queryContains" + index %>'>
+	<aui:select inlineField="<%= true %>" label="" name='<%= "queryContains" + index %>' title="query-contains">
 		<aui:option label="contains" selected="<%= queryContains %>" value="true" />
 		<aui:option label="does-not-contain" selected="<%= !queryContains %>" value="false" />
 	</aui:select>
 
-	<aui:select inlineField="<%= true %>" label="" name='<%= "queryAndOperator" + index %>'>
+	<aui:select inlineField="<%= true %>" label="" name='<%= "queryAndOperator" + index %>' title="and-operator">
 		<aui:option label="all" selected="<%= queryAndOperator %>" value="true" />
 		<aui:option label="any" selected="<%= !queryAndOperator %>" value="false" />
 	</aui:select>
@@ -67,47 +67,30 @@ if (queryLogicIndex >= 0) {
 		/>
 	</div>
 
-	<div class="field categories-selector <%= Validator.equals(queryName, "assetCategories") ? StringPool.BLANK : "hide" %>">
+	<div class="categories-selector field <%= Validator.equals(queryName, "assetCategories") ? StringPool.BLANK : "hide" %>">
 		<liferay-ui:asset-categories-selector
 			curCategoryIds='<%= Validator.equals(queryName, "assetCategories") ? queryValues : null %>'
+			groupIds="<%= categorizableGroupIds %>"
 			hiddenInput='<%= "queryCategoryIds" + index %>'
 		/>
 	</div>
 </div>
 
-<aui:script use="aui-base">
-	var select = A.one('#<portlet:namespace /><%= randomNamespace %>selector');
+<aui:script sandbox="<%= true %>">
+	var select = $('#<portlet:namespace /><%= randomNamespace %>selector');
 
-	if (select) {
-		var row = select.ancestor('.query-row');
+	var row = select.closest('.query-row');
 
-		if (row) {
-			select.on(
-				'change',
-				function(event) {
-					var tagsSelector = row.one('.tags-selector');
-					var categoriesSelector = row.one('.categories-selector');
+	select.on(
+		'change',
+		function(event) {
+			var tagsSelector = row.find('.tags-selector');
+			var categoriesSelector = row.find('.categories-selector');
 
-					if (select.val() == 'assetTags') {
-						if (tagsSelector) {
-							tagsSelector.show();
-						}
+			var assetTags = (select.val() == 'assetTags');
 
-						if (categoriesSelector) {
-							categoriesSelector.hide();
-						}
-					}
-					else {
-						if (tagsSelector) {
-							tagsSelector.hide();
-						}
-
-						if (categoriesSelector) {
-							categoriesSelector.show();
-						}
-					}
-				}
-			);
+			tagsSelector.toggleClass('hide', !assetTags);
+			categoriesSelector.toggleClass('hide', assetTags);
 		}
-	}
+	);
 </aui:script>

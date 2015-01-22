@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -471,7 +471,7 @@ public class CacheFilter extends BasePortalFilter {
 
 	private static final int _PATTERN_RESOURCE = 2;
 
-	private static Log _log = LogFactoryUtil.getLog(CacheFilter.class);
+	private static final Log _log = LogFactoryUtil.getLog(CacheFilter.class);
 
 	private int _pattern;
 

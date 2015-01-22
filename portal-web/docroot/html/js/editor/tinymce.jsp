@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,7 @@
 <%@ include file="/html/taglib/init.jsp" %>
 
 <%
+String contents = (String)request.getAttribute("liferay-ui:input-editor:contents");
 String cssClass = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-editor:cssClass"));
 String editorImpl = (String)request.getAttribute("liferay-ui:input-editor:editorImpl");
 String initMethod = (String)request.getAttribute("liferay-ui:input-editor:initMethod");
@@ -28,7 +29,14 @@ if (Validator.isNotNull(onChangeMethod)) {
 	onChangeMethod = namespace + onChangeMethod;
 }
 
+String onInitMethod = (String)request.getAttribute("liferay-ui:input-editor:onInitMethod");
+
+if (Validator.isNotNull(onInitMethod)) {
+	onInitMethod = namespace + onInitMethod;
+}
+
 boolean resizable = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:input-editor:resizable"));
+boolean showSource = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:input-editor:showSource"));
 boolean skipEditorLoading = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:input-editor:skipEditorLoading"));
 %>
 
@@ -48,29 +56,12 @@ boolean skipEditorLoading = GetterUtil.getBoolean((String)request.getAttribute("
 </c:if>
 
 <div class="<%= cssClass %>">
-	<textarea id="<%= name %>" name="<%= name %>" style="height: 100%; width: 100%;"></textarea>
+	<textarea id="<%= name %>" name="<%= name %>" style="height: 100%; visibility: hidden; width: 100%;"><%= (contents != null) ? contents : StringPool.BLANK %></textarea>
 </div>
 
-<aui:script>
+<aui:script use="aui-node-base">
 	window['<%= name %>'] = {
 		onChangeCallbackCounter: 0,
-
-		destroy: function() {
-			tinyMCE.editors['<%= name %>'].destroy();
-
-			window['<%= name %>'] = null;
-		},
-
-		focus: function() {
-			tinyMCE.editors['<%= name %>'].focus();
-		},
-
-		fileBrowserCallback: function(field_name, url, type) {
-		},
-
-		getHTML: function() {
-			return tinyMCE.editors['<%= name %>'].getContent();
-		},
 
 		init: function(value) {
 			if (typeof value != 'string') {
@@ -80,11 +71,57 @@ boolean skipEditorLoading = GetterUtil.getBoolean((String)request.getAttribute("
 			window['<%= name %>'].setHTML(value);
 		},
 
+		destroy: function() {
+			tinyMCE.editors['<%= name %>'].destroy();
+
+			window['<%= name %>'] = null;
+		},
+
+		fileBrowserCallback: function(field_name, url, type) {
+		},
+
+		focus: function() {
+			tinyMCE.editors['<%= name %>'].focus();
+		},
+
+		getHTML: function() {
+			var data;
+
+			if ((contents == null) && !window['<%= name %>'].instanceReady && window['<%= HtmlUtil.escape(namespace + initMethod) %>']) {
+				data = <%= HtmlUtil.escape(namespace + initMethod) %>();
+			}
+			else {
+				data = tinyMCE.editors['<%= name %>'].getContent();
+			}
+
+			return data;
+		},
+
 		initInstanceCallback: function() {
-			<c:if test="<%= Validator.isNotNull(initMethod) %>">
+			<c:if test="<%= (contents == null) && Validator.isNotNull(initMethod) %>">
 				window['<%= name %>'].init(<%= HtmlUtil.escape(namespace + initMethod) %>());
 			</c:if>
+
+			var iframe = A.one('#<%= name %>_ifr');
+
+			if (iframe) {
+				var iframeWin = iframe.getDOM().contentWindow;
+
+				if (iframeWin) {
+					var iframeDoc = iframeWin.document.documentElement;
+
+					A.one(iframeDoc).addClass('aui');
+				}
+			}
+
+			<c:if test="<%= Validator.isNotNull(onInitMethod) %>">
+				window['<%= HtmlUtil.escapeJS(namespace + onInitMethod) %>']();
+			</c:if>
+
+			window['<%= name %>'].instanceReady = true;
 		},
+
+		instanceReady: false,
 
 		<%
 		if (Validator.isNotNull(onChangeMethod)) {
@@ -110,7 +147,7 @@ boolean skipEditorLoading = GetterUtil.getBoolean((String)request.getAttribute("
 
 				}
 
-				onChangeCallbackCounter++;
+				window['<%= name %>'].onChangeCallbackCounter++;
 			},
 
 		<%
@@ -124,6 +161,7 @@ boolean skipEditorLoading = GetterUtil.getBoolean((String)request.getAttribute("
 
 	tinyMCE.init(
 		{
+			content_css: '<%= HtmlUtil.escapeJS(themeDisplay.getPathThemeCss()) %>/aui.css,<%= HtmlUtil.escapeJS(themeDisplay.getPathThemeCss()) %>/main.css',
 			convert_urls: false,
 			elements: '<%= name %>',
 			extended_valid_elements: 'a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name|usemap],hr[class|width|size|noshade],font[face|size|color|style],span[class|align|style]',
@@ -147,11 +185,11 @@ boolean skipEditorLoading = GetterUtil.getBoolean((String)request.getAttribute("
 			relative_urls: false,
 			remove_script_host: false,
 			theme: 'advanced',
-			theme_advanced_buttons1_add_before: 'fontselect,fontsizeselect,forecolor,backcolor,separator',
 			theme_advanced_buttons2_add: 'separator,media,advhr,separator,preview,print',
+			theme_advanced_buttons1_add_before: 'fontselect,fontsizeselect,forecolor,backcolor,separator',
 			theme_advanced_buttons2_add_before: 'cut,copy,paste,search,replace',
 			theme_advanced_buttons3_add_before: 'tablecontrols,separator',
-			theme_advanced_disable: 'formatselect,styleselect,help',
+			theme_advanced_disable: 'formatselect,styleselect,help<c:if test="<%= !showSource %>">,code</c:if>',
 			theme_advanced_resize_horizontal: '<%= resizable %>',
 			theme_advanced_toolbar_align: 'left',
 			theme_advanced_toolbar_location: 'top'

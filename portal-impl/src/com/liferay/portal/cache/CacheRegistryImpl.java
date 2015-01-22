@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -102,10 +102,11 @@ public class CacheRegistryImpl implements CacheRegistry {
 		_cacheRegistryItems.remove(name);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(CacheRegistryImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		CacheRegistryImpl.class);
 
 	private boolean _active = true;
-	private Map<String, CacheRegistryItem> _cacheRegistryItems =
-		new ConcurrentHashMap<String, CacheRegistryItem>();
+	private final Map<String, CacheRegistryItem> _cacheRegistryItems =
+		new ConcurrentHashMap<>();
 
 }

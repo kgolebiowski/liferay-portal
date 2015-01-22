@@ -1,22 +1,5 @@
 <head>
 	<script type='text/javascript'>
-		function errorLogSizeCheck() {
-			if (document.getElementById("errorLogSizeButton").checked) {
-				document.getElementById("errorLogSize").innerHTML = "Decrease Error Log Size";
-
-				actionCommandLog.style.height = "37%";
-				errorLog.style.height = "50%";
-				pageObjectXMLLog.style.height = "37%";
-			}
-			else {
-				document.getElementById("errorLogSize").innerHTML = "&nbsp;Increase Error Log Size";
-
-				actionCommandLog.style.height = "75%";
-				errorLog.style.height = "12%";
-				pageObjectXMLLog.style.height = "75%";
-			}
-		}
-
 		function pauseButtonCheck() {
 			if (document.getElementById("pauseButton").checked) {
 				document.getElementById("pause").innerHTML = "Paused...";
@@ -26,38 +9,48 @@
 			}
 		}
 
+		function pauseErrorButtonCheck() {
+			if (document.getElementById("pauseErrorButton").checked) {
+				document.getElementById("pauseError").innerHTML = "Disable Pause After Error";
+			}
+			else {
+				document.getElementById("pauseError").innerHTML = "Enable Pause After Error&nbsp;";
+			}
+		}
+
 		function radioCheck () {
 			var actionCommandLogButtonChecked = document.getElementById("actionCommandLogButton").checked;
-			var disableActionScreenShotButtonChecked = document.getElementById("disableActionScreenShotButton").checked;
-			var enableActionScreenShotButtonChecked = document.getElementById("enableActionScreenShotButton").checked;
+			var descriptionLogButtonChecked = document.getElementById("descriptionLogButton").checked;
+			var errorLogButtonChecked = document.getElementById("errorLogButton").checked;
 			var xmlLogButtonChecked = document.getElementById("xmlLogButton").checked;
 
 			var actionCommandLog = document.getElementById("actionCommandLog");
-			var actionScreenShotLog = document.getElementById("actionScreenShotLog");
+			var descriptionLog = document.getElementById("descriptionLog");
+			var errorLog = document.getElementById("errorLog");
 			var pageObjectXMLLog = document.getElementById("pageObjectXMLLog");
 
-			if ((actionCommandLogButtonChecked) && (disableActionScreenShotButtonChecked)) {
+			if (actionCommandLogButtonChecked) {
 				actionCommandLog.style.display = "block";
-				actionCommandLog.style.width = "99%";
-				actionScreenShotLog.style.display = "none";
+				descriptionLog.style.display ="none";
+				errorLog.style.display ="none";
 				pageObjectXMLLog.style.display = "none";
 			}
-			else if ((actionCommandLogButtonChecked) && (enableActionScreenShotButtonChecked)) {
-				actionCommandLog.style.display = "block";
-				actionCommandLog.style.width = "46%";
-				actionScreenShotLog.style.display = "block";
+			else if (descriptionLogButtonChecked) {
+				actionCommandLog.style.display = "none";
+				descriptionLog.style.display ="block";
+				errorLog.style.display ="none";
 				pageObjectXMLLog.style.display = "none";
 			}
-			else if ((xmlLogButtonChecked) && (disableActionScreenShotButtonChecked)) {
+			else if (errorLogButtonChecked) {
 				actionCommandLog.style.display = "none";
-				actionScreenShotLog.style.display = "none";
-				pageObjectXMLLog.style.width = "99%";
-				pageObjectXMLLog.style.display = "block";
+				descriptionLog.style.display ="none";
+				errorLog.style.display ="block";
+				pageObjectXMLLog.style.display = "none";
 			}
-			else if ((xmlLogButtonChecked) && (enableActionScreenShotButtonChecked)) {
+			else if (xmlLogButtonChecked) {
 				actionCommandLog.style.display = "none";
-				actionScreenShotLog.style.display = "block";
-				pageObjectXMLLog.style.width = "46%";
+				descriptionLog.style.display ="none";
+				errorLog.style.display ="none";
 				pageObjectXMLLog.style.display = "block";
 			}
 		}
@@ -142,24 +135,25 @@
 		#actionCommandLog {
 			border: 1px solid #CCC;
 			float: left;
-			height: 75%;
+			height: 85%;
 			overflow: auto;
 			white-space: nowrap;
 			width: 99%;
 		}
 
-		#actionScreenShotLog {
+		#descriptionLog {
 			border: 1px solid #CCC;
 			float: left;
-			height: 75%;
+			height: 85%;
 			overflow: auto;
 			white-space: nowrap;
-			width: 53%;
+			width: 99%;
 		}
 
 		#errorLog {
 			border: 1px solid #CCC;
-			height: 12%;
+			float: left;
+			height: 85%;
 			overflow: auto;
 			white-space: nowrap;
 			width: 99%;
@@ -168,9 +162,8 @@
 		#pageObjectXMLLog {
 			border: 1px solid #CCC;
 			float: left;
-			height: 75%;
+			height: 85%;
 			overflow: auto;
-			white-space: nowrap;
 			width: 99%;
 		}
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.dynamicdatalists.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -21,11 +23,13 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * This class is used by SOAP remote services.
+ * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.dynamicdatalists.service.http.DDLRecordVersionServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @see com.liferay.portlet.dynamicdatalists.service.http.DDLRecordVersionServiceSoap
  * @generated
  */
+@ProviderType
 public class DDLRecordVersionSoap implements Serializable {
 	public static DDLRecordVersionSoap toSoapModel(DDLRecordVersion model) {
 		DDLRecordVersionSoap soapModel = new DDLRecordVersionSoap();

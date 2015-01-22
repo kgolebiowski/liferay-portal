@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -116,7 +116,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 		Set<Header> values = _metaData._headers.get(HttpHeaders.SET_COOKIE);
 
 		if (values == null) {
-			values = new HashSet<Header>();
+			values = new HashSet<>();
 
 			_metaData._headers.put(HttpHeaders.SET_COOKIE, values);
 		}
@@ -133,7 +133,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 		Set<Header> values = _metaData._headers.get(name);
 
 		if (values == null) {
-			values = new HashSet<Header>();
+			values = new HashSet<>();
 
 			_metaData._headers.put(name, values);
 		}
@@ -156,7 +156,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 		Set<Header> values = _metaData._headers.get(name);
 
 		if (values == null) {
-			values = new HashSet<Header>();
+			values = new HashSet<>();
 
 			_metaData._headers.put(name, values);
 		}
@@ -173,7 +173,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 		Set<Header> values = _metaData._headers.get(name);
 
 		if (values == null) {
-			values = new HashSet<Header>();
+			values = new HashSet<>();
 
 			_metaData._headers.put(name, values);
 		}
@@ -278,7 +278,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 			return Collections.emptyList();
 		}
 
-		List<String> stringValues = new ArrayList<String>();
+		List<String> stringValues = new ArrayList<>();
 
 		for (Header header : values) {
 			stringValues.add(header.toString());
@@ -358,7 +358,18 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 
 	@Override
 	public void sendError(int status) throws IOException {
-		sendError(status, null);
+		if (isCommitted()) {
+			throw new IllegalStateException("Send error after commit");
+		}
+
+		_metaData._error = true;
+		_metaData._status = status;
+
+		resetBuffer();
+
+		_committed = true;
+
+		super.sendError(status);
 	}
 
 	@Override
@@ -477,7 +488,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 
 	@Override
 	public void setDateHeader(String name, long value) {
-		Set<Header> values = new HashSet<Header>();
+		Set<Header> values = new HashSet<>();
 
 		_metaData._headers.put(name, values);
 
@@ -496,7 +507,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 			return;
 		}
 
-		Set<Header> values = new HashSet<Header>();
+		Set<Header> values = new HashSet<>();
 
 		_metaData._headers.put(name, values);
 
@@ -509,7 +520,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 
 	@Override
 	public void setIntHeader(String name, int value) {
-		Set<Header> values = new HashSet<Header>();
+		Set<Header> values = new HashSet<>();
 
 		_metaData._headers.put(name, values);
 
@@ -533,7 +544,13 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 
 	@Override
 	public void setStatus(int status) {
-		setStatus(status, null);
+		if (isCommitted()) {
+			return;
+		}
+
+		_metaData._status = status;
+
+		super.setStatus(status);
 	}
 
 	@Override
@@ -588,8 +605,7 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 		private String _contentType;
 		private boolean _error;
 		private String _errorMessage;
-		private Map<String, Set<Header>> _headers =
-			new HashMap<String, Set<Header>>();
+		private final Map<String, Set<Header>> _headers = new HashMap<>();
 		private Locale _locale;
 		private String _location;
 		private int _status = SC_OK;
@@ -612,6 +628,6 @@ public class MetaInfoCacheServletResponse extends HttpServletResponseWrapper {
 	protected boolean calledGetWriter;
 
 	private boolean _committed;
-	private MetaData _metaData = new MetaData();
+	private final MetaData _metaData = new MetaData();
 
 }

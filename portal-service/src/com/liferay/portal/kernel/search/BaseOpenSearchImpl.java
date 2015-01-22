@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -46,6 +46,11 @@ import javax.servlet.http.HttpServletRequest;
  * @author Brian Wing Shun Chan
  */
 public abstract class BaseOpenSearchImpl implements OpenSearch {
+
+	public BaseOpenSearchImpl() {
+		_enabled = GetterUtil.getBoolean(
+			PropsUtil.get(getClass().getName()), true);
+	}
 
 	@Override
 	public boolean isEnabled() {
@@ -536,7 +541,6 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 		return portletURL;
 	}
 
-	private boolean _enabled = GetterUtil.getBoolean(
-		PropsUtil.get(getClass().getName()), true);
+	private final boolean _enabled;
 
 }

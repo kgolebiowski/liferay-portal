@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -252,10 +252,10 @@ public class DLProcessorRegistryImpl implements DLProcessorRegistry {
 	private static final String[] _DL_FILE_ENTRY_PROCESSORS =
 		PropsUtil.getArray(PropsKeys.DL_FILE_ENTRY_PROCESSORS);
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DLProcessorRegistryImpl.class);
 
-	private Map<String, DLProcessor> _dlProcessors =
-		new ConcurrentHashMap<String, DLProcessor>();
+	private final Map<String, DLProcessor> _dlProcessors =
+		new ConcurrentHashMap<>();
 
 }

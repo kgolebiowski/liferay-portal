@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -269,19 +269,19 @@ public interface CompanyModel extends BaseModel<Company>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(Company company);
+	public int compareTo(com.liferay.portal.model.Company company);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Company> toCacheModel();
+	public CacheModel<com.liferay.portal.model.Company> toCacheModel();
 
 	@Override
-	public Company toEscapedModel();
+	public com.liferay.portal.model.Company toEscapedModel();
 
 	@Override
-	public Company toUnescapedModel();
+	public com.liferay.portal.model.Company toUnescapedModel();
 
 	@Override
 	public String toString();

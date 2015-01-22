@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -24,26 +24,31 @@ import com.liferay.portal.kernel.nio.intraband.SystemDataType;
 import com.liferay.portal.kernel.nio.intraband.blocking.ExecutorIntraband;
 import com.liferay.portal.kernel.nio.intraband.nonblocking.SelectorIntraband;
 import com.liferay.portal.kernel.nio.intraband.rpc.BootstrapRPCDatagramReceiveHandler;
+import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
 import com.liferay.portal.kernel.nio.intraband.welder.socket.SocketWelder;
 import com.liferay.portal.kernel.resiliency.spi.MockSPI;
+import com.liferay.portal.kernel.resiliency.spi.MockSPIProvider;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
 import com.liferay.portal.kernel.resiliency.spi.SPIConfiguration;
 import com.liferay.portal.kernel.resiliency.spi.SPIRegistryUtil;
 import com.liferay.portal.kernel.resiliency.spi.provider.SPIProvider;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.test.NewEnv;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.PropsUtilAdvice;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.portal.resiliency.spi.SPIRegistryImpl;
 import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJMockingNewClassLoaderJUnitTestRunner;
+import com.liferay.portal.test.AspectJNewEnvTestRule;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+import java.io.IOException;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
@@ -52,7 +57,8 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -60,18 +66,20 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(AspectJMockingNewClassLoaderJUnitTestRunner.class)
+@NewEnv(type = NewEnv.Type.CLASSLOADER)
 public class MPIHelperUtilTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			CodeCoverageAssertor.INSTANCE, AspectJNewEnvTestRule.INSTANCE);
 
 	@Before
 	public void setUp() {
@@ -100,7 +108,10 @@ public class MPIHelperUtilTest {
 
 	@After
 	public void tearDown() {
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.OFF)) {
+
 			MPIHelperUtil.shutdown();
 		}
 		catch (Throwable t) {
@@ -124,6 +135,9 @@ public class MPIHelperUtilTest {
 
 			Assert.assertEquals(
 				"Unable to instantiate NoSuchClass", throwable.getMessage());
+		}
+		finally {
+			System.clearProperty(PropsKeys.INTRABAND_IMPL);
 		}
 	}
 
@@ -198,66 +212,108 @@ public class MPIHelperUtilTest {
 			datagramReceiveHandlers[SystemDataType.RPC.getValue()].getClass());
 	}
 
-	@AdviseWith(adviceClasses = {PropsUtilAdvice.class})
+	@NewEnv(type = NewEnv.Type.NONE)
 	@Test
-	public void testShutdownFail() throws Exception {
-
-		// Shutdown after shutdown, with log
-
-		List<LogRecord> logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
-
-		MPIHelperUtil.shutdown();
-
-		MPIHelperUtil.shutdown();
-
-		Assert.assertEquals(1, logRecords.size());
-
-		LogRecord logRecord = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Unable to unexport " + _getMPIImpl(), logRecord.getMessage());
-
-		Throwable throwable = logRecord.getThrown();
-
-		Assert.assertSame(NoSuchObjectException.class, throwable.getClass());
-
-		// Shutdown after shutdown, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		MPIHelperUtil.shutdown();
-
-		Assert.assertTrue(logRecords.isEmpty());
+	public void testConstructor() {
+		new MPIHelperUtil();
 	}
 
 	@AdviseWith(adviceClasses = {PropsUtilAdvice.class})
 	@Test
-	public void testSPIKey() throws Exception {
+	public void testShutdownFailWithLog() throws NoSuchObjectException {
+		UnicastRemoteObject.unexportObject(_getMPIImpl(), true);
 
-		// SPI provider name does not match
+		final IOException ioException = new IOException();
 
-		Object spiKey1 = _createSPIKey("name1", "id1");
-		Object spiKey2 = _createSPIKey("name2", "id1");
+		ReflectionTestUtil.setFieldValue(
+			MPIHelperUtil.class, "_intraband",
+			new MockIntraband() {
 
-		Assert.assertFalse(spiKey1.equals(spiKey2));
-		Assert.assertEquals("name1#id1", spiKey1.toString());
-		Assert.assertEquals("name2#id1", spiKey2.toString());
+				@Override
+				public void close() throws IOException {
+					throw ioException;
+				}
 
-		// SPI id does not match
+			});
 
-		spiKey1 = _createSPIKey("name1", "id1");
-		spiKey2 = _createSPIKey("name1", "id2");
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.WARNING)) {
 
-		Assert.assertFalse(spiKey1.equals(spiKey2));
-		Assert.assertEquals("name1#id1", spiKey1.toString());
-		Assert.assertEquals("name1#id2", spiKey2.toString());
+			MPIHelperUtil.shutdown();
+
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
+
+			Assert.assertEquals(2, logRecords.size());
+
+			LogRecord logRecord = logRecords.get(0);
+
+			logRecord = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Unable to unexport " + _getMPIImpl(), logRecord.getMessage());
+
+			Throwable throwable = logRecord.getThrown();
+
+			Assert.assertSame(
+				NoSuchObjectException.class, throwable.getClass());
+
+			logRecord = logRecords.get(1);
+
+			Assert.assertEquals(
+				"Unable to close intraband", logRecord.getMessage());
+			Assert.assertSame(ioException, logRecord.getThrown());
+		}
 	}
 
 	@AdviseWith(adviceClasses = {PropsUtilAdvice.class})
 	@Test
-	public void testSPIProviderRegistration() throws Exception {
+	public void testShutdownFailWithoutLog() throws NoSuchObjectException {
+		UnicastRemoteObject.unexportObject(_getMPIImpl(), true);
+
+		final IOException ioException = new IOException();
+
+		ReflectionTestUtil.setFieldValue(
+			MPIHelperUtil.class, "_intraband",
+			new MockIntraband() {
+
+				@Override
+				public void close() throws IOException {
+					throw ioException;
+				}
+
+			});
+
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.OFF)) {
+
+			MPIHelperUtil.shutdown();
+
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
+
+			Assert.assertTrue(logRecords.isEmpty());
+		}
+	}
+
+	@AdviseWith(adviceClasses = {PropsUtilAdvice.class})
+	@Test
+	public void testShutdownSuccess() {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.ALL)) {
+
+			MPIHelperUtil.shutdown();
+
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
+
+			Assert.assertTrue(logRecords.isEmpty());
+		}
+	}
+
+	@AdviseWith(adviceClasses = {PropsUtilAdvice.class})
+	@Test
+	public void testSPIProviderRegistration() throws RemoteException {
 
 		// Register SPI provider, null name
 
@@ -271,661 +327,798 @@ public class MPIHelperUtilTest {
 		catch (NullPointerException npe) {
 		}
 
-		// Register SPI provider, with log
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.INFO)) {
 
-		List<LogRecord> logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.INFO);
+			// Register SPI provider, with log
 
-		String name1 = "spiProvider1";
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
-		mockSPIProvider1 = new MockSPIProvider(name1);
+			String name1 = "spiProvider1";
 
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
-		Assert.assertEquals(1, logRecords.size());
+			mockSPIProvider1 = new MockSPIProvider(name1);
 
-		LogRecord logRecord1 = logRecords.get(0);
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
+			Assert.assertEquals(1, logRecords.size());
 
-		Assert.assertEquals(
-			"Registered SPI provider " + mockSPIProvider1,
-			logRecord1.getMessage());
+			LogRecord logRecord1 = logRecords.get(0);
 
-		// Register SPI provider, without log
+			Assert.assertEquals(
+				"Registered SPI provider " + mockSPIProvider1,
+				logRecord1.getMessage());
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			// Register SPI provider, without log
 
-		String name2 = "spiProvider2";
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		MockSPIProvider mockSPIProvider2 = new MockSPIProvider(name2);
+			String name2 = "spiProvider2";
 
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider2));
-		Assert.assertTrue(logRecords.isEmpty());
+			MockSPIProvider mockSPIProvider2 = new MockSPIProvider(name2);
 
-		// Register SPI provider, duplicate name, with log
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider2));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
+			// Register SPI provider, duplicate name, with log
 
-		MockSPIProvider mockSPIProvider3 = new MockSPIProvider(name1);
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
 
-		Assert.assertFalse(MPIHelperUtil.registerSPIProvider(mockSPIProvider3));
-		Assert.assertEquals(1, logRecords.size());
+			MockSPIProvider mockSPIProvider3 = new MockSPIProvider(name1);
 
-		logRecord1 = logRecords.get(0);
+			Assert.assertFalse(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider3));
+			Assert.assertEquals(1, logRecords.size());
 
-		Assert.assertEquals(
-			"Not registering SPI provider " + mockSPIProvider3 +
-				" because it duplicates " + mockSPIProvider1,
-			logRecord1.getMessage());
+			logRecord1 = logRecords.get(0);
 
-		// Register SPI provider, duplicate name, without log
+			Assert.assertEquals(
+				"Not registering SPI provider " + mockSPIProvider3 +
+					" because it duplicates " + mockSPIProvider1,
+				logRecord1.getMessage());
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			// Register SPI provider, duplicate name, without log
 
-		mockSPIProvider3 = new MockSPIProvider(name1);
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		Assert.assertFalse(MPIHelperUtil.registerSPIProvider(mockSPIProvider3));
-		Assert.assertTrue(logRecords.isEmpty());
+			mockSPIProvider3 = new MockSPIProvider(name1);
 
-		// Get SPI provider
+			Assert.assertFalse(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider3));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		String name3 = "spiProvider3";
+			// Get SPI provider
 
-		Assert.assertSame(
-			mockSPIProvider1, MPIHelperUtil.getSPIProvider(name1));
-		Assert.assertSame(
-			mockSPIProvider2, MPIHelperUtil.getSPIProvider(name2));
-		Assert.assertNull(MPIHelperUtil.getSPIProvider(name3));
+			String name3 = "spiProvider3";
 
-		List<SPIProvider> spiProviders = MPIHelperUtil.getSPIProviders();
+			Assert.assertSame(
+				mockSPIProvider1, MPIHelperUtil.getSPIProvider(name1));
+			Assert.assertSame(
+				mockSPIProvider2, MPIHelperUtil.getSPIProvider(name2));
+			Assert.assertNull(MPIHelperUtil.getSPIProvider(name3));
 
-		Assert.assertEquals(2, spiProviders.size());
-		Assert.assertTrue(spiProviders.contains(mockSPIProvider1));
-		Assert.assertTrue(spiProviders.contains(mockSPIProvider2));
+			List<SPIProvider> spiProviders = MPIHelperUtil.getSPIProviders();
 
-		// Unregister SPI provider, null name
+			Assert.assertEquals(2, spiProviders.size());
+			Assert.assertTrue(spiProviders.contains(mockSPIProvider1));
+			Assert.assertTrue(spiProviders.contains(mockSPIProvider2));
 
-		mockSPIProvider3 = new MockSPIProvider(null);
+			// Unregister SPI provider, null name
 
-		try {
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider3);
+			mockSPIProvider3 = new MockSPIProvider(null);
 
-			Assert.fail();
+			try {
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider3);
+
+				Assert.fail();
+			}
+			catch (NullPointerException npe) {
+			}
+
+			// Unregister SPI provider, nonexistent name, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
+
+			mockSPIProvider3 = new MockSPIProvider(name3);
+
+			Assert.assertFalse(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider3));
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord1 = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Not unregistering unregistered SPI provider " +
+					mockSPIProvider3,
+				logRecord1.getMessage());
+
+			// Unregister SPI provider, nonexistent name, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			mockSPIProvider3 = new MockSPIProvider(name3);
+
+			Assert.assertFalse(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider3));
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Unregister SPI provider, mismatch instance, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.INFO);
+
+			Assert.assertFalse(
+				MPIHelperUtil.unregisterSPIProvider(
+					new MockSPIProvider(name2)));
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord1 = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Not unregistering unregistered SPI provider " + name2,
+				logRecord1.getMessage());
+
+			// Unregister SPI provider, mismatch instance, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			Assert.assertFalse(
+				MPIHelperUtil.unregisterSPIProvider(
+					new MockSPIProvider(name2)));
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Unregister SPI provider, concurrent remove failure, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.INFO);
+
+			ConcurrentMap<String, Object> oldSPIProviderContainers =
+				ReflectionTestUtil.getFieldValue(
+					MPIHelperUtil.class, "_spiProviderContainers");
+
+			try {
+				ReflectionTestUtil.setFieldValue(
+					MPIHelperUtil.class, "_spiProviderContainers",
+					new ConcurrentHashMap<String, Object>(
+						oldSPIProviderContainers) {
+
+						@Override
+						public boolean remove(Object key, Object value) {
+							return false;
+						}
+
+					});
+
+				Assert.assertFalse(
+					MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
+			}
+			finally {
+				ReflectionTestUtil.setFieldValue(
+					MPIHelperUtil.class, "_spiProviderContainers",
+					oldSPIProviderContainers);
+			}
+
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord1 = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Not unregistering unregistered SPI provider " + name2,
+				logRecord1.getMessage());
+
+			// Unregister SPI provider, concurrent remove failure, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			oldSPIProviderContainers = ReflectionTestUtil.getFieldValue(
+				MPIHelperUtil.class, "_spiProviderContainers");
+
+			try {
+				ReflectionTestUtil.setFieldValue(
+					MPIHelperUtil.class, "_spiProviderContainers",
+					new ConcurrentHashMap<String, Object>(
+						oldSPIProviderContainers) {
+
+						@Override
+						public boolean remove(Object key, Object value) {
+							return false;
+						}
+
+					});
+
+				Assert.assertFalse(
+					MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
+			}
+			finally {
+				ReflectionTestUtil.setFieldValue(
+					MPIHelperUtil.class, "_spiProviderContainers",
+					oldSPIProviderContainers);
+			}
+
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Unregister SPI provider, with no SPI, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.INFO);
+
+			Assert.assertTrue(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord1 = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Unregistered SPI provider " + mockSPIProvider2,
+				logRecord1.getMessage());
+
+			// Unregister SPI provider, with no SPI, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			Assert.assertTrue(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1));
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Unregister SPI provider, with SPI, fail on stop, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.SEVERE);
+
+			mockSPIProvider1 = new MockSPIProvider(name1);
+
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
+
+			mockSPIProvider2 = new MockSPIProvider(name2);
+
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider2));
+
+			MockSPI mockSPI1 = new MockSPI();
+
+			mockSPI1.failOnStop = true;
+			mockSPI1.spiProviderName = name1;
+
+			MPIHelperUtilTestUtil.directResigterSPI("spi1", mockSPI1);
+
+			MockSPI mockSPI2 = new MockSPI();
+
+			mockSPI2.failOnStop = true;
+			mockSPI2.spiProviderName = name2;
+
+			MPIHelperUtilTestUtil.directResigterSPI("spi2", mockSPI2);
+
+			Assert.assertTrue(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1));
+			Assert.assertFalse(mockSPI1.destroyed);
+			Assert.assertFalse(mockSPI1.stopped);
+			Assert.assertFalse(mockSPI2.destroyed);
+			Assert.assertFalse(mockSPI2.stopped);
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord1 = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Unable to unregister SPI " + mockSPI1 +
+					" while unregistering SPI provider " + mockSPIProvider1,
+				logRecord1.getMessage());
+
+			Throwable throwable = logRecord1.getThrown();
+
+			Assert.assertSame(RemoteException.class, throwable.getClass());
+
+			// Unregister SPI provider, with SPI, fail on destroy, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			mockSPI1.failOnDestroy = true;
+			mockSPI1.failOnStop = false;
+
+			mockSPI2.failOnDestroy = true;
+			mockSPI2.failOnStop = false;
+
+			Assert.assertTrue(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
+			Assert.assertFalse(mockSPI1.destroyed);
+			Assert.assertFalse(mockSPI1.stopped);
+			Assert.assertFalse(mockSPI2.destroyed);
+			Assert.assertTrue(mockSPI2.stopped);
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Unregister SPI provider, with SPI, fail on catch, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			mockSPIProvider1 = new MockSPIProvider(name1);
+
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
+
+			final RuntimeException runtimeException = new RuntimeException();
+
+			mockSPI1 = new MockSPI() {
+
+				@Override
+				public String toString() {
+					throw runtimeException;
+				}
+
+			};
+
+			mockSPI1.failOnDestroy = true;
+			mockSPI1.failOnStop = false;
+			mockSPI1.spiProviderName = name1;
+
+			MPIHelperUtilTestUtil.directResigterSPI(name1, mockSPI1);
+
+			try {
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1);
+
+				Assert.fail();
+			}
+			catch (RuntimeException re) {
+				Assert.assertSame(runtimeException, re);
+			}
+
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Unregister SPI provider, with SPI, success, with log
+
+			mockSPIProvider1 = new MockSPIProvider(name1);
+
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
+
+			mockSPIProvider2 = new MockSPIProvider(name2);
+
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider2));
+
+			mockSPI1 = new MockSPI();
+
+			mockSPI1.failOnDestroy = false;
+			mockSPI1.spiProviderName = name1;
+
+			MPIHelperUtilTestUtil.directResigterSPI("spi1", mockSPI1);
+
+			mockSPI2 = new MockSPI();
+
+			mockSPI2.failOnDestroy = false;
+			mockSPI2.spiProviderName = name2;
+
+			MPIHelperUtilTestUtil.directResigterSPI("spi2", mockSPI2);
+
+			logRecords = captureHandler.resetLogLevel(Level.INFO);
+
+			Assert.assertTrue(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1));
+			Assert.assertTrue(mockSPI1.destroyed);
+			Assert.assertTrue(mockSPI1.stopped);
+			Assert.assertFalse(mockSPI2.destroyed);
+			Assert.assertFalse(mockSPI2.stopped);
+			Assert.assertEquals(2, logRecords.size());
+
+			logRecord1 = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Unregistered SPI " + mockSPI1 +
+					" while unregistering SPI provider " + mockSPIProvider1,
+				logRecord1.getMessage());
+
+			LogRecord logRecord2 = logRecords.get(1);
+
+			Assert.assertEquals(
+				"Unregistered SPI provider " + mockSPIProvider1,
+				logRecord2.getMessage());
+
+			// Unregister SPI provider, with SPI, success, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			Assert.assertTrue(
+				MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
+			Assert.assertTrue(mockSPI1.destroyed);
+			Assert.assertTrue(mockSPI1.stopped);
+			Assert.assertTrue(mockSPI2.destroyed);
+			Assert.assertTrue(mockSPI2.stopped);
+			Assert.assertTrue(logRecords.isEmpty());
 		}
-		catch (NullPointerException npe) {
-		}
-
-		// Unregister SPI provider, nonexistent name, with log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
-
-		mockSPIProvider3 = new MockSPIProvider(name3);
-
-		Assert.assertFalse(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider3));
-		Assert.assertEquals(1, logRecords.size());
-
-		logRecord1 = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Not unregistering unregistered SPI provider " + mockSPIProvider3,
-			logRecord1.getMessage());
-
-		// Unregister SPI provider, nonexistent name, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		mockSPIProvider3 = new MockSPIProvider(name3);
-
-		Assert.assertFalse(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider3));
-		Assert.assertTrue(logRecords.isEmpty());
-
-		// Unregister SPI provider, with no SPI, with log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.INFO);
-
-		Assert.assertTrue(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
-		Assert.assertEquals(1, logRecords.size());
-
-		logRecord1 = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Unregistered SPI provider " + mockSPIProvider2,
-			logRecord1.getMessage());
-
-		// Unregister SPI provider, with no SPI, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		Assert.assertTrue(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1));
-		Assert.assertTrue(logRecords.isEmpty());
-
-		// Unregister SPI provider, with SPI, fail on destroy, with log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.SEVERE);
-
-		mockSPIProvider1 = new MockSPIProvider(name1);
-
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
-
-		mockSPIProvider2 = new MockSPIProvider(name2);
-
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider2));
-
-		MockSPI mockSPI1 = new MockSPI();
-
-		mockSPI1.failOnDestroy = true;
-		mockSPI1.spiProviderName = name1;
-
-		_directResigterSPI("spi1", mockSPI1);
-
-		MockSPI mockSPI2 = new MockSPI();
-
-		mockSPI2.failOnDestroy = true;
-		mockSPI2.spiProviderName = name2;
-
-		_directResigterSPI("spi2", mockSPI2);
-
-		Assert.assertTrue(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1));
-		Assert.assertEquals(1, logRecords.size());
-
-		logRecord1 = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Unable to unregister SPI " + mockSPI1 +
-				" while unregistering SPI provider " + mockSPIProvider1,
-			logRecord1.getMessage());
-
-		Throwable throwable = logRecord1.getThrown();
-
-		Assert.assertSame(RemoteException.class, throwable.getClass());
-
-		// Unregister SPI provider, with SPI, fail on destroy, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		Assert.assertTrue(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
-		Assert.assertTrue(logRecords.isEmpty());
-
-		// Unregister SPI provider, with SPI, success, with log
-
-		mockSPIProvider1 = new MockSPIProvider(name1);
-
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider1));
-
-		mockSPIProvider2 = new MockSPIProvider(name2);
-
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider2));
-
-		mockSPI1 = new MockSPI();
-
-		mockSPI1.failOnDestroy = false;
-		mockSPI1.spiProviderName = name1;
-
-		_directResigterSPI("spi1", mockSPI1);
-
-		mockSPI2 = new MockSPI();
-
-		mockSPI2.failOnDestroy = false;
-		mockSPI2.spiProviderName = name2;
-
-		_directResigterSPI("spi2", mockSPI2);
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.INFO);
-
-		Assert.assertTrue(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider1));
-		Assert.assertEquals(2, logRecords.size());
-
-		logRecord1 = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Unregistered SPI " + mockSPI1 +
-				" while unregistering SPI provider " + mockSPIProvider1,
-			logRecord1.getMessage());
-
-		LogRecord logRecord2 = logRecords.get(1);
-
-		Assert.assertEquals(
-			"Unregistered SPI provider " + mockSPIProvider1,
-			logRecord2.getMessage());
-
-		// Unregister SPI provider, with SPI, success, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		Assert.assertTrue(
-			MPIHelperUtil.unregisterSPIProvider(mockSPIProvider2));
-		Assert.assertTrue(logRecords.isEmpty());
 	}
 
 	@AdviseWith(adviceClasses = {PropsUtilAdvice.class})
 	@Test
 	public void testSPIRegistration() {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.WARNING)) {
 
-		// Mismatch MPI, with log
+			// Mismatch MPI, with log
 
-		List<LogRecord> logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
-		MockSPI mockSPI1 = new MockSPI();
+			MockSPI mockSPI1 = new MockSPI();
 
-		mockSPI1.mpi = new MockMPI();
+			mockSPI1.mpi = new MockMPI();
 
-		Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
+			Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
 
-		LogRecord logRecord = logRecords.get(0);
+			LogRecord logRecord = logRecords.get(0);
 
-		Assert.assertEquals(
-			"Not registering SPI " + mockSPI1 + " with foreign MPI " +
-							mockSPI1.mpi + " versus " + MPIHelperUtil.getMPI(),
-			logRecord.getMessage());
+			Assert.assertEquals(
+				"Not registering SPI " + mockSPI1 + " with foreign MPI " +
+					mockSPI1.mpi + " versus " + MPIHelperUtil.getMPI(),
+				logRecord.getMessage());
 
-		// Mismatch MPI, without log
+			// Mismatch MPI, without log
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
-		Assert.assertTrue(logRecords.isEmpty());
+			Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		// Null SPI provider name
+			// Null SPI provider name
 
-		mockSPI1 = new MockSPI();
+			mockSPI1 = new MockSPI();
 
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiProviderName = null;
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiProviderName = null;
 
-		try {
-			MPIHelperUtil.registerSPI(mockSPI1);
+			try {
+				MPIHelperUtil.registerSPI(mockSPI1);
 
-			Assert.fail();
-		}
-		catch (NullPointerException npe) {
-		}
-
-		// No such SPI provider, with log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
-
-		mockSPI1 = new MockSPI();
-
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiProviderName = "name1";
-
-		Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
-
-		logRecord = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Not registering SPI " + mockSPI1 + " with unknown SPI provider " +
-				mockSPI1.spiProviderName,
-			logRecord.getMessage());
-
-		// No such SPI provider, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		mockSPI1 = new MockSPI();
-
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiProviderName = "name1";
-
-		Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
-		Assert.assertTrue(logRecords.isEmpty());
-
-		// Successful register, with log
-
-		String name = "name1";
-
-		MockSPIProvider mockSPIProvider = new MockSPIProvider(name);
-
-		Assert.assertTrue(MPIHelperUtil.registerSPIProvider(mockSPIProvider));
-
-		mockSPI1 = new MockSPI();
-
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiConfiguration = new SPIConfiguration(
-			"testId1", "", 8081, "", new String[0],
-			new String[] {"servletContextName1"}, null);
-		mockSPI1.spiProviderName = name;
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.INFO);
-
-		Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
-
-		logRecord = logRecords.get(0);
-
-		Assert.assertEquals(
-			"Registered SPI " + mockSPI1, logRecord.getMessage());
-
-		// Successful register, without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		MessagingConfigurator messagingConfigurator =
-			new AbstractMessagingConfigurator() {
-
-			@Override
-			public void connect() {
+				Assert.fail();
+			}
+			catch (NullPointerException npe) {
 			}
 
-			@Override
-			public void disconnect() {
+			// No such SPI provider, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
+
+			mockSPI1 = new MockSPI();
+
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiProviderName = "name1";
+
+			Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Not registering SPI " + mockSPI1 +
+					" with unknown SPI provider " +  mockSPI1.spiProviderName,
+				logRecord.getMessage());
+
+			// No such SPI provider, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			mockSPI1 = new MockSPI();
+
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiProviderName = "name1";
+
+			Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Successful register, with log
+
+			String name = "name1";
+
+			MockSPIProvider mockSPIProvider = new MockSPIProvider(name);
+
+			Assert.assertTrue(
+				MPIHelperUtil.registerSPIProvider(mockSPIProvider));
+
+			mockSPI1 = new MockSPI();
+
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiConfiguration = new SPIConfiguration(
+				"testId1", "", 8081, "", new String[0],
+				new String[] {"servletContextName1"}, null);
+			mockSPI1.spiProviderName = name;
+
+			logRecords = captureHandler.resetLogLevel(Level.INFO);
+
+			Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Registered SPI " + mockSPI1, logRecord.getMessage());
+
+			// Successful register, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			MessagingConfigurator messagingConfigurator =
+				new AbstractMessagingConfigurator() {
+
+				@Override
+				public void connect() {
+				}
+
+				@Override
+				public void disconnect() {
+				}
+
+				@Override
+				protected MessageBus getMessageBus() {
+					return null;
+				}
+
+				@Override
+				protected ClassLoader getOperatingClassloader() {
+					return null;
+				}
+			};
+
+			MessagingConfiguratorRegistry.registerMessagingConfigurator(
+				"servletContextName2", messagingConfigurator);
+
+			MockSPI mockSPI2 = new MockSPI();
+
+			mockSPI2.mpi = MPIHelperUtil.getMPI();
+			mockSPI2.spiConfiguration = new SPIConfiguration(
+				"testId2", "", 8082, "", new String[0],
+				new String[] {"servletContextName2"}, null);
+			mockSPI2.spiProviderName = name;
+
+			Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI2));
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Duplicate register, with log
+
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
+
+			Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
+
+			logRecord = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Not registering SPI " + mockSPI1 + " because it duplicates " +
+					mockSPI1, logRecord.getMessage());
+
+			// Duplicate register, without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI2));
+			Assert.assertTrue(logRecords.isEmpty());
+
+			// Bad SPI impl
+
+			mockSPI1 = new MockSPI();
+
+			mockSPI1.failOnGetConfiguration = true;
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiProviderName = name;
+
+			try {
+				MPIHelperUtil.registerSPI(mockSPI1);
+
+				Assert.fail();
+			}
+			catch (RuntimeException re) {
+				Throwable throwable = re.getCause();
+
+				Assert.assertSame(RemoteException.class, throwable.getClass());
 			}
 
-			@Override
-			protected MessageBus getMessageBus() {
-				return null;
-			}
+			// Get SPI, no such SPI provider
 
-			@Override
-			protected ClassLoader getOperatingClassloader() {
-				return null;
-			}
-		};
+			Assert.assertNull(MPIHelperUtil.getSPI("name2", "testId1"));
 
-		MessagingConfiguratorRegistry.registerMessagingConfigurator(
-			"servletContextName2", messagingConfigurator);
+			// Get SPI, exists
 
-		MockSPI mockSPI2 = new MockSPI();
+			Assert.assertNotNull(MPIHelperUtil.getSPI(name, "testId1"));
 
-		mockSPI2.mpi = MPIHelperUtil.getMPI();
-		mockSPI2.spiConfiguration = new SPIConfiguration(
-			"testId2", "", 8082, "", new String[0],
-			new String[] {"servletContextName2"}, null);
-		mockSPI2.spiProviderName = name;
+			// Get SPI, does not exist
 
-		Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI2));
-		Assert.assertTrue(logRecords.isEmpty());
+			Assert.assertNull(MPIHelperUtil.getSPI(name, "testId3"));
 
-		// Duplicate register, with log
+			// Get SPIs
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
+			logRecords = captureHandler.resetLogLevel(Level.SEVERE);
 
-		Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
+			mockSPI2.failOnIsAlive = true;
 
-		logRecord = logRecords.get(0);
+			List<SPI> spis = MPIHelperUtil.getSPIs();
 
-		Assert.assertEquals(
-			"Not registering SPI " + mockSPI1 + " because it duplicates " +
-				mockSPI1, logRecord.getMessage());
+			Assert.assertEquals(1, spis.size());
 
-		// Duplicate register, without log
+			mockSPI1 = (MockSPI)spis.get(0);
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			Assert.assertEquals(name, mockSPI1.spiProviderName);
+			Assert.assertEquals(1, logRecords.size());
 
-		Assert.assertFalse(MPIHelperUtil.registerSPI(mockSPI2));
-		Assert.assertTrue(logRecords.isEmpty());
+			logRecord = logRecords.get(0);
 
-		// Bad SPI impl
-
-		mockSPI1 = new MockSPI();
-
-		mockSPI1.failOnGetConfiguration = true;
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiProviderName = name;
-
-		try {
-			MPIHelperUtil.registerSPI(mockSPI1);
-
-			Assert.fail();
-		}
-		catch (RuntimeException re) {
-			Throwable throwable = re.getCause();
+			Throwable throwable = logRecord.getThrown();
 
 			Assert.assertSame(RemoteException.class, throwable.getClass());
-		}
 
-		// Get SPI, exists
+			// Get SPIs by SPI provider, exists
 
-		Assert.assertNotNull(MPIHelperUtil.getSPI(name, "testId1"));
+			mockSPI2 = new MockSPI();
 
-		// Get SPI, does not exist
+			mockSPI2.mpi = MPIHelperUtil.getMPI();
+			mockSPI2.spiConfiguration = new SPIConfiguration(
+				"testId2", "", 8082, "", new String[0], new String[0], null);
+			mockSPI2.spiProviderName = name;
 
-		Assert.assertNull(MPIHelperUtil.getSPI(name, "testId3"));
+			Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI2));
 
-		// Get SPIs
+			mockSPI2.failOnIsAlive = true;
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.SEVERE);
+			spis = MPIHelperUtil.getSPIs(name);
 
-		mockSPI2.failOnIsAlive = true;
+			Assert.assertEquals(1, spis.size());
 
-		List<SPI> spis = MPIHelperUtil.getSPIs();
+			mockSPI1 = (MockSPI)spis.get(0);
 
-		Assert.assertEquals(1, spis.size());
+			Assert.assertEquals(name, mockSPI1.spiProviderName);
 
-		mockSPI1 = (MockSPI)spis.get(0);
+			// Get SPIs by SPI provider, does not exist
 
-		Assert.assertEquals(name, mockSPI1.spiProviderName);
-		Assert.assertEquals(1, logRecords.size());
+			spis = MPIHelperUtil.getSPIs("name2");
 
-		logRecord = logRecords.get(0);
+			Assert.assertTrue(spis.isEmpty());
 
-		Throwable throwable = logRecord.getThrown();
+			// Unregister thread local shortcut, with log
 
-		Assert.assertSame(RemoteException.class, throwable.getClass());
+			mockSPI1 = new MockSPI();
 
-		// Get SPIs by SPI provider, exists
+			mockSPI1.spiConfiguration = new SPIConfiguration(
+				null, null, 0, null, null, new String[0], null);
 
-		mockSPI2 = new MockSPI();
+			ThreadLocal<SPI> unregisteringSPIThreadLocal =
+				ReflectionTestUtil.getFieldValue(
+					MPIHelperUtil.class, "_unregisteringSPIThreadLocal");
 
-		mockSPI2.mpi = MPIHelperUtil.getMPI();
-		mockSPI2.spiConfiguration = new SPIConfiguration(
-			"testId2", "", 8082, "", new String[0], new String[0], null);
-		mockSPI2.spiProviderName = name;
+			unregisteringSPIThreadLocal.set(mockSPI1);
 
-		Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI2));
+			try {
+				Assert.assertTrue(MPIHelperUtil.unregisterSPI(mockSPI1));
+			}
+			finally {
+				unregisteringSPIThreadLocal.remove();
+			}
 
-		mockSPI2.failOnIsAlive = true;
+			// Unregister MPI mismatch, with log
 
-		spis = MPIHelperUtil.getSPIs(name);
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
 
-		Assert.assertEquals(1, spis.size());
+			mockSPI1 = new MockSPI();
 
-		mockSPI1 = (MockSPI)spis.get(0);
+			mockSPI1.mpi = new MockMPI();
 
-		Assert.assertEquals(name, mockSPI1.spiProviderName);
+			Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
 
-		// Get SPIs by SPI provider, does not exist
+			logRecord = logRecords.get(0);
 
-		spis = MPIHelperUtil.getSPIs("name2");
+			Assert.assertEquals(
+				"Not unregistering SPI " + mockSPI1 + " with foreign MPI " +
+					mockSPI1.mpi + " versus " + MPIHelperUtil.getMPI(),
+				logRecord.getMessage());
 
-		Assert.assertTrue(spis.isEmpty());
+			// Unregister MPI mismatch, without log
 
-		// Unregister MPI mismatch, with log
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
+			Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		mockSPI1 = new MockSPI();
+			// Unregister no such SPI provider, with log
 
-		mockSPI1.mpi = new MockMPI();
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
 
-		Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
+			mockSPI1 = new MockSPI();
 
-		logRecord = logRecords.get(0);
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiProviderName = "name2";
 
-		Assert.assertEquals(
-			"Not unregistering SPI " + mockSPI1 + " with foreign MPI " +
-							mockSPI1.mpi + " versus " + MPIHelperUtil.getMPI(),
-			logRecord.getMessage());
+			Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
 
-		// Unregister MPI mismatch, without log
+			logRecord = logRecords.get(0);
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			Assert.assertEquals(
+				"Not unregistering SPI " + mockSPI1 +
+					" with unknown SPI provider " + mockSPI1.spiProviderName,
+				logRecord.getMessage());
 
-		Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertTrue(logRecords.isEmpty());
+			// Unregister no such SPI provider, without log
 
-		// Unregister no such SPI provider, with log
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
+			mockSPI1 = new MockSPI();
 
-		mockSPI1 = new MockSPI();
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiProviderName = "name2";
 
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiProviderName = "name2";
+			Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
+			// Unregister no such SPI, with log
 
-		logRecord = logRecords.get(0);
+			logRecords = captureHandler.resetLogLevel(Level.WARNING);
 
-		Assert.assertEquals(
-			"Not unregistering SPI " + mockSPI1 +
-				" with unknown SPI provider " + mockSPI1.spiProviderName,
-			logRecord.getMessage());
+			mockSPI1 = new MockSPI();
 
-		// Unregister no such SPI provider, without log
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiConfiguration = new SPIConfiguration(
+				"testId3", "", 8083, "", new String[0], new String[0], null);
+			mockSPI1.spiProviderName = name;
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
 
-		mockSPI1 = new MockSPI();
+			logRecord = logRecords.get(0);
 
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiProviderName = "name2";
+			Assert.assertEquals(
+				"Not unregistering unregistered SPI " + mockSPI1,
+				logRecord.getMessage());
 
-		Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertTrue(logRecords.isEmpty());
+			// Unregister no such SPI, without log
 
-		// Unregister no such SPI, with log
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.WARNING);
+			mockSPI1 = new MockSPI();
 
-		mockSPI1 = new MockSPI();
+			mockSPI1.mpi = MPIHelperUtil.getMPI();
+			mockSPI1.spiConfiguration = new SPIConfiguration(
+				"testId3", "", 8083, "", new String[0], new String[0], null);
+			mockSPI1.spiProviderName = name;
 
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiConfiguration = new SPIConfiguration(
-			"testId3", "", 8083, "", new String[0], new String[0], null);
-		mockSPI1.spiProviderName = name;
+			Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
+			// Unregister success, with log
 
-		logRecord = logRecords.get(0);
+			mockSPI1 = (MockSPI)MPIHelperUtil.getSPI(name, "testId1");
 
-		Assert.assertEquals(
-			"Not unregistering unregistered SPI " + mockSPI1,
-			logRecord.getMessage());
+			logRecords = captureHandler.resetLogLevel(Level.INFO);
 
-		// Unregister no such SPI, without log
+			Assert.assertTrue(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertEquals(1, logRecords.size());
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
+			logRecord = logRecords.get(0);
 
-		mockSPI1 = new MockSPI();
+			Assert.assertEquals(
+				"Unregistered SPI " + mockSPI1, logRecord.getMessage());
 
-		mockSPI1.mpi = MPIHelperUtil.getMPI();
-		mockSPI1.spiConfiguration = new SPIConfiguration(
-			"testId3", "", 8083, "", new String[0], new String[0], null);
-		mockSPI1.spiProviderName = name;
+			// Unregister success, without log
 
-		Assert.assertFalse(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertTrue(logRecords.isEmpty());
+			Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI1));
 
-		// Unregister success, with log
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
 
-		mockSPI1 = (MockSPI)MPIHelperUtil.getSPI(name, "testId1");
+			Assert.assertTrue(MPIHelperUtil.unregisterSPI(mockSPI1));
+			Assert.assertTrue(logRecords.isEmpty());
 
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.INFO);
+			// Unregister fail on getting configuration
 
-		Assert.assertTrue(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertEquals(1, logRecords.size());
+			mockSPI1.failOnGetConfiguration = true;
 
-		logRecord = logRecords.get(0);
+			try {
+				MPIHelperUtil.unregisterSPI(mockSPI1);
 
-		Assert.assertEquals(
-			"Unregistered SPI " + mockSPI1, logRecord.getMessage());
+				Assert.fail();
+			}
+			catch (RuntimeException re) {
+				throwable = re.getCause();
 
-		// Unregister success, without log
-
-		Assert.assertTrue(MPIHelperUtil.registerSPI(mockSPI1));
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		Assert.assertTrue(MPIHelperUtil.unregisterSPI(mockSPI1));
-		Assert.assertTrue(logRecords.isEmpty());
-
-		// Unregister fail on getting configuration
-
-		mockSPI1.failOnGetConfiguration = true;
-
-		try {
-			MPIHelperUtil.unregisterSPI(mockSPI1);
-
-			Assert.fail();
-		}
-		catch (RuntimeException re) {
-			throwable = re.getCause();
-
-			Assert.assertSame(RemoteException.class, throwable.getClass());
+				Assert.assertSame(RemoteException.class, throwable.getClass());
+			}
 		}
 	}
 
-	private static Object _createSPIKey(String spiProviderName, String spiId)
-		throws Exception {
-
-		Class<?> spiKeyClass = Class.forName(
-			MPIHelperUtil.class.getName().concat("$SPIKey"));
-
-		Constructor<?> spiKeyConstructor = spiKeyClass.getConstructor(
-			String.class, String.class);
-
-		return spiKeyConstructor.newInstance(spiProviderName, spiId);
-	}
-
-	private static Object _directResigterSPI(String spiId, SPI spi)
-		throws Exception {
-
-		Field spisField = ReflectionUtil.getDeclaredField(
-			MPIHelperUtil.class, "_spis");
-
-		Map<Object, SPI> spis = (Map<Object, SPI>)spisField.get(null);
-
-		Object spiKey = _createSPIKey(spi.getSPIProviderName(), spiId);
-
-		spis.put(spiKey, spi);
-
-		return spiKey;
-	}
-
-	private static MPI _getMPIImpl() throws Exception {
-		Field mpiImplField = ReflectionUtil.getDeclaredField(
+	private static MPI _getMPIImpl() {
+		MPI mpiImpl = ReflectionTestUtil.getFieldValue(
 			MPIHelperUtil.class, "_mpiImpl");
-
-		MPI mpiImpl = (MPI)mpiImplField.get(null);
 
 		Assert.assertNotNull(mpiImpl);
 
@@ -939,25 +1132,6 @@ public class MPIHelperUtilTest {
 			return true;
 		}
 
-	}
-
-	private static class MockSPIProvider implements SPIProvider {
-
-		public MockSPIProvider(String name) {
-			_name = name;
-		}
-
-		@Override
-		public SPI createSPI(SPIConfiguration spiConfiguration) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public String getName() {
-			return _name;
-		}
-
-		private String _name;
 	}
 
 }

@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -97,10 +97,10 @@ private String _buildTagsNavigation(long scopeGroupId, long siteGroupId, String 
 			int count = 0;
 
 			if (classNameId > 0) {
-				count = AssetTagServiceUtil.getTagsCount(scopeGroupId, classNameId, tagName);
+				count = AssetTagServiceUtil.getVisibleAssetsTagsCount(scopeGroupId, classNameId, tagName);
 			}
 			else {
-				count = AssetTagServiceUtil.getTagsCount(scopeGroupId, tagName);
+				count = AssetTagServiceUtil.getVisibleAssetsTagsCount(scopeGroupId, tagName);
 			}
 
 			if (!showZeroAssetCount && (count == 0)) {
@@ -124,10 +124,10 @@ private String _buildTagsNavigation(long scopeGroupId, long siteGroupId, String 
 		int count = 0;
 
 		if (classNameId > 0) {
-			count = AssetTagServiceUtil.getTagsCount(scopeGroupId, classNameId, tagName);
+			count = AssetTagServiceUtil.getVisibleAssetsTagsCount(scopeGroupId, classNameId, tagName);
 		}
 		else {
-			count = AssetTagServiceUtil.getTagsCount(scopeGroupId, tagName);
+			count = AssetTagServiceUtil.getVisibleAssetsTagsCount(scopeGroupId, tagName);
 		}
 
 		int popularity = (int)(1 + ((maxCount - (maxCount - (count - minCount))) * multiplier));

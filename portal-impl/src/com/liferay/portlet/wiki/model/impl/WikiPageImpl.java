@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portlet.wiki.model.impl;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
@@ -44,13 +43,8 @@ import java.util.List;
  */
 public class WikiPageImpl extends WikiPageBaseImpl {
 
-	public WikiPageImpl() {
-	}
-
 	@Override
-	public Folder addAttachmentsFolder()
-		throws PortalException, SystemException {
-
+	public Folder addAttachmentsFolder() throws PortalException {
 		if (_attachmentsFolderId !=
 				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 
@@ -80,15 +74,33 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public List<FileEntry> getAttachmentsFileEntries() throws SystemException {
+	public WikiPage fetchParentPage() {
+		if (Validator.isNull(getParentTitle())) {
+			return null;
+		}
+
+		return WikiPageLocalServiceUtil.fetchPage(
+			getNodeId(), getParentTitle());
+	}
+
+	@Override
+	public WikiPage fetchRedirectPage() {
+		if (Validator.isNull(getRedirectTitle())) {
+			return null;
+		}
+
+		return WikiPageLocalServiceUtil.fetchPage(
+			getNodeId(), getRedirectTitle());
+	}
+
+	@Override
+	public List<FileEntry> getAttachmentsFileEntries() {
 		return getAttachmentsFileEntries(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 	}
 
 	@Override
-	public List<FileEntry> getAttachmentsFileEntries(int start, int end)
-		throws SystemException {
-
-		List<FileEntry> fileEntries = new ArrayList<FileEntry>();
+	public List<FileEntry> getAttachmentsFileEntries(int start, int end) {
+		List<FileEntry> fileEntries = new ArrayList<>();
 
 		long attachmentsFolderId = getAttachmentsFolderId();
 
@@ -102,7 +114,7 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public int getAttachmentsFileEntriesCount() throws SystemException {
+	public int getAttachmentsFileEntriesCount() {
 		int attachmentsFileEntriesCount = 0;
 
 		long attachmentsFolderId = getAttachmentsFolderId();
@@ -118,7 +130,7 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public long getAttachmentsFolderId() throws SystemException {
+	public long getAttachmentsFolderId() {
 		if (_attachmentsFolderId !=
 				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 
@@ -145,9 +157,8 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 
 		try {
 			Folder folder = PortletFileRepositoryUtil.getPortletFolder(
-				getUserId(), repository.getRepositoryId(),
-				nodeAttachmentsFolderId, String.valueOf(getResourcePrimKey()),
-				serviceContext);
+				repository.getRepositoryId(), nodeAttachmentsFolderId,
+				String.valueOf(getResourcePrimKey()));
 
 			_attachmentsFolderId = folder.getFolderId();
 		}
@@ -171,18 +182,16 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public List<FileEntry> getDeletedAttachmentsFileEntries()
-		throws SystemException {
-
+	public List<FileEntry> getDeletedAttachmentsFileEntries() {
 		return getDeletedAttachmentsFileEntries(
 			QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 	}
 
 	@Override
-	public List<FileEntry> getDeletedAttachmentsFileEntries(int start, int end)
-		throws SystemException {
+	public List<FileEntry> getDeletedAttachmentsFileEntries(
+		int start, int end) {
 
-		List<FileEntry> fileEntries = new ArrayList<FileEntry>();
+		List<FileEntry> fileEntries = new ArrayList<>();
 
 		long attachmentsFolderId = getAttachmentsFolderId();
 
@@ -196,7 +205,7 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public int getDeletedAttachmentsFileEntriesCount() throws SystemException {
+	public int getDeletedAttachmentsFileEntriesCount() {
 		int deletedAttachmentsFileEntriesCount = 0;
 
 		long attachmentsFolderId = getAttachmentsFolderId();
@@ -223,34 +232,26 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public long getNodeAttachmentsFolderId() throws SystemException {
+	public long getNodeAttachmentsFolderId() {
 		WikiNode node = getNode();
 
 		return node.getAttachmentsFolderId();
 	}
 
 	@Override
-	public WikiPage getParentPage() {
+	public WikiPage getParentPage() throws PortalException {
 		if (Validator.isNull(getParentTitle())) {
 			return null;
 		}
 
-		try {
-			return WikiPageLocalServiceUtil.getPage(
-				getNodeId(), getParentTitle());
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			return null;
-		}
+		return WikiPageLocalServiceUtil.getPage(getNodeId(), getParentTitle());
 	}
 
 	@Override
 	public List<WikiPage> getParentPages() {
-		List<WikiPage> parentPages = new ArrayList<WikiPage>();
+		List<WikiPage> parentPages = new ArrayList<>();
 
-		WikiPage parentPage = getParentPage();
+		WikiPage parentPage = fetchParentPage();
 
 		if (parentPage != null) {
 			parentPages.addAll(parentPage.getParentPages());
@@ -261,20 +262,13 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 	}
 
 	@Override
-	public WikiPage getRedirectPage() {
+	public WikiPage getRedirectPage() throws PortalException {
 		if (Validator.isNull(getRedirectTitle())) {
 			return null;
 		}
 
-		try {
-			return WikiPageLocalServiceUtil.getPage(
-				getNodeId(), getRedirectTitle());
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			return null;
-		}
+		return WikiPageLocalServiceUtil.getPage(
+			getNodeId(), getRedirectTitle());
 	}
 
 	@Override
@@ -314,7 +308,7 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 
 	@Override
 	public List<WikiPage> getViewableParentPages() {
-		List<WikiPage> pages = new ArrayList<WikiPage>();
+		List<WikiPage> pages = new ArrayList<>();
 
 		WikiPage page = getViewableParentPage();
 
@@ -336,7 +330,7 @@ public class WikiPageImpl extends WikiPageBaseImpl {
 		_attachmentsFolderId = attachmentsFolderId;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(WikiPageImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(WikiPageImpl.class);
 
 	private long _attachmentsFolderId;
 

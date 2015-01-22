@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,7 @@
 --%>
 
 <aui:fieldset cssClass="general-display-settings">
-	<c:if test="<%= !rootPortletId.equals(PortletKeys.HIGHEST_RATED_ASSETS) && !rootPortletId.equals(PortletKeys.MOST_VIEWED_ASSETS) %>">
+	<c:if test="<%= assetPublisherDisplayContext.isShowEnableAddContentButton() %>">
 		<aui:input helpMessage="show-add-content-button-help" name="preferences--showAddContentButton--" type="checkbox" value="<%= assetPublisherDisplayContext.isShowAddContentButton() %>" />
 	</c:if>
 
@@ -27,6 +27,7 @@
 
 		<liferay-ui:ddm-template-selector
 			classNameId="<%= PortalUtil.getClassNameId(templateHandler.getClassName()) %>"
+			defaultDisplayStyle="<%= PropsValues.ASSET_PUBLISHER_DISPLAY_STYLE_DEFAULT %>"
 			displayStyle="<%= assetPublisherDisplayContext.getDisplayStyle() %>"
 			displayStyleGroupId="<%= assetPublisherDisplayContext.getDisplayStyleGroupId() %>"
 			displayStyles="<%= Arrays.asList(PropsValues.ASSET_PUBLISHER_DISPLAY_STYLES) %>"
@@ -35,12 +36,12 @@
 		/>
 	</div>
 
-	<aui:select cssClass="hidden-field abstract-length" helpMessage="abstract-length-key-help" name="preferences--abstractLength--">
-		<aui:option label="100" selected="<%= assetPublisherDisplayContext.getAbstractLength() == 100 %>" />
-		<aui:option label="200" selected="<%= assetPublisherDisplayContext.getAbstractLength() == 200 %>" />
-		<aui:option label="300" selected="<%= assetPublisherDisplayContext.getAbstractLength() == 300 %>" />
-		<aui:option label="400" selected="<%= assetPublisherDisplayContext.getAbstractLength() == 400 %>" />
-		<aui:option label="500" selected="<%= assetPublisherDisplayContext.getAbstractLength() == 500 %>" />
+	<aui:select cssClass="abstract-length hidden-field" helpMessage="abstract-length-key-help" name="preferences--abstractLength--" value="<%= assetPublisherDisplayContext.getAbstractLength() %>">
+		<aui:option label="100" />
+		<aui:option label="200" />
+		<aui:option label="300" />
+		<aui:option label="400" />
+		<aui:option label="500" />
 	</aui:select>
 
 	<aui:input cssClass="hidden-field show-asset-title" name="preferences--showAssetTitle--" type="checkbox" value="<%= assetPublisherDisplayContext.isShowAssetTitle() %>" />
@@ -49,26 +50,14 @@
 
 	<aui:input cssClass="hidden-field show-extra-info" name="preferences--showExtraInfo--" type="checkbox" value="<%= assetPublisherDisplayContext.isShowExtraInfo() %>" />
 
-	<aui:select cssClass="hidden-field asset-link-behavior" name="preferences--assetLinkBehavior--">
+	<aui:select cssClass="asset-link-behavior hidden-field" name="preferences--assetLinkBehavior--">
 		<aui:option label="show-full-content" selected="<%= assetPublisherDisplayContext.isAssetLinkBehaviorShowFullContent() %>" value="showFullContent" />
 		<aui:option label="view-in-context" selected="<%= assetPublisherDisplayContext.isAssetLinkBehaviorViewInPortlet() %>" value="viewInPortlet" />
 	</aui:select>
 
-	<aui:select helpMessage="number-of-items-to-display-help" label="number-of-items-to-display" name="preferences--delta--">
-
-		<%
-		int[] deltas = {1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100};
-
-		for (int currentDelta: deltas) {
-		%>
-
-			<aui:option label="<%= currentDelta %>" selected="<%= (assetPublisherDisplayContext.getDelta() == currentDelta) %>" />
-
-		<%
-		}
-		%>
-
-	</aui:select>
+	<aui:input helpMessage="number-of-items-to-display-help" label="number-of-items-to-display" name="preferences--delta--" type="text" value="<%= assetPublisherDisplayContext.getDelta() %>">
+		<aui:validator name="digits" />
+	</aui:input>
 
 	<aui:select name="preferences--paginationType--">
 		<aui:option label="none" selected="<%= assetPublisherDisplayContext.isPaginationTypeNone() %>" />
@@ -83,15 +72,15 @@
 	</c:if>
 
 	<%
-	String helpMessage1 = "<em>" + LanguageUtil.format(pageContext, "content-related-to-x", StringPool.DOUBLE_PERIOD, false) + "</em>";
-	String helpMessage2 = "<em>" + LanguageUtil.format(pageContext, "content-with-tag-x", StringPool.DOUBLE_PERIOD, false) + "</em>";
+	String helpMessage1 = "<em>" + LanguageUtil.format(request, "content-related-to-x", StringPool.DOUBLE_PERIOD, false) + "</em>";
+	String helpMessage2 = "<em>" + LanguageUtil.format(request, "content-with-tag-x", StringPool.DOUBLE_PERIOD, false) + "</em>";
 	%>
 
-	<aui:input helpMessage='<%= LanguageUtil.format(pageContext, "such-as-x-or-x", new Object[] {helpMessage1, helpMessage2}, false) %>' name="preferences--showMetadataDescriptions--" type="checkbox" value="<%= assetPublisherDisplayContext.isShowMetadataDescriptions() %>" />
+	<aui:input helpMessage='<%= LanguageUtil.format(request, "such-as-x-or-x", new Object[] {helpMessage1, helpMessage2}, false) %>' name="preferences--showMetadataDescriptions--" type="checkbox" value="<%= assetPublisherDisplayContext.isShowMetadataDescriptions() %>" />
 
 	<aui:input name="preferences--showAvailableLocales--" type="checkbox" value="<%= assetPublisherDisplayContext.isShowAvailableLocales() %>" />
 
-	<aui:input helpMessage="set-as-the-default-asset-publisher-for-this-page-help" label="set-as-the-default-asset-publisher-for-this-page" name="defaultAssetPublisher" type="checkbox" value="<%= AssetUtil.isDefaultAssetPublisher(layout, portletDisplay.getId(), portletResource) %>" />
+	<aui:input helpMessage="set-as-the-default-asset-publisher-for-this-page-help" label="set-as-the-default-asset-publisher-for-this-page" name="defaultAssetPublisher" type="checkbox" value="<%= AssetUtil.isDefaultAssetPublisher(layout, portletDisplay.getId(), assetPublisherDisplayContext.getPortletResource()) %>" />
 
 	<aui:field-wrapper helpMessage='<%= !assetPublisherDisplayContext.isOpenOfficeServerEnabled() ? "enabling-openoffice-integration-provides-document-conversion-functionality" : StringPool.BLANK %>' label="enable-conversion-to">
 		<div class="field-row">
@@ -102,9 +91,7 @@
 			for (String conversion : conversions) {
 			%>
 
-			<aui:field-wrapper inlineField="<%= true %>" inlineLabel="left" label="<%= StringUtil.toUpperCase(conversion) %>" name='<%= "extensions" + conversion %>'>
-				<input <%= ArrayUtil.contains(assetPublisherDisplayContext.getExtensions(), conversion) ? "checked": "" %> <%= !assetPublisherDisplayContext.isOpenOfficeServerEnabled() ? "disabled" : "" %> id="<portlet:namespace />extensions<%= conversion %>" name="<portlet:namespace />extensions" type="checkbox" value="<%= conversion %>" />
-			</aui:field-wrapper>
+				<aui:input checked="<%= ArrayUtil.contains(assetPublisherDisplayContext.getExtensions(), conversion) %>" disabled="<%= !assetPublisherDisplayContext.isOpenOfficeServerEnabled() %>" id='<%= "extensions" + conversion %>' inlineField="<%= true %>" label="<%= StringUtil.toUpperCase(conversion) %>" name="extensions" type="checkbox" value="<%= conversion %>" />
 
 			<%
 			}
@@ -117,12 +104,17 @@
 
 	<aui:input name="preferences--enableFlags--" type="checkbox" value="<%= assetPublisherDisplayContext.isEnableFlags() %>" />
 
-	<c:if test="<%= rootPortletId.equals(PortletKeys.HIGHEST_RATED_ASSETS) || rootPortletId.equals(PortletKeys.MOST_VIEWED_ASSETS) || !PropsValues.ASSET_PUBLISHER_SEARCH_WITH_INDEX %>">
-		<aui:input name="preferences--enablePermissions--" type="checkbox" value="<%= assetPublisherDisplayContext.isEnablePermissions() %>" />
-	</c:if>
+	<c:choose>
+		<c:when test="<%= !assetPublisherDisplayContext.isShowEnablePermissions() %>">
+			<aui:input name="preferences--enablePermissions--" type="hidden" value="<%= assetPublisherDisplayContext.isEnablePermissions() %>" />
+		</c:when>
+		<c:otherwise>
+			<aui:input name="preferences--enablePermissions--" type="checkbox" value="<%= assetPublisherDisplayContext.isEnablePermissions() %>" />
+		</c:otherwise>
+	</c:choose>
 
 	<c:choose>
-		<c:when test="<%= rootPortletId.equals(PortletKeys.RELATED_ASSETS) %>">
+		<c:when test="<%= !assetPublisherDisplayContext.isShowEnableRelatedAssets() %>">
 			<aui:input name="preferences--enableRelatedAssets--" type="hidden" value="<%= assetPublisherDisplayContext.isEnableRelatedAssets() %>" />
 		</c:when>
 		<c:otherwise>
@@ -165,7 +157,7 @@
 		for (int i = 0; i < metadataFields.length; i++) {
 			String folderColumn = metadataFields[i];
 
-			leftList.add(new KeyValuePair(folderColumn, LanguageUtil.get(pageContext, folderColumn)));
+			leftList.add(new KeyValuePair(folderColumn, LanguageUtil.get(request, folderColumn)));
 		}
 
 		// Right list
@@ -178,7 +170,7 @@
 
 		for (String folderColumn : allMetadataFields) {
 			if (Arrays.binarySearch(metadataFields, folderColumn) < 0) {
-				rightList.add(new KeyValuePair(folderColumn, LanguageUtil.get(pageContext, folderColumn)));
+				rightList.add(new KeyValuePair(folderColumn, LanguageUtil.get(request, folderColumn)));
 			}
 		}
 
@@ -197,57 +189,35 @@
 	</aui:field-wrapper>
 </aui:fieldset>
 
-<aui:script use="aui-base">
-	var selectDisplayStyle = A.one('#<portlet:namespace />displayStyle');
+<aui:script sandbox="<%= true %>">
+	var selectDisplayStyle = $('#<portlet:namespace />displayStyle');
 
-	function showHiddenFields () {
-		var assetLinkBehavior = A.one('.asset-link-behavior');
-		var hiddenFields = A.all('.hidden-field');
-		var selectDisplayStyle = A.one('#<portlet:namespace />displayStyle');
+	function showHiddenFields() {
+		var hiddenFields = $('.hidden-field');
 
-		if (hiddenFields) {
-			hiddenFields.get('parentNode').hide();
+		hiddenFields.parentsUntil('.general-display-settings', '.checkbox, .form-group').addClass('hide');
+
+		var displayStyle = selectDisplayStyle.val();
+
+		if (displayStyle == 'full-content') {
+			showParent('.show-asset-title', '.checkbox');
+			showParent('.show-context-link', '.checkbox');
+			showParent('.show-extra-info', '.checkbox');
 		}
-
-		if (selectDisplayStyle) {
-			var displayStyle = selectDisplayStyle.val();
-
-			if (displayStyle == 'full-content') {
-				var showAssetTitle = A.one('.show-asset-title');
-				var showContextLink = A.one('.show-context-link');
-				var showExtraInfo = A.one('.show-extra-info');
-
-				if (showAssetTitle) {
-					showAssetTitle.get('parentNode').show();
-				}
-
-				if (showContextLink) {
-					showContextLink.get('parentNode').show();
-				}
-
-				if (showExtraInfo) {
-					showExtraInfo.get('parentNode').show();
-				}
+		else {
+			if (displayStyle == 'abstracts') {
+				showParent('.abstract-length', '.form-group');
 			}
-			else {
-				if (displayStyle == 'abstracts') {
-					var abstractLength = A.one('.abstract-length');
 
-					if (abstractLength) {
-						abstractLength.get('parentNode').show();
-					}
-				}
-
-				if (assetLinkBehavior) {
-					assetLinkBehavior.get('parentNode').show();
-				}
-			}
+			showParent('.asset-link-behavior', '.form-group');
 		}
+	}
+
+	function showParent(child, parent) {
+		$(child).parentsUntil('.general-display-settings', parent).removeClass('hide');
 	}
 
 	showHiddenFields();
 
-	if (selectDisplayStyle) {
-		selectDisplayStyle.on('change', showHiddenFields);
-	}
+	selectDisplayStyle.on('change', showHiddenFields);
 </aui:script>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -215,6 +215,17 @@ public class SessionImpl implements Session {
 
 	@NotPrivileged
 	@Override
+	public boolean isDirty() throws ORMException {
+		try {
+			return _session.isDirty();
+		}
+		catch (Exception e) {
+			throw ExceptionTranslator.translate(e);
+		}
+	}
+
+	@NotPrivileged
+	@Override
 	public Object load(Class<?> clazz, Serializable id) throws ORMException {
 		try {
 			return _session.load(clazz, id);
@@ -257,6 +268,6 @@ public class SessionImpl implements Session {
 		}
 	}
 
-	private org.hibernate.Session _session;
+	private final org.hibernate.Session _session;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -27,7 +27,8 @@ import com.liferay.portal.model.BaseModel;
  * usage examples see {@link
  * com.liferay.portal.service.impl.LayoutLocalServiceImpl#importLayouts(long,
  * long, boolean, java.util.Map, java.io.File)}, and {@link
- * com.liferay.portal.verify.VerifyProcessUtil#verifyProcess(boolean, boolean)}.
+ * com.liferay.portal.verify.VerifyProcessUtil#verifyProcess(boolean, boolean,
+ * boolean)}.
  * </p>
  *
  * @author     Raymond Augé

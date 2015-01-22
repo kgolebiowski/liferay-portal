@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,9 @@
  */
 
 package com.liferay.portal.kernel.process;
+
+import com.liferay.portal.kernel.io.DummyOutputStream;
+import com.liferay.portal.kernel.util.StreamUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,21 +44,11 @@ public class ConsumerOutputProcessor implements OutputProcessor<Void, Void> {
 	}
 
 	private void _consume(InputStream inputStream) throws ProcessException {
-		byte[] buffer = new byte[1024];
-
 		try {
-			while (inputStream.read(buffer) != -1);
+			StreamUtil.transfer(inputStream, new DummyOutputStream());
 		}
 		catch (IOException ioe) {
 			throw new ProcessException(ioe);
-		}
-		finally {
-			try {
-				inputStream.close();
-			}
-			catch (IOException ioe) {
-				throw new ProcessException(ioe);
-			}
 		}
 	}
 

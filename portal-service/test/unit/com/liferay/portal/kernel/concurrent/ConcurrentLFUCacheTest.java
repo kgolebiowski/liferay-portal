@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -122,7 +122,7 @@ public class ConcurrentLFUCacheTest {
 		}
 
 		ConcurrentLFUCache<String, String> concurrentLFUCache =
-			new ConcurrentLFUCache<String, String>(10);
+			new ConcurrentLFUCache<>(10);
 
 		Assert.assertEquals(0, concurrentLFUCache.evictCount());
 		Assert.assertEquals(0, concurrentLFUCache.hitCount());
@@ -137,7 +137,7 @@ public class ConcurrentLFUCacheTest {
 	@Test
 	public void testLFU1() {
 		ConcurrentLFUCache<String, String> concurrentLFUCache =
-			new ConcurrentLFUCache<String, String>(2, 0.5F);
+			new ConcurrentLFUCache<>(2, 0.5F);
 
 		try {
 			concurrentLFUCache.put(null, "value");
@@ -201,7 +201,7 @@ public class ConcurrentLFUCacheTest {
 	@Test
 	public void testLFU2() {
 		ConcurrentLFUCache<String, String> concurrentLFUCache =
-			new ConcurrentLFUCache<String, String>(3);
+			new ConcurrentLFUCache<>(3);
 
 		concurrentLFUCache.put("1", "1");
 		concurrentLFUCache.put("2", "2");

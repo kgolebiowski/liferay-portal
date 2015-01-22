@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,12 +15,15 @@
 package com.liferay.portlet.blogs.model.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Image;
+import com.liferay.portal.portletfilerepository.PortletFileRepositoryUtil;
 import com.liferay.portal.service.ImageLocalServiceUtil;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.webserver.WebServerServletTokenUtil;
+import com.liferay.portlet.documentlibrary.util.DLUtil;
 
 import java.util.Date;
 
@@ -30,7 +33,22 @@ import java.util.Date;
  */
 public class BlogsEntryImpl extends BlogsEntryBaseImpl {
 
-	public BlogsEntryImpl() {
+	@Override
+	public String getCoverImageURL(ThemeDisplay themeDisplay)
+		throws PortalException {
+
+		long coverImageFileEntryId = getCoverImageFileEntryId();
+
+		if (coverImageFileEntryId == 0) {
+			return null;
+		}
+
+		FileEntry fileEntry = PortletFileRepositoryUtil.getPortletFileEntry(
+			coverImageFileEntryId);
+
+		return DLUtil.getPreviewURL(
+			fileEntry, fileEntry.getFileVersion(), themeDisplay,
+			StringPool.BLANK);
 	}
 
 	@Override
@@ -50,7 +68,7 @@ public class BlogsEntryImpl extends BlogsEntryBaseImpl {
 	}
 
 	@Override
-	public String getSmallImageType() throws PortalException, SystemException {
+	public String getSmallImageType() throws PortalException {
 		if ((_smallImageType == null) && isSmallImage()) {
 			Image smallImage = ImageLocalServiceUtil.getImage(
 				getSmallImageId());

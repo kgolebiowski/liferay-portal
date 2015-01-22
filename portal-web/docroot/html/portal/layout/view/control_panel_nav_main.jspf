@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,53 +14,46 @@
  */
 --%>
 
-<div>
+<%
+List<Portlet> portlets = PortalUtil.getControlPanelPortlets(controlPanelCategory, themeDisplay);
+%>
 
-	<%
-	List<Portlet> portlets = PortalUtil.getControlPanelPortlets(controlPanelCategory, themeDisplay);
+<div class="control-panel-bar-secondary">
+	<aui:nav cssClass="nav-pills">
 
-	if (portlets.size() > 1) {
-	%>
+		<%
+		for (Portlet curPortlet : portlets) {
+			String curPortletId = curPortlet.getPortletId();
 
-		<aui:nav cssClass="control-panel-bar-secondary nav-pills">
+			String urlControlPanelSitesPortlet = HttpUtil.setParameter(themeDisplay.getURLControlPanel(), "p_p_id", curPortletId);
 
-			<%
-			for (Portlet curPortlet : portlets) {
-				String curPortletId = curPortlet.getPortletId();
+			urlControlPanelSitesPortlet = HttpUtil.setParameter(urlControlPanelSitesPortlet, "controlPanelCategory", controlPanelCategory);
+			urlControlPanelSitesPortlet = HttpUtil.setParameter(urlControlPanelSitesPortlet, "doAsGroupId", group.getGroupId());
 
-				String urlControlPanelSitesPortlet = HttpUtil.setParameter(themeDisplay.getURLControlPanel(), "p_p_id", curPortletId);
+			boolean selected = curPortletId.equals(ppid);
 
-				urlControlPanelSitesPortlet = HttpUtil.setParameter(urlControlPanelSitesPortlet, "controlPanelCategory", controlPanelCategory);
+			String portletControlPanelEntryCategory = portlet.getControlPanelEntryCategory();
 
-				boolean selected = curPortletId.equals(ppid);
+			if (portletControlPanelEntryCategory.startsWith(PortletCategoryKeys.SITE_ADMINISTRATION)) {
+				Group siteGroup = themeDisplay.getSiteGroup();
 
-				String portletControlPanelEntryCategory = portlet.getControlPanelEntryCategory();
-
-				if (portletControlPanelEntryCategory.startsWith(PortletCategoryKeys.SITE_ADMINISTRATION)) {
-					Group siteGroup = themeDisplay.getSiteGroup();
-
-					if (siteGroup.isLayoutPrototype() && curPortletId.equals(PortletKeys.LAYOUT_PROTOTYPE)) {
-						selected = true;
-					}
-					else if (siteGroup.isLayoutSetPrototype() && curPortletId.equals(PortletKeys.LAYOUT_SET_PROTOTYPE)) {
-						selected = true;
-					}
-					else if (siteGroup.isSite() && curPortletId.equals(PortletKeys.SITES_ADMIN)) {
-						selected = true;
-					}
+				if (siteGroup.isLayoutPrototype() && curPortletId.equals(PortletKeys.LAYOUT_PROTOTYPE)) {
+					selected = true;
 				}
-			%>
-
-				<aui:nav-item anchorId='<%= "controlPanelSubNav" + curPortletId + "Link" %>' href="<%= urlControlPanelSitesPortlet %>" label="<%= PortalUtil.getPortletTitle(curPortlet, application, locale) %>" selected="<%= selected %>" />
-
-			<%
+				else if (siteGroup.isLayoutSetPrototype() && curPortletId.equals(PortletKeys.LAYOUT_SET_PROTOTYPE)) {
+					selected = true;
+				}
+				else if (siteGroup.isSite() && curPortletId.equals(PortletKeys.SITES_ADMIN)) {
+					selected = true;
+				}
 			}
-			%>
+		%>
 
-		</aui:nav>
+			<aui:nav-item anchorId='<%= "controlPanelSubNav" + curPortletId + "Link" %>' href="<%= urlControlPanelSitesPortlet %>" label="<%= PortalUtil.getPortletTitle(curPortlet, application, locale) %>" selected="<%= selected %>" />
 
-	<%
-	}
-	%>
+		<%
+		}
+		%>
 
+	</aui:nav>
 </div>

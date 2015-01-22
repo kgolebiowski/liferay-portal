@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,7 +30,6 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Organization;
 import com.liferay.portal.model.OrganizationConstants;
 import com.liferay.portal.service.OrganizationLocalServiceUtil;
-import com.liferay.portal.service.persistence.OrganizationActionableDynamicQuery;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portal.util.PropsValues;
 
@@ -42,6 +41,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 
 /**
@@ -56,6 +57,9 @@ public class OrganizationIndexer extends BaseIndexer {
 	public static final String PORTLET_ID = PortletKeys.USERS_ADMIN;
 
 	public OrganizationIndexer() {
+		setCommitImmediately(true);
+		setDefaultSelectedFieldNames(
+			Field.COMPANY_ID, Field.ORGANIZATION_ID, Field.UID);
 		setIndexerEnabled(PropsValues.ORGANIZATIONS_INDEXER_ENABLED);
 		setPermissionAware(true);
 		setStagingAware(false);
@@ -199,8 +203,8 @@ public class OrganizationIndexer extends BaseIndexer {
 
 	@Override
 	protected Summary doGetSummary(
-		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		Document document, Locale locale, String snippet, PortletURL portletURL,
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		String title = document.get("name");
 
@@ -217,14 +221,7 @@ public class OrganizationIndexer extends BaseIndexer {
 
 	@Override
 	protected void doReindex(Object obj) throws Exception {
-		if (obj instanceof List<?>) {
-			List<Organization> organizations = (List<Organization>)obj;
-
-			for (Organization organization : organizations) {
-				doReindex(organization);
-			}
-		}
-		else if (obj instanceof Long) {
+		if (obj instanceof Long) {
 			long organizationId = (Long)obj;
 
 			Organization organization =
@@ -235,8 +232,7 @@ public class OrganizationIndexer extends BaseIndexer {
 		else if (obj instanceof long[]) {
 			long[] organizationIds = (long[])obj;
 
-			Map<Long, Collection<Document>> documentsMap =
-				new HashMap<Long, Collection<Document>>();
+			Map<Long, Collection<Document>> documentsMap = new HashMap<>();
 
 			for (long organizationId : organizationIds) {
 				Organization organization =
@@ -254,7 +250,7 @@ public class OrganizationIndexer extends BaseIndexer {
 				Collection<Document> documents = documentsMap.get(companyId);
 
 				if (documents == null) {
-					documents = new ArrayList<Document>();
+					documents = new ArrayList<>();
 
 					documentsMap.put(companyId, documents);
 				}
@@ -269,7 +265,8 @@ public class OrganizationIndexer extends BaseIndexer {
 				Collection<Document> documents = entry.getValue();
 
 				SearchEngineUtil.updateDocuments(
-					getSearchEngineId(), companyId, documents);
+					getSearchEngineId(), companyId, documents,
+					isCommitImmediately());
 			}
 		}
 		else if (obj instanceof Organization) {
@@ -278,7 +275,8 @@ public class OrganizationIndexer extends BaseIndexer {
 			Document document = getDocument(organization);
 
 			SearchEngineUtil.updateDocument(
-				getSearchEngineId(), organization.getCompanyId(), document);
+				getSearchEngineId(), organization.getCompanyId(), document,
+				isCommitImmediately());
 		}
 	}
 
@@ -303,21 +301,25 @@ public class OrganizationIndexer extends BaseIndexer {
 	}
 
 	protected void reindexOrganizations(long companyId) throws Exception {
-		ActionableDynamicQuery actionableDynamicQuery =
-			new OrganizationActionableDynamicQuery() {
-
-			@Override
-			protected void performAction(Object object) throws PortalException {
-				Organization organization = (Organization)object;
-
-				Document document = getDocument(organization);
-
-				addDocument(document);
-			}
-
-		};
+		final ActionableDynamicQuery actionableDynamicQuery =
+			OrganizationLocalServiceUtil.getActionableDynamicQuery();
 
 		actionableDynamicQuery.setCompanyId(companyId);
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod() {
+
+				@Override
+				public void performAction(Object object)
+					throws PortalException {
+
+					Organization organization = (Organization)object;
+
+					Document document = getDocument(organization);
+
+					actionableDynamicQuery.addDocument(document);
+				}
+
+			});
 		actionableDynamicQuery.setSearchEngineId(getSearchEngineId());
 
 		actionableDynamicQuery.performActions();

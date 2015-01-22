@@ -28,13 +28,48 @@ import java.util.Map;
 </#list>
 
 public class ${seleniumBuilderContext.getPathSimpleClassName(pathName)} {
-	public static Map<String, String> getPaths() {
-		Map<String, String> paths = new HashMap<String, String>();
 
-		paths.put("TOP", "relative=top");
+	public static String getPathDescription(String locatorKey) {
+		if (_pathDescriptions.containsKey(locatorKey)) {
+			return _pathDescriptions.get(locatorKey);
+		}
+
+		return locatorKey;
+	}
+
+	public static Map<String, String> getPathDescriptions() {
+		Map<String, String> pathDescriptions = new HashMap<String, String>();
+
+		pathDescriptions.putAll(_pathDescriptions);
+
+		return pathDescriptions;
+	}
+
+	public static String getPathLocator(String locatorKey) {
+		if (_pathLocators.containsKey(locatorKey)) {
+			return _pathLocators.get(locatorKey);
+		}
+
+		return locatorKey;
+	}
+
+	public static Map<String, String> getPathLocators() {
+		Map<String, String> pathLocators = new HashMap<String, String>();
+
+		pathLocators.putAll(_pathLocators);
+
+		return pathLocators;
+	}
+
+	private static Map<String, String> _pathDescriptions = new HashMap<String, String>();
+	private static Map<String, String> _pathLocators = new HashMap<String, String>();
+
+	static {
+		_pathLocators.put("TOP", "relative=top");
 
 		<#if extendedPath != "">
-			paths.putAll(${seleniumBuilderContext.getPathSimpleClassName(extendedPath)}.getPaths());
+			_pathDescriptions.putAll(${seleniumBuilderContext.getPathSimpleClassName(extendedPath)}.getPathDescriptions());
+			_pathLocators.putAll(${seleniumBuilderContext.getPathSimpleClassName(extendedPath)}.getPathLocators());
 		</#if>
 
 		<#list trElements as trElement>
@@ -44,11 +79,15 @@ public class ${seleniumBuilderContext.getPathSimpleClassName(pathName)} {
 				(tdElements[0].getText() != "") &&
 				(tdElements[0].getText() != "EXTEND_ACTION_PATH")
 			>
-				paths.put("${tdElements[0].getText()}", "${seleniumBuilderFileUtil.escapeJava(tdElements[1].getText())}");
+				<#if (tdElements[2].getText() != pathName) && (tdElements[2].getText() != "")>
+					_pathDescriptions.put("${tdElements[0].getText()}", "${seleniumBuilderFileUtil.escapeJava(tdElements[2].getText())}");
+				<#elseif tdElements[2].getText() = "">
+					_pathDescriptions.put("${tdElements[0].getText()}", "${seleniumBuilderFileUtil.escapeJava(tdElements[0].getText())}");
+				</#if>
+
+				_pathLocators.put("${tdElements[0].getText()}", "${seleniumBuilderFileUtil.escapeJava(tdElements[1].getText())}");
 			</#if>
 		</#list>
-
-		return paths;
 	}
 
 }

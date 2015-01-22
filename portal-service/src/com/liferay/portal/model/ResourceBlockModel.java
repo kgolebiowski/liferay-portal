@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -197,19 +197,19 @@ public interface ResourceBlockModel extends BaseModel<ResourceBlock>, MVCCModel 
 	public Object clone();
 
 	@Override
-	public int compareTo(ResourceBlock resourceBlock);
+	public int compareTo(com.liferay.portal.model.ResourceBlock resourceBlock);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<ResourceBlock> toCacheModel();
+	public CacheModel<com.liferay.portal.model.ResourceBlock> toCacheModel();
 
 	@Override
-	public ResourceBlock toEscapedModel();
+	public com.liferay.portal.model.ResourceBlock toEscapedModel();
 
 	@Override
-	public ResourceBlock toUnescapedModel();
+	public com.liferay.portal.model.ResourceBlock toUnescapedModel();
 
 	@Override
 	public String toString();

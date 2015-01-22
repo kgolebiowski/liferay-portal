@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,10 +14,14 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
 import com.liferay.portal.model.ExportImportConfiguration;
+import com.liferay.portal.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -33,11 +37,49 @@ import java.util.Date;
  * @see ExportImportConfiguration
  * @generated
  */
+@ProviderType
 public class ExportImportConfigurationCacheModel implements CacheModel<ExportImportConfiguration>,
-	Externalizable {
+	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof ExportImportConfigurationCacheModel)) {
+			return false;
+		}
+
+		ExportImportConfigurationCacheModel exportImportConfigurationCacheModel = (ExportImportConfigurationCacheModel)obj;
+
+		if ((exportImportConfigurationId == exportImportConfigurationCacheModel.exportImportConfigurationId) &&
+				(mvccVersion == exportImportConfigurationCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, exportImportConfigurationId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
+	}
+
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(25);
+		StringBundler sb = new StringBundler(33);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -63,6 +105,14 @@ public class ExportImportConfigurationCacheModel implements CacheModel<ExportImp
 		sb.append(type);
 		sb.append(", settings=");
 		sb.append(settings);
+		sb.append(", status=");
+		sb.append(status);
+		sb.append(", statusByUserId=");
+		sb.append(statusByUserId);
+		sb.append(", statusByUserName=");
+		sb.append(statusByUserName);
+		sb.append(", statusDate=");
+		sb.append(statusDate);
 		sb.append("}");
 
 		return sb.toString();
@@ -122,6 +172,23 @@ public class ExportImportConfigurationCacheModel implements CacheModel<ExportImp
 			exportImportConfigurationImpl.setSettings(settings);
 		}
 
+		exportImportConfigurationImpl.setStatus(status);
+		exportImportConfigurationImpl.setStatusByUserId(statusByUserId);
+
+		if (statusByUserName == null) {
+			exportImportConfigurationImpl.setStatusByUserName(StringPool.BLANK);
+		}
+		else {
+			exportImportConfigurationImpl.setStatusByUserName(statusByUserName);
+		}
+
+		if (statusDate == Long.MIN_VALUE) {
+			exportImportConfigurationImpl.setStatusDate(null);
+		}
+		else {
+			exportImportConfigurationImpl.setStatusDate(new Date(statusDate));
+		}
+
 		exportImportConfigurationImpl.resetOriginalValues();
 
 		return exportImportConfigurationImpl;
@@ -141,6 +208,10 @@ public class ExportImportConfigurationCacheModel implements CacheModel<ExportImp
 		description = objectInput.readUTF();
 		type = objectInput.readInt();
 		settings = objectInput.readUTF();
+		status = objectInput.readInt();
+		statusByUserId = objectInput.readLong();
+		statusByUserName = objectInput.readUTF();
+		statusDate = objectInput.readLong();
 	}
 
 	@Override
@@ -184,6 +255,18 @@ public class ExportImportConfigurationCacheModel implements CacheModel<ExportImp
 		else {
 			objectOutput.writeUTF(settings);
 		}
+
+		objectOutput.writeInt(status);
+		objectOutput.writeLong(statusByUserId);
+
+		if (statusByUserName == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(statusByUserName);
+		}
+
+		objectOutput.writeLong(statusDate);
 	}
 
 	public long mvccVersion;
@@ -198,4 +281,8 @@ public class ExportImportConfigurationCacheModel implements CacheModel<ExportImp
 	public String description;
 	public int type;
 	public String settings;
+	public int status;
+	public long statusByUserId;
+	public String statusByUserName;
+	public long statusDate;
 }

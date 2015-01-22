@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.kernel.scheduler;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.proxy.MessagingProxy;
@@ -30,6 +32,7 @@ import java.util.List;
  * @author Shuyang Zhou
  * @author Tina Tian
  */
+@ProviderType
 public interface SchedulerEngine {
 
 	public static final String DESCRIPTION = "DESCRIPTION";
@@ -74,6 +77,10 @@ public interface SchedulerEngine {
 
 	public static final String PREVIOUS_FIRE_TIME = "PREVIOUS_FIRE_TIME";
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	public static final String RECEIVER_KEY = "RECEIVER_KEY";
 
 	public static final String SCHEDULER = "SCHEDULER";
@@ -84,36 +91,46 @@ public interface SchedulerEngine {
 
 	public static final String STORAGE_TYPE = "STORAGE_TYPE";
 
-	public void delete(String groupName) throws SchedulerException;
+	public void delete(String groupName, StorageType storageType)
+		throws SchedulerException;
 
-	public void delete(String jobName, String groupName)
+	public void delete(
+			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException;
 
 	@MessagingProxy(mode = ProxyMode.SYNC)
-	public SchedulerResponse getScheduledJob(String jobName, String groupName)
+	public SchedulerResponse getScheduledJob(
+			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException;
 
 	@MessagingProxy(mode = ProxyMode.SYNC)
-	public List<SchedulerResponse> getScheduledJobs()
+	public List<SchedulerResponse> getScheduledJobs() throws SchedulerException;
+
+	@MessagingProxy(mode = ProxyMode.SYNC)
+	public List<SchedulerResponse> getScheduledJobs(StorageType storageType)
 		throws SchedulerException;
 
 	@MessagingProxy(mode = ProxyMode.SYNC)
-	public List<SchedulerResponse> getScheduledJobs(String groupName)
+	public List<SchedulerResponse> getScheduledJobs(
+			String groupName, StorageType storageType)
 		throws SchedulerException;
 
-	public void pause(String groupName) throws SchedulerException;
-
-	public void pause(String jobName, String groupName)
+	public void pause(String groupName, StorageType storageType)
 		throws SchedulerException;
 
-	public void resume(String groupName) throws SchedulerException;
+	public void pause(String jobName, String groupName, StorageType storageType)
+		throws SchedulerException;
 
-	public void resume(String jobName, String groupName)
+	public void resume(String groupName, StorageType storageType)
+		throws SchedulerException;
+
+	public void resume(
+			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException;
 
 	public void schedule(
 			Trigger trigger, String description, String destinationName,
-			Message message)
+			Message message, StorageType storageType)
 		throws SchedulerException;
 
 	@MessagingProxy(local = true, mode = ProxyMode.SYNC)
@@ -122,16 +139,20 @@ public interface SchedulerEngine {
 	@MessagingProxy(local = true, mode = ProxyMode.SYNC)
 	public void start() throws SchedulerException;
 
-	public void suppressError(String jobName, String groupName)
+	public void suppressError(
+			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException;
 
 	@MessagingProxy(mode = ProxyMode.SYNC)
-	public void unschedule(String groupName) throws SchedulerException;
-
-	@MessagingProxy(mode = ProxyMode.SYNC)
-	public void unschedule(String jobName, String groupName)
+	public void unschedule(String groupName, StorageType storageType)
 		throws SchedulerException;
 
-	public void update(Trigger trigger) throws SchedulerException;
+	@MessagingProxy(mode = ProxyMode.SYNC)
+	public void unschedule(
+			String jobName, String groupName, StorageType storageType)
+		throws SchedulerException;
+
+	public void update(Trigger trigger, StorageType storageType)
+		throws SchedulerException;
 
 }

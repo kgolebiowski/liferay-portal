@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -106,9 +106,9 @@ public abstract class BaseTemplateManager implements TemplateManager {
 				_classLoader, _restricted);
 		}
 
-		private ClassLoader _classLoader;
+		private final ClassLoader _classLoader;
 		private boolean _restricted;
-		private TemplateContextHelper _templateContextHelper;
+		private final TemplateContextHelper _templateContextHelper;
 
 	}
 
@@ -133,10 +133,10 @@ public abstract class BaseTemplateManager implements TemplateManager {
 				_helperUtilities, true);
 		}
 
-		private TemplateResource _errorTemplateResource;
-		private Map<String, Object> _helperUtilities;
+		private final TemplateResource _errorTemplateResource;
+		private final Map<String, Object> _helperUtilities;
 		private boolean _restricted;
-		private TemplateResource _templateResource;
+		private final TemplateResource _templateResource;
 
 	}
 

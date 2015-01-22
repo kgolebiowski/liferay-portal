@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,8 +30,8 @@ import java.lang.reflect.Method;
  * For a usage example see {@link
  * com.liferay.portlet.shopping.util.ShoppingUtil#getBreadcrumbs(
  * com.liferay.portlet.shopping.model.ShoppingCategory,
- * javax.servlet.jsp.PageContext, javax.portlet.RenderRequest,
- * javax.portlet.RenderResponse) ShoppingUtil.getBreadcrumbs} .
+ * javax.portlet.RenderRequest, javax.portlet.RenderResponse)
+ * ShoppingUtil#getBreadcrumbs}.
  * </p>
  *
  * @author Shuyang Zhou
@@ -81,6 +81,6 @@ public class AutoEscapeBeanHandler implements InvocationHandler, Serializable {
 		return result;
 	}
 
-	private Serializable _bean;
+	private final Serializable _bean;
 
 }

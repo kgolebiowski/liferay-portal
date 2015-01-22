@@ -1,4 +1,4 @@
-@import "compass";
+@import "bourbon";
 @import "mixins";
 
 @mixin keyframes($name) {
@@ -20,54 +20,58 @@
 }
 
 .menu-content, .underlay-content {
-	@include box-shadow(2px 4px 7px rgba(0, 0, 0, 0.5));
+	box-shadow: 2px 4px 7px rgba(0, 0, 0, 0.5);
 }
 
 .lfr-add-panel, .lfr-device-preview-panel, .lfr-edit-layout-panel {
-	@include box-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+	box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
-.lfr-preview-file-image img, .lfr-translation-manager {
-	@include box-shadow(0 3px 5px -3px rgba(0, 0, 0, 0.8));
+.lfr-ddm-container .file-entry-upload-progress {
+	border-radius: 0 0 4px 4px;
+}
+
+.lfr-preview-file-image img {
+	box-shadow: 0 3px 5px -3px rgba(0, 0, 0, 0.8);
 }
 
 .lfr-preview-file-image-current-column {
-	@include box-shadow(inset 0 0 3px rgba(0, 0, 0, 0.8));
+	box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 .lfr-preview-file-image-current-column {
-	@include box-shadow(inset 0 0 5px rgba(0, 0, 0, 0.8));
+	box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
 .lfr-device-preview {
 	.lfr-device-size-status-content {
-		@include border-radius(3px);
-		@include box-shadow(0 0 1px #FFF);
-		@include opacity(0.9);
+		border-radius: 3px;
+		box-shadow: 0 0 1px #FFF;
+		opacity: 0.9;
 	}
 
 	.lfr-device {
 		&:after, &:before {
-			@include box-shadow(#111 0 1px 0);
+			box-shadow: #111 0 1px 0;
 		}
 
 		&:after {
-			@include border-radius(15px);
+			border-radius: 15px;
 		}
 
 		&.rotated {
 			&:after, &:before {
-				@include box-shadow(#111 -1px 1px 0);
+				box-shadow: #111 -1px 1px 0;
 			}
 		}
 
 		&.smartphone, &.tablet {
-			@include border-radius(25px);
+			border-radius: 25px;
 		}
 
 		&.tablet {
 			&:before {
-				@include border-radius(5px);
+				border-radius: 5px;
 			}
 		}
 	}
@@ -75,153 +79,204 @@
 
 .dockbar {
 	@include respond-to(phone, tablet) {
-		.navbar-inner .btn-navbar {
-			@include box-shadow(none);
-			@include text-shadow(none);
+		.navbar-btn {
+			box-shadow: none;
+			text-shadow: none;
 		}
 	}
 
-	.navbar-inner .nav li.staging-toggle {
+	.nav li.staging-toggle {
 		&.active > a {
-			@include box-shadow(none);
+			box-shadow: none;
 		}
 
 		span {
-			@include border-radius(4px);
+			border-radius: 4px;
 		}
 	}
 
 	.menu-button-active .menu-button {
-		@include box-shadow(inset 0 1px 5px rgba(0, 0, 0, 0.7));
+		box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.7);
 	}
 
 	.impersonating-user .alert-info {
-		@include border-radius(0);
+		border-radius: 0;
 	}
 }
 
-.dockbar .navbar-inner .nav-add-controls > li > ul.dropdown-menu {
-	@include box-shadow(none);
-}
-
-.dockbar-split .dockbar .navbar-inner .container .nav-collapse > .nav {
-	 > li > a {
-		@include text-shadow(none);
-
-		@include respond-to(phone) {
-			@include border-radius(4px);
-		}
-	}
-
-	&.nav-add-controls {
-		> li {
-			a {
-				@include border-radius(4px);
-
-				.nav-item-label {
-					@include border-radius(30px);
+.dockbar {
+	.container, .container-fluid {
+		> .nav {
+			@include respond-to(phone, tablet) {
+				&.nav-account-controls .info-link-container .info-link {
+					border-radius: 3px;
 				}
 			}
 
-			&.open a {
-				@include border-radius(4px);
-			}
+			> li {
+				> a, .info-button > a {
+					text-shadow: none;
 
-			> ul {
-				@include box-shadow(none);
+					@include respond-to(phone, tablet) {
+						border-radius: 4px;
+					}
+				}
 			}
 		}
 	}
+
+	.nav-add-controls > li > ul.dropdown-menu {
+		box-shadow: none;
+	}
 }
 
-@include respond-to(phone, tablet) {
-	.navbar .navbar-search .form-search .search-query {
-		@include border-radius(14px);
+.dockbar-split .dockbar {
+	.container, .container-fluid {
+		> .nav {
+			&.nav-add-controls {
+				> li {
+					a {
+						@include respond-to(desktop) {
+							border-radius: 4px;
+						}
+
+						.nav-item-label {
+							border-radius: 30px;
+						}
+					}
+
+					&.open a {
+						@include respond-to(desktop) {
+							border-radius: 4px;
+						}
+					}
+
+					> ul {
+						box-shadow: none;
+					}
+				}
+			}
+		}
 	}
 }
 
 .portlet-document-library, .portlet-dynamic-data-mapping {
 	.lfr-ddm-small-image-preview {
-		@include box-shadow(0 1px 3px #CCC);
+		box-shadow: 0 1px 3px #CCC;
 	}
-}
-
-.portlet-asset-category-admin {
-	.tree-node-selected, .tree-node-over, .category-item {
-		@include border-radius(5px);
-	}
-}
-
-.lfr-translation-manager-translation.lfr-translation-manager-translation-editing {
-	@include box-shadow(inset 0 0 2px #224FA8);
 }
 
 .portlet-document-library-upload-mask .overlaymask-content {
-	@include border-radius(5px);
+	border-radius: 5px;
 }
 
 .lfr-search-combobox-item, .portlet-journal .lfr-search-combobox .search input {
-	@include border-radius(1px);
+	border-radius: 1px;
 }
 
 .lfr-search-combobox {
 	.field-input-text {
-		@include border-radius(4px 1px 1px 4px);
+		border-radius: 4px 1px 1px 4px;
 	}
 
 	.button-input {
-		@include border-radius(1px 4px 4px 1px);
+		border-radius: 1px 4px 4px 1px;
 	}
 }
 
 .lfr-upload-container .progress-bar, .lfr-upload-container .progress, .lfr-editable:after {
-	@include border-radius(10px);
+	border-radius: 10px;
 }
 
-body > .lfr-menu-list ul, .active-area-proxy, .entry-display-style .entry-thumbnail, .lfr-api-results, .lfr-translation-manager, .lfr-translation-manager-translation, .lfr-upload-container .cancel-button .modify-pages .delete-tab, .portlet-image-gallery-display .image-thumbnail img, .rule-group-instance-container .rule-group-instance, .select-documents, .select-files, .taglib-ratings.stars:hover, .taglib-ratings.stars:hover .liferay-rating-vote, .tags-search-combobox .field-input-text {
-	@include border-radius(4px);
+.portlet-language .portlet-body {
+	.current-language, .taglib-icon, .taglib-language-list-text {
+		border-radius: 10px;
+	}
 }
 
-.entry-display-style, .lfr-search-combobox, .lfr-upload-container .upload-file, .lfr-upload-container .upload-target, .portlet-document-library .common-file-metadata-container.selected, .portlet-document-library-display .common-file-metadata-container.selected, .portlet-image-gallery-display .image-icon, .select-documents, .select-files {
-	@include border-radius(5px);
+body > .lfr-menu-list ul, .active-area-proxy, .entry-display-style .entry-thumbnail, .lfr-api-results, .lfr-translation-manager, .lfr-translation-manager-translation, .lfr-upload-container .cancel-button .modify-pages .delete-tab, .portlet-image-gallery-display .image-thumbnail img, .rule-group-instance-container .rule-group-instance, .select-documents, .select-files, .taglib-ratings.stars:hover, .taglib-ratings.stars:hover .liferay-rating-vote > div, .taglib-ratings.stars .rating-focused > div, .tags-search-combobox .field-input-text {
+	border-radius: 4px;
 }
 
-.portlet-journal .lfr-ddm-container .field-wrapper {
-	@include border-radius(6px);
+.entry-display-style, .lfr-search-combobox, .lfr-upload-container .upload-file, .lfr-upload-container .upload-target, .portlet-asset-tag-admin .merge-tag, .portlet-document-library .common-file-metadata-container.selected, .portlet-document-library-display .common-file-metadata-container.selected, .portlet-image-gallery-display .image-icon, .select-documents, .select-files {
+	border-radius: 5px;
+}
+
+.portlet-dynamic-data-list-display, .portlet-dynamic-data-lists, .portlet-journal {
+	.lfr-ddm-container {
+		.lfr-ddm-repeatable-placeholder, .field-wrapper {
+			border-radius: 6px;
+		}
+	}
 }
 
 .portlet-journal .display-page-item-container .display-page-item, .portlet-journal .display-page-item-container .display-page-item .display-page-item-remove, .taglib-categorization-filter .asset-entry {
-	@include border-radius(14px);
+	border-radius: 14px;
+}
+
+.portlet-journal-content .lfr-icon-actions .lfr-icon-action-add a {
+	text-shadow: none;
 }
 
 .menu-content {
-	@include border-bottom-left-radius(4px);
-	@include border-bottom-right-radius(4px);
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+
+.taglib-form-navigator > .form-steps > ul.form-navigator.list-group {
+	box-shadow: none;
+
+	.tab .tab-label {
+		&:hover, &:focus {
+			.number {
+				box-shadow: 0 0 5px 0 #333;
+				@include transition-duration(0.25s);
+				@include transition-property(box-shadow);
+				@include transition-timing-function(ease-out);
+			}
+		}
+
+		.number {
+			border-radius: 50%;
+		}
+	}
 }
 
 .underlay-content {
-	@include border-bottom-left-radius(8px);
-	@include border-bottom-right-radius(8px);
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
 }
 
-.lfr-add-panel {
-	.add-content-button {
-		.lfr-actions {
-			@include border-radius(2px);
+.input-localized {
+	.lfr-input-localized-state {
+		border-radius: 3px;
+	}
+
+	.lfr-input-localized .lfr-input-localized-state {
+		box-shadow: 0 0 3px #DDD;
+
+		&.lfr-input-localized-state-error {
+			box-shadow: 0 0 3px #FF0047;
 		}
 	}
 
+	.palette-item-selected .lfr-input-localized-state {
+		box-shadow: 0 0 3px #27C1F2;
+	}
+}
+
+.lfr-add-panel {
 	.lfr-panel-content .app-view-entry-taglib {
 		&.display-list, &.display-descriptive {
 			&:hover, &.hover, &.over {
-				@include border-radius(0);
+				border-radius: 0;
 			}
 		}
 	}
 
 	.lfr-panel.lfr-extended {
-		@include border-radius(0);
-		@include box-shadow(none);
+		border-radius: 0;
+		box-shadow: none;
 	}
 
 	.lfr-panel.lfr-extended .lfr-panel-titlebar, .add-application-tab .lfr-add-content .lfr-title-category {
@@ -230,70 +285,79 @@ body > .lfr-menu-list ul, .active-area-proxy, .entry-display-style .entry-thumbn
 
 	.search-panel {
 		.add-content-search .field-input {
-			@include border-radius(4px);
+			border-radius: 4px;
 		}
 	}
 }
 
 .lfr-add-dialog, .lfr-add-panel {
-	.add-content-menu .search-query {
-		@include border-radius(15px);
+	.add-content-menu {
+		.search-query {
+			border-radius: 15px;
+		}
+
+		.content-link {
+			border-radius: 4px;
+		}
+
+		@include respond-to(phone, tablet) {
+			.add-content-item {
+				border-radius: 4px;
+			}
+		}
 	}
 }
 
 .lfr-content-preview-popup .lfr-content-preview-popup-content {
-	@include border-radius(0);
-	@include box-shadow(8px 3px 7px rgba(0, 0, 0, 0.25));
+	border-radius: 0;
+	box-shadow: 8px 3px 7px rgba(0, 0, 0, 0.25);
 }
 
 .lfr-message .lfr-message-control {
-	@include border-radius(10px);
+	border-radius: 10px;
 }
 
-.lfr-token, .layout-customizable-controls, .lfr-translation-manager-delete-translation {
-	@include border-radius(8px);
+.lfr-token, .layout-customizable-controls {
+	border-radius: 8px;
 }
 
 .customizable-layout-column-content {
-	@include border-radius(6px);
+	border-radius: 6px;
 }
 
 .staging-tabview-list {
-	@include border-radius(0);
+	border-radius: 0;
 }
 
 .site-variations-tabview-list .tab-content, .staging-tabview-list .tab-active .tab-content, .tagselector-content .textboxlistentry-holder .lfr-tag-selector-input:focus {
-	@include box-shadow(none);
+	box-shadow: none;
 }
 
 .rule-group-instance-container .rule-group-instance {
-	@include box-shadow(1px 1px 2px #999);
+	box-shadow: 1px 1px 2px #999;
 }
 
 .lfr-action-label {
-	@include border-radius(2px);
-}
-
-.lfr-api-service-search .field-input {
-	@include box-sizing("border-box");
+	border-radius: 2px;
 }
 
 @include keyframes(progress-bar-stripes) {
 	from {
 		background-position: 40px 0;
 	}
+
 	to {
 		background-position: 0 0;
 	}
 }
 
 .lfr-progress-active .progress-bar-status, .lfr-upload-container .file-uploading .progress-bar .progress {
+	background-size: 40px 40px;
 	$transparent: rgba(255, 255, 255, 0);
 
 	@include background-image(linear-gradient(-45deg, rgba(255, 255, 255, 0.3) 25%, $transparent 25%, $transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, $transparent 75%, $transparent));
-	@include background-size(40px 40px);
 	@include experimental(animation, progress-bar-stripes 0.5s linear infinite);
-	@include single-transition(width, 0.5s, ease-out);
+	@include transition(width, 0.5s, ease-out);
 }
 
 @include keyframes(highlight-animation) {
@@ -310,13 +374,40 @@ body > .lfr-menu-list ul, .active-area-proxy, .entry-display-style .entry-thumbn
 	@include experimental(animation, highlight-animation 0.7s);
 }
 
+.lfr-surface-loading .lfr-surface-loading-bar {
+	@include experimental(animation, shift-rightwards 1s ease-in-out infinite);
+	@include experimental(animation-delay, 0.4s);
+}
+
+.lfr-surface-loading-bar {
+	@include transform(translateX(100%));
+}
+
+@include keyframes(shift-rightwards) {
+	0% {
+		@include transform(translateX(-100%));
+	}
+
+	40% {
+		@include transform(translateX(0%));
+	}
+
+	60% {
+		@include transform(translateX(0%));
+	}
+
+	100% {
+		@include transform(translateX(100%));
+	}
+}
+
 body:first-of-type {
 	%portlet-action-bar-fx {
-		@include single-transition(opacity, 0.5s, ease, 0.15s);
+		@include transition(opacity, 0.5s, ease, 0.15s);
 	}
 
 	%portlet-action-bar-fx-hover {
-		@include single-transition(opacity, 0.5s, ease, 0s);
+		@include transition(opacity, 0.5s, ease, 0s);
 	}
 
 	%portlet-action-bar-fx-text {
@@ -324,14 +415,14 @@ body:first-of-type {
 		max-width: 0;
 		overflow: hidden;
 
-		@include single-transition(max-width, 0.3s, ease-in, 0.2s);
+		@include transition(max-width, 0.3s, ease-in, 0.2s);
 
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	%portlet-action-bar-fx-hover-text {
-		@include single-transition(max-width, 0.3s, ease, 0s);
+		@include transition(max-width, 0.3s, ease, 0s);
 	}
 
 	.portlet-borderless-bar {
@@ -341,16 +432,36 @@ body:first-of-type {
 			@extend %portlet-action-bar-fx-text;
 
 			@extend %portlet-action-bar-fx-hover-text;
+
+			border-bottom-left-radius: 20px;
+			border-top-left-radius: 20px;
+		}
+
+		.portlet-title-default {
+			border-bottom-right-radius: 20px;
+			border-top-right-radius: 20px;
 		}
 	}
 
-	.portlet-borderless-container:hover {
-		.portlet-borderless-bar {
-			@extend %portlet-action-bar-fx-hover;
+	.portlet-borderless-container {
+		&:hover {
+			.portlet-borderless-bar {
+				@extend %portlet-action-bar-fx-hover;
+
+				.portlet-actions {
+					max-width: 500px;
+				}
+			}
 		}
 
-		.portlet-borderless-bar .portlet-actions {
-			max-width: 500px;
+		@include respond-to(phone, tablet) {
+			.portlet-borderless-bar {
+				@include transition(opacity, 0.5s, ease, 0s);
+
+				.portlet-actions {
+					max-width: 500px;
+				}
+			}
 		}
 	}
 
@@ -359,7 +470,7 @@ body:first-of-type {
 			.lfr-icon-actions {
 				@extend %portlet-action-bar-fx-hover;
 
-				.taglib-text {
+				.lfr-icon-menu-text, .taglib-text {
 					@extend %portlet-action-bar-fx-hover-text;
 
 					max-width: 200px;
@@ -370,7 +481,7 @@ body:first-of-type {
 		.lfr-icon-actions {
 			@extend %portlet-action-bar-fx;
 
-			.taglib-text {
+			.lfr-icon-menu-text, .taglib-text {
 				@extend %portlet-action-bar-fx-text;
 
 				@include respond-to(phone, tablet) {
@@ -387,9 +498,17 @@ body:first-of-type {
 }
 
 .portlet-document-library .entry-thumbnail .label, .portlet-document-library-display .workflow-status .label, .portlet-journal .entry-thumbnail .label {
-	@include border-bottom-left-radius(0);
-	@include border-top-left-radius(0);
-	@include border-top-right-radius(0);
+	border-bottom-left-radius: 0;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+
+.portlet-options.btn-group {
+	&, &.open {
+		.dropdown-toggle {
+			box-shadow: none;
+		}
+	}
 }
 
 @include keyframes(lfr-drop-active) {
@@ -397,16 +516,19 @@ body:first-of-type {
 		background-color: #EBEBEB;
 		border-color: #DDD;
 	}
+
 	50% {
 		background-color: #DDEDDE;
 		border-color: #7D7;
 
-		@include scale(1.1);
+		@include transform(scale(1.1));
 	}
+
 	75% {
 		background-color: #DDEDDE;
 		border-color: #7D7;
 	}
+
 	100% {
 		background-color: #EBEBEB;
 		border-color: #DDD;
@@ -419,10 +541,51 @@ body:first-of-type {
 	}
 
 	.portlet-document-library .document-container {
-		@include box-shadow(inset 0 0 5px #B8C1D1);
+		box-shadow: inset 0 0 5px #B8C1D1;
 	}
 }
 
 .upload-drop-intent .lfr-upload-container .upload-target {
 	@include experimental(animation, lfr-drop-active 1s ease 0.2s infinite);
+}
+
+.quick-access-nav {
+	a {
+		box-shadow: rgba(0, 0, 0, 0.1) 1px 1px 1px;
+	}
+}
+
+.cke_toolbar {
+	&.cke_toolbar__a11yhelpbtn {
+		.cke_toolgroup, .cke_toolgroup:hover {
+			box-shadow: initial;
+		}
+
+		.cke_button {
+			&:hover {
+				box-shadow: none;
+			}
+
+			.cke_button_label {
+				&:after {
+					@include background-image(linear-gradient(#FFF, #E4E4E4));
+					border-radius: 2px;
+				}
+
+				&:hover:after {
+					@include background-image(linear-gradient(#F2F2F2, #CCC));
+				}
+			}
+		}
+	}
+}
+
+.taglib-image-selector {
+	.glyphicon-ok {
+		border-radius: 30px;
+	}
+
+	.progress-wrapper .progressbar {
+		border-radius: 0;
+	}
 }

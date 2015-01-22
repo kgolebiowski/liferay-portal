@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,14 +40,14 @@ public class WelderFactoryUtil {
 	}
 
 	public static Class<? extends Welder> getWelderClass() {
-		if (Validator.isNotNull(INTRABAND_WELDER_IMPL)) {
+		if (Validator.isNotNull(_INTRABAND_WELDER_IMPL)) {
 			try {
 				return (Class<? extends Welder>)Class.forName(
-					INTRABAND_WELDER_IMPL);
+					_INTRABAND_WELDER_IMPL);
 			}
 			catch (ClassNotFoundException cnfe) {
 				throw new RuntimeException(
-					"Unable to load class with name " + INTRABAND_WELDER_IMPL,
+					"Unable to load class with name " + _INTRABAND_WELDER_IMPL,
 					cnfe);
 			}
 		}
@@ -61,7 +61,7 @@ public class WelderFactoryUtil {
 		}
 	}
 
-	private static final String INTRABAND_WELDER_IMPL = GetterUtil.getString(
+	private static final String _INTRABAND_WELDER_IMPL = GetterUtil.getString(
 		System.getProperty(PropsKeys.INTRABAND_WELDER_IMPL));
 
 }

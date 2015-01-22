@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portal.search.lucene;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.BaseQuerySuggester;
 import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
@@ -105,8 +107,8 @@ public class LuceneQuerySuggester extends BaseQuerySuggester {
 		IndexSearcher indexSearcher = null;
 
 		try {
-			indexSearcher = LuceneHelperUtil.getSearcher(
-				searchContext.getCompanyId(), true);
+			indexSearcher = LuceneHelperUtil.getIndexSearcher(
+				searchContext.getCompanyId());
 
 			String localizedKeywordFieldName = DocumentImpl.getLocalizedName(
 				searchContext.getLanguageId(), Field.KEYWORD_SEARCH);
@@ -125,7 +127,13 @@ public class LuceneQuerySuggester extends BaseQuerySuggester {
 			throw new SearchException("Unable to suggest query", e);
 		}
 		finally {
-			LuceneHelperUtil.cleanUp(indexSearcher);
+			try {
+				LuceneHelperUtil.releaseIndexSearcher(
+					searchContext.getCompanyId(), indexSearcher);
+			}
+			catch (IOException ioe) {
+				_log.error("Unable to release searcher", ioe);
+			}
 		}
 	}
 
@@ -297,8 +305,7 @@ public class LuceneQuerySuggester extends BaseQuerySuggester {
 		IndexSearcher indexSearcher = null;
 
 		try {
-			Map<String, List<String>> suggestions =
-				new LinkedHashMap<String, List<String>>();
+			Map<String, List<String>> suggestions = new LinkedHashMap<>();
 
 			float scoresThreshold = searchContext.getScoresThreshold();
 
@@ -306,10 +313,10 @@ public class LuceneQuerySuggester extends BaseQuerySuggester {
 				scoresThreshold = _SCORES_THRESHOLD_DEFAULT;
 			}
 
-			indexSearcher = LuceneHelperUtil.getSearcher(
-				searchContext.getCompanyId(), true);
+			indexSearcher = LuceneHelperUtil.getIndexSearcher(
+				searchContext.getCompanyId());
 
-			List<IndexReader> indexReaders = new ArrayList<IndexReader>();
+			List<IndexReader> indexReaders = new ArrayList<>();
 
 			if (indexSearcher.maxDoc() > 0) {
 				ReaderUtil.gatherSubReaders(
@@ -356,16 +363,26 @@ public class LuceneQuerySuggester extends BaseQuerySuggester {
 			throw new SearchException("Unable to find suggestions", ioe);
 		}
 		finally {
-			LuceneHelperUtil.cleanUp(indexSearcher);
+			try {
+				LuceneHelperUtil.releaseIndexSearcher(
+					searchContext.getCompanyId(), indexSearcher);
+			}
+			catch (IOException ioe) {
+				_log.error("Unable to release searcher", ioe);
+			}
 		}
 	}
 
 	private static final float _SCORES_THRESHOLD_DEFAULT = 0.5f;
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		LuceneQuerySuggester.class);
+
 	private float _boostEnd = 1.0f;
 	private float _boostStart = 2.0f;
 	private int _querySuggestionMaxNGramLength = 50;
-	private RelevancyChecker _relevancyChecker = new DefaultRelevancyChecker();
+	private final RelevancyChecker _relevancyChecker =
+		new DefaultRelevancyChecker();
 	private StringDistance _stringDistance;
 	private Comparator<SuggestWord> _suggestWordComparator =
 		SuggestWordQueue.DEFAULT_COMPARATOR;

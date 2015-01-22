@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -182,19 +182,19 @@ public interface ShardModel extends AttachedModel, BaseModel<Shard>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(Shard shard);
+	public int compareTo(com.liferay.portal.model.Shard shard);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Shard> toCacheModel();
+	public CacheModel<com.liferay.portal.model.Shard> toCacheModel();
 
 	@Override
-	public Shard toEscapedModel();
+	public com.liferay.portal.model.Shard toEscapedModel();
 
 	@Override
-	public Shard toUnescapedModel();
+	public com.liferay.portal.model.Shard toUnescapedModel();
 
 	@Override
 	public String toString();

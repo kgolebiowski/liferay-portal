@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,7 +23,7 @@ String backURL = ParamUtil.getString(request, "backURL");
 long repositoryId = ParamUtil.getLong(request, "repositoryId");
 long folderId = ParamUtil.getLong(request, "folderId");
 
-List<DLFileEntryType> fileEntryTypes = DLFileEntryTypeServiceUtil.getFolderFileEntryTypes(PortalUtil.getSiteAndCompanyGroupIds(themeDisplay), folderId, true);
+List<DLFileEntryType> fileEntryTypes = DLFileEntryTypeServiceUtil.getFolderFileEntryTypes(PortalUtil.getCurrentAndAncestorSiteGroupIds(scopeGroupId), folderId, true);
 %>
 
 <liferay-ui:search-container>
@@ -38,7 +38,7 @@ List<DLFileEntryType> fileEntryTypes = DLFileEntryTypeServiceUtil.getFolderFileE
 		modelVar="fileEntryType"
 	>
 		<liferay-ui:search-container-column-text name="name">
-			<a class="select-file-entry-type" data-rowId="<%= fileEntryType.getFileEntryTypeId() %>" href="javascript:;"><%= HtmlUtil.escape(fileEntryType.getName(locale)) %></a>
+			<a class="select-file-entry-type" data-rowId="<%= fileEntryType.getFileEntryTypeId() %>" href="javascript:;"><%= fileEntryType.getName(locale) %></a>
 		</liferay-ui:search-container-column-text>
 	</liferay-ui:search-container-row>
 

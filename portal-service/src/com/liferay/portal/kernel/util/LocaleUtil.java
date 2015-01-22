@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -257,7 +257,7 @@ public class LocaleUtil {
 				}
 			}
 
-			if (validate && !LanguageUtil.isAvailableLanguageCode(languageId)) {
+			if (validate && !LanguageUtil.isAvailableLocale(locale)) {
 				throw new IllegalArgumentException("Invalid locale " + locale);
 			}
 
@@ -331,7 +331,7 @@ public class LocaleUtil {
 	}
 
 	private Map<String, String> _getISOLanguages(Locale locale) {
-		Map<String, String> isoLanguages = new TreeMap<String, String>(
+		Map<String, String> isoLanguages = new TreeMap<>(
 			String.CASE_INSENSITIVE_ORDER);
 
 		for (String isoLanguageId : Locale.getISOLanguages()) {
@@ -537,11 +537,11 @@ public class LocaleUtil {
 
 	private static final String _BETA_SUFFIX = " [Beta]";
 
-	private static Log _log = LogFactoryUtil.getLog(LocaleUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(LocaleUtil.class);
 
-	private static LocaleUtil _instance = new LocaleUtil();
+	private static final LocaleUtil _instance = new LocaleUtil();
 
 	private Locale _locale;
-	private Map<String, Locale> _locales = new HashMap<String, Locale>();
+	private final Map<String, Locale> _locales = new HashMap<>();
 
 }

@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -34,7 +34,7 @@ if (category != null) {
 	categoryName = category.getName();
 }
 else {
-	categoryName = LanguageUtil.get(pageContext, "message-boards-home");
+	categoryName = LanguageUtil.get(request, "message-boards-home");
 }
 %>
 
@@ -74,20 +74,16 @@ else {
 			</portlet:renderURL>
 
 			<liferay-ui:search-container-column-text
-				buffer="buffer"
 				href="<%= rowURL %>"
 				name="category[message-board]"
 			>
+				<%= curCategory.getName() %>
 
-				<%
-				buffer.append(curCategory.getName());
+				<c:if test="<%= Validator.isNotNull(curCategory.getDescription()) %>">
+					<br />
 
-				if (Validator.isNotNull(curCategory.getDescription())) {
-					buffer.append("<br />");
-					buffer.append(curCategory.getDescription());
-				}
-				%>
-
+					<%= curCategory.getDescription() %>
+				</c:if>
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text
@@ -137,18 +133,6 @@ else {
 	</liferay-ui:search-container>
 </aui:form>
 
-<aui:script use="aui-base">
-	var Util = Liferay.Util;
-
-	A.one('#<portlet:namespace />selectCategoryFm').delegate(
-		'click',
-		function(event) {
-			var result = Util.getAttributes(event.currentTarget, 'data-');
-
-			Util.getOpener().Liferay.fire('<%= HtmlUtil.escapeJS(eventName) %>', result);
-
-			Util.getWindow().hide();
-		},
-		'.selector-button'
-	);
+<aui:script>
+	Liferay.Util.selectEntityHandler('#<portlet:namespace />selectCategoryFm', '<%= HtmlUtil.escapeJS(eventName) %>');
 </aui:script>

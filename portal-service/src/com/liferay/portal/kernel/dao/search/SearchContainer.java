@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -81,6 +81,10 @@ public class SearchContainer<R> {
 	public static final int MAX_DELTA = 200;
 
 	public SearchContainer() {
+		_curParam = DEFAULT_CUR_PARAM;
+		_displayTerms = null;
+		_portletRequest = null;
+		_searchTerms = null;
 	}
 
 	public SearchContainer(
@@ -142,7 +146,7 @@ public class SearchContainer<R> {
 					portletRequest, DisplayTerms.AND_OPERATOR, true)));
 
 		if (headerNames != null) {
-			_headerNames = new ArrayList<String>(headerNames.size());
+			_headerNames = new ArrayList<>(headerNames.size());
 
 			_headerNames.addAll(headerNames);
 
@@ -296,7 +300,7 @@ public class SearchContainer<R> {
 		return _orderByColParam;
 	}
 
-	public OrderByComparator getOrderByComparator() {
+	public OrderByComparator<R> getOrderByComparator() {
 		return _orderByComparator;
 	}
 
@@ -438,7 +442,7 @@ public class SearchContainer<R> {
 		_orderByColParam = orderByColParam;
 	}
 
-	public void setOrderByComparator(OrderByComparator orderByComparator) {
+	public void setOrderByComparator(OrderByComparator<R> orderByComparator) {
 		_orderByComparator = orderByComparator;
 	}
 
@@ -480,7 +484,7 @@ public class SearchContainer<R> {
 			return;
 		}
 
-		_normalizedHeaderNames = new ArrayList<String>(headerNames.size());
+		_normalizedHeaderNames = new ArrayList<>(headerNames.size());
 
 		for (String headerName : headerNames) {
 			_normalizedHeaderNames.add(
@@ -521,11 +525,11 @@ public class SearchContainer<R> {
 
 	private String _className;
 	private int _cur;
-	private String _curParam = DEFAULT_CUR_PARAM;
+	private final String _curParam;
 	private int _delta = DEFAULT_DELTA;
 	private boolean _deltaConfigurable = DEFAULT_DELTA_CONFIGURABLE;
 	private String _deltaParam = DEFAULT_DELTA_PARAM;
-	private DisplayTerms _displayTerms;
+	private final DisplayTerms _displayTerms;
 	private String _emptyResultsMessage;
 	private int _end;
 	private List<String> _headerNames;
@@ -543,16 +547,16 @@ public class SearchContainer<R> {
 	private Map<String, String> _orderableHeaders;
 	private String _orderByCol;
 	private String _orderByColParam = DEFAULT_ORDER_BY_COL_PARAM;
-	private OrderByComparator _orderByComparator;
+	private OrderByComparator<R> _orderByComparator;
 	private String _orderByJS;
 	private String _orderByType;
 	private String _orderByTypeParam = DEFAULT_ORDER_BY_TYPE_PARAM;
-	private PortletRequest _portletRequest;
+	private final PortletRequest _portletRequest;
 	private int _resultEnd;
-	private List<ResultRow> _resultRows = new ArrayList<ResultRow>();
-	private List<R> _results = new ArrayList<R>();
+	private final List<ResultRow> _resultRows = new ArrayList<>();
+	private List<R> _results = new ArrayList<>();
 	private RowChecker _rowChecker;
-	private DisplayTerms _searchTerms;
+	private final DisplayTerms _searchTerms;
 	private int _start;
 	private int _total;
 	private String _totalVar;

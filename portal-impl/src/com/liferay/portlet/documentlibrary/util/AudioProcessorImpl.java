@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,14 +14,17 @@
 
 package com.liferay.portlet.documentlibrary.util;
 
+import com.liferay.portal.fabric.InputResource;
+import com.liferay.portal.fabric.OutputResource;
 import com.liferay.portal.kernel.lar.PortletDataContext;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.process.ClassPathUtil;
 import com.liferay.portal.kernel.process.ProcessCallable;
+import com.liferay.portal.kernel.process.ProcessChannel;
 import com.liferay.portal.kernel.process.ProcessException;
-import com.liferay.portal.kernel.process.ProcessExecutor;
+import com.liferay.portal.kernel.process.ProcessExecutorUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -32,7 +35,6 @@ import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.SystemEnv;
-import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xuggler.XugglerUtil;
 import com.liferay.portal.log.Log4jLogFactoryImpl;
@@ -153,16 +155,8 @@ public class AudioProcessorImpl
 
 	@Override
 	public boolean isSupported(String mimeType) {
-		if (Validator.isNull(mimeType)) {
-			return false;
-		}
-
-		try {
-			if (XugglerUtil.isEnabled()) {
-				return _audioMimeTypes.contains(mimeType);
-			}
-		}
-		catch (Exception e) {
+		if (_audioMimeTypes.contains(mimeType) && XugglerUtil.isEnabled()) {
+			return true;
 		}
 
 		return false;
@@ -349,13 +343,9 @@ public class AudioProcessorImpl
 			return;
 		}
 
-		StopWatch stopWatch = null;
+		StopWatch stopWatch = new StopWatch();
 
-		if (_log.isInfoEnabled()) {
-			stopWatch = new StopWatch();
-
-			stopWatch.start();
-		}
+		stopWatch.start();
 
 		try {
 			if (PropsValues.DL_FILE_ENTRY_PREVIEW_FORK_PROCESS_ENABLED) {
@@ -363,14 +353,18 @@ public class AudioProcessorImpl
 					new LiferayAudioProcessCallable(
 						ServerDetector.getServerId(),
 						PropsUtil.get(PropsKeys.LIFERAY_HOME),
-						Log4JUtil.getCustomLogSettings(),
-						srcFile.getCanonicalPath(), destFile.getCanonicalPath(),
+						Log4JUtil.getCustomLogSettings(), srcFile, destFile,
 						containerType,
 						PropsUtil.getProperties(
 							PropsKeys.DL_FILE_ENTRY_PREVIEW_AUDIO, false));
 
-				Future<String> future = ProcessExecutor.execute(
-					ClassPathUtil.getPortalClassPath(), processCallable);
+				ProcessChannel<String> processChannel =
+					ProcessExecutorUtil.execute(
+						ClassPathUtil.getPortalProcessConfig(),
+						processCallable);
+
+				Future<String> future =
+					processChannel.getProcessNoticeableFuture();
 
 				String processIdentity = String.valueOf(
 					fileVersion.getFileVersionId());
@@ -455,32 +449,35 @@ public class AudioProcessorImpl
 	private static final String[] _PREVIEW_TYPES =
 		PropsValues.DL_FILE_ENTRY_PREVIEW_AUDIO_CONTAINERS;
 
-	private static Log _log = LogFactoryUtil.getLog(AudioProcessorImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		AudioProcessorImpl.class);
 
-	private Set<String> _audioMimeTypes = SetUtil.fromArray(
+	private final Set<String> _audioMimeTypes = SetUtil.fromArray(
 		PropsValues.DL_FILE_ENTRY_PREVIEW_AUDIO_MIME_TYPES);
-	private List<Long> _fileVersionIds = new Vector<Long>();
+	private final List<Long> _fileVersionIds = new Vector<>();
 
 	private static class LiferayAudioProcessCallable
 		implements ProcessCallable<String> {
 
 		public LiferayAudioProcessCallable(
 			String serverId, String liferayHome,
-			Map<String, String> customLogSettings, String inputURL,
-			String outputURL, String audioContainer,
+			Map<String, String> customLogSettings, File inputFile,
+			File outputFile, String audioContainer,
 			Properties audioProperties) {
 
 			_serverId = serverId;
 			_liferayHome = liferayHome;
 			_customLogSettings = customLogSettings;
-			_inputURL = inputURL;
-			_outputURL = outputURL;
+			_inputFile = inputFile;
+			_outputFile = outputFile;
 			_audioContainer = audioContainer;
 			_audioProperties = audioProperties;
 		}
 
 		@Override
 		public String call() throws ProcessException {
+			XugglerAutoInstallHelper.installNativeLibraries();
+
 			Properties systemProperties = System.getProperties();
 
 			SystemEnv.setProperties(systemProperties);
@@ -495,7 +492,9 @@ public class AudioProcessorImpl
 
 			try {
 				LiferayConverter liferayConverter = new LiferayAudioConverter(
-					_inputURL, _outputURL, _audioContainer, _audioProperties);
+					_inputFile.getCanonicalPath(),
+					_outputFile.getCanonicalPath(), _audioContainer,
+					_audioProperties);
 
 				liferayConverter.convert();
 			}
@@ -508,13 +507,19 @@ public class AudioProcessorImpl
 
 		private static final long serialVersionUID = 1L;
 
-		private String _audioContainer;
-		private Properties _audioProperties;
-		private Map<String, String> _customLogSettings;
-		private String _inputURL;
-		private String _liferayHome;
-		private String _outputURL;
-		private String _serverId;
+		private final String _audioContainer;
+		private final Properties _audioProperties;
+		private final Map<String, String> _customLogSettings;
+
+		@InputResource
+		private final File _inputFile;
+
+		private final String _liferayHome;
+
+		@OutputResource
+		private final File _outputFile;
+
+		private final String _serverId;
 
 	}
 

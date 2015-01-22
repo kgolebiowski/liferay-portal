@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,20 +19,29 @@ import com.liferay.portal.kernel.backgroundtask.BackgroundTaskResult;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskStatus;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskStatusRegistryUtil;
 import com.liferay.portal.kernel.backgroundtask.BaseBackgroundTaskExecutor;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.lar.MissingReference;
 import com.liferay.portal.kernel.lar.MissingReferences;
 import com.liferay.portal.kernel.staging.StagingUtil;
+import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.BackgroundTask;
+import com.liferay.portal.model.LayoutSet;
 import com.liferay.portal.service.BackgroundTaskLocalServiceUtil;
+import com.liferay.portal.service.LayoutSetLocalServiceUtil;
+import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.ServiceContextThreadLocal;
+import com.liferay.portal.service.UserLocalServiceUtil;
+import com.liferay.portal.spring.transaction.TransactionAttributeBuilder;
 
 import java.io.Serializable;
 
+import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.transaction.interceptor.TransactionAttribute;
 
 /**
  * @author Mate Thurzo
@@ -63,36 +72,57 @@ public abstract class BaseStagingBackgroundTaskExecutor
 		backgroundTaskStatus.clearAttributes();
 	}
 
+	protected void initThreadLocals(long groupId, boolean privateLayout)
+		throws PortalException {
+
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.popServiceContext();
+
+		if (serviceContext == null) {
+			serviceContext = new ServiceContext();
+		}
+
+		LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
+			groupId, privateLayout);
+
+		serviceContext.setCompanyId(layoutSet.getCompanyId());
+		serviceContext.setSignedIn(false);
+
+		long defaultUserId = UserLocalServiceUtil.getDefaultUserId(
+			layoutSet.getCompanyId());
+
+		serviceContext.setUserId(defaultUserId);
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+	}
+
 	protected void markBackgroundTask(
-			long backgroundTaskId, String backgroundTaskState)
-		throws SystemException {
+		long backgroundTaskId, String backgroundTaskState) {
 
 		BackgroundTask backgroundTask =
 			BackgroundTaskLocalServiceUtil.fetchBackgroundTask(
 				backgroundTaskId);
 
-		if (backgroundTask == null) {
+		if ((backgroundTask == null) || Validator.isNull(backgroundTaskState)) {
 			return;
 		}
 
 		Map<String, Serializable> taskContextMap =
 			backgroundTask.getTaskContextMap();
 
-		if (Validator.isNull(backgroundTaskState)) {
-			return;
+		if (taskContextMap == null) {
+			taskContextMap = new HashMap<>();
 		}
 
 		taskContextMap.put(backgroundTaskState, Boolean.TRUE);
 
-		backgroundTask.setTaskContext(
-			JSONFactoryUtil.serialize(taskContextMap));
+		backgroundTask.setTaskContextMap(taskContextMap);
 
 		BackgroundTaskLocalServiceUtil.updateBackgroundTask(backgroundTask);
 	}
 
 	protected BackgroundTaskResult processMissingReferences(
-			long backgroundTaskId, MissingReferences missingReferences)
-		throws SystemException {
+		long backgroundTaskId, MissingReferences missingReferences) {
 
 		BackgroundTaskResult backgroundTaskResult = new BackgroundTaskResult(
 			BackgroundTaskConstants.STATUS_SUCCESSFUL);
@@ -116,5 +146,9 @@ public abstract class BaseStagingBackgroundTaskExecutor
 
 		return backgroundTaskResult;
 	}
+
+	protected TransactionAttribute transactionAttribute =
+		TransactionAttributeBuilder.build(
+			Propagation.REQUIRED, new Class<?>[] {Exception.class});
 
 }

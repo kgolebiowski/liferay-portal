@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,27 +16,28 @@ package com.liferay.portal.security.pacl.test;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.ReleaseInfo;
-import com.liferay.portal.security.pacl.PACLExecutionTestListener;
-import com.liferay.portal.security.pacl.PACLIntegrationJUnitTestRunner;
 import com.liferay.portal.service.UserLocalServiceUtil;
+import com.liferay.portal.test.PACLTestRule;
 
 import java.lang.reflect.Field;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Raymond Augé
  */
-@ExecutionTestListeners(listeners = {PACLExecutionTestListener.class})
-@RunWith(PACLIntegrationJUnitTestRunner.class)
 public class ReflectionTest {
 
 	public static final String TEST_FIELD_1 = "TEST_FIELD_1";
+
+	@ClassRule
+	@Rule
+	public static final PACLTestRule paclTestRule = new PACLTestRule();
 
 	@Test
 	public void testPlugin1() throws Exception {
@@ -200,16 +201,16 @@ public class ReflectionTest {
 		}
 	}
 
-	private static final String TEST_FIELD_2 = "TEST_FIELD_2";
+	private static final String _TEST_FIELD_2 = "TEST_FIELD_2";
 
-	private static Log _log = LogFactoryUtil.getLog(ReflectionTest.class);
+	private static final Log _log = LogFactoryUtil.getLog(ReflectionTest.class);
 
 	static {
 
 		// Prevent compiler from removing the unused fields
 
 		if (_log.isDebugEnabled()) {
-			_log.debug(TEST_FIELD_2);
+			_log.debug(_TEST_FIELD_2);
 		}
 	}
 

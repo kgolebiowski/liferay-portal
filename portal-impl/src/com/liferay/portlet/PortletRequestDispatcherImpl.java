@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -194,8 +194,7 @@ public class PortletRequestDispatcherImpl
 				pathNoQueryString = _path.substring(0, pos);
 				queryString = _path.substring(pos + 1);
 
-				Map<String, String[]> queryParams =
-					new HashMap<String, String[]>();
+				Map<String, String[]> queryParams = new HashMap<>();
 
 				String[] queryParamsArray = StringUtil.split(
 					queryString, CharPool.AMPERSAND);
@@ -274,7 +273,7 @@ public class PortletRequestDispatcherImpl
 				if (urlPattern.endsWith("/*")) {
 					pos = urlPattern.indexOf("/*");
 
-					urlPattern = urlPattern.substring(0, pos);
+					urlPattern = urlPattern.substring(0, pos + 1);
 
 					if (pathNoQueryString.startsWith(urlPattern)) {
 						pathInfo = pathNoQueryString.substring(
@@ -337,13 +336,13 @@ public class PortletRequestDispatcherImpl
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortletRequestDispatcherImpl.class);
 
-	private LiferayPortletContext _liferayPortletContext;
-	private boolean _named;
-	private String _path;
-	private Portlet _portlet;
-	private RequestDispatcher _requestDispatcher;
+	private final LiferayPortletContext _liferayPortletContext;
+	private final boolean _named;
+	private final String _path;
+	private final Portlet _portlet;
+	private final RequestDispatcher _requestDispatcher;
 
 }

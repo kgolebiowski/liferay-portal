@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,19 +21,16 @@ ResultRow row = (ResultRow)request.getAttribute(WebKeys.SEARCH_CONTAINER_RESULT_
 
 Object[] objArray = (Object[])row.getObject();
 
-String[] queryTerms = (String[])objArray[0];
-Document doc = (Document)objArray[1];
-Summary summary = (Summary)objArray[2];
+Document doc = (Document)objArray[0];
+Summary summary = (Summary)objArray[1];
 
-String content = StringUtil.highlight(summary.getContent(), queryTerms);
-
+String articleId = doc.get(Field.ARTICLE_ID);
 long articleGroupId = GetterUtil.getLong(doc.get(Field.GROUP_ID));
-String articleId = doc.get("articleId");
 
 List hitLayoutIds = JournalContentSearchLocalServiceUtil.getLayoutIds(layout.getGroupId(), layout.isPrivateLayout(), articleId);
 %>
 
-<%= content %><br />
+<%= summary.getHighlightedContent() %><br />
 
 <c:choose>
 	<c:when test="<%= !hitLayoutIds.isEmpty() %>">
@@ -67,25 +64,20 @@ List hitLayoutIds = JournalContentSearchLocalServiceUtil.getLayoutIds(layout.get
 
 		</span>
 	</c:when>
-	<c:otherwise>
+	<c:when test="<%= Validator.isNotNull(targetPortletId) %>">
 		<span style="font-size: xx-small;">
+			<br />
 
-		<%
-		if (Validator.isNull(targetPortletId)) {
-			targetPortletId = PortletKeys.JOURNAL_CONTENT;
-		}
+			<%
+			PortletURL webContentPortletURL = PortletURLFactoryUtil.create(request, targetPortletId, plid, PortletRequest.RENDER_PHASE);
 
-		PortletURL webContentPortletURL = PortletURLFactoryUtil.create(request, targetPortletId, plid, PortletRequest.RENDER_PHASE);
+			webContentPortletURL.setParameter("groupId", String.valueOf(articleGroupId));
+			webContentPortletURL.setParameter("articleId", articleId);
+			%>
 
-		webContentPortletURL.setParameter("struts_action", "/journal_content/view");
-		webContentPortletURL.setParameter("groupId", String.valueOf(articleGroupId));
-		webContentPortletURL.setParameter("articleId", articleId);
-		%>
-
-		<br /><a href="<%= webContentPortletURL.toString() %>"><%= StringUtil.shorten(webContentPortletURL.toString(), 100) %></a>
-
+			<a href="<%= webContentPortletURL.toString() %>"><%= StringUtil.shorten(webContentPortletURL.toString(), 100) %></a>
 		</span>
-	</c:otherwise>
+	</c:when>
 </c:choose>
 
 <%!

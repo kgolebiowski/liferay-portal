@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,12 +17,17 @@ package com.liferay.portal.util;
 import com.liferay.mail.model.FileAttachment;
 import com.liferay.mail.service.MailServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.mail.MailMessage;
 import com.liferay.portal.kernel.mail.SMTPAccount;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
+import com.liferay.portal.kernel.notifications.UserNotificationManagerUtil;
+import com.liferay.portal.kernel.transaction.TransactionCommitCallbackRegistryUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ClassLoaderPool;
 import com.liferay.portal.kernel.util.EscapableObject;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -33,18 +38,24 @@ import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Group;
+import com.liferay.portal.model.ResourceAction;
 import com.liferay.portal.model.Subscription;
 import com.liferay.portal.model.User;
+import com.liferay.portal.model.UserNotificationDeliveryConstants;
+import com.liferay.portal.security.permission.ActionKeys;
+import com.liferay.portal.security.permission.BaseModelPermissionCheckerUtil;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.service.CompanyLocalServiceUtil;
 import com.liferay.portal.service.GroupLocalServiceUtil;
+import com.liferay.portal.service.ResourceActionLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.SubscriptionLocalServiceUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.service.permission.SubscriptionPermissionUtil;
+import com.liferay.portal.service.UserNotificationEventLocalServiceUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,6 +70,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import javax.mail.internet.InternetAddress;
 
@@ -66,6 +78,8 @@ import javax.mail.internet.InternetAddress;
  * @author Brian Wing Shun Chan
  * @author Mate Thurzo
  * @author Raymond Augé
+ * @author Sergio González
+ * @author Roberto Díaz
  */
 public class SubscriptionSender implements Serializable {
 
@@ -79,7 +93,7 @@ public class SubscriptionSender implements Serializable {
 		}
 
 		if (fileAttachments == null) {
-			fileAttachments = new ArrayList<FileAttachment>();
+			fileAttachments = new ArrayList<>();
 		}
 
 		FileAttachment attachment = new FileAttachment(file, fileName);
@@ -88,15 +102,15 @@ public class SubscriptionSender implements Serializable {
 	}
 
 	public void addPersistedSubscribers(String className, long classPK) {
-		ObjectValuePair<String, Long> ovp = new ObjectValuePair<String, Long>(
+		ObjectValuePair<String, Long> ovp = new ObjectValuePair<>(
 			className, classPK);
 
 		_persistestedSubscribersOVPs.add(ovp);
 	}
 
 	public void addRuntimeSubscribers(String toAddress, String toName) {
-		ObjectValuePair<String, String> ovp =
-			new ObjectValuePair<String, String>(toAddress, toName);
+		ObjectValuePair<String, String> ovp = new ObjectValuePair<>(
+			toAddress, toName);
 
 		_runtimeSubscribersOVPs.add(ovp);
 	}
@@ -115,18 +129,6 @@ public class SubscriptionSender implements Serializable {
 				currentThread.setContextClassLoader(_classLoader);
 			}
 
-			String inferredClassName = null;
-			long inferredClassPK = 0;
-
-			if (_persistestedSubscribersOVPs.size() > 1) {
-				ObjectValuePair<String, Long> objectValuePair =
-					_persistestedSubscribersOVPs.get(
-						_persistestedSubscribersOVPs.size() - 1);
-
-				inferredClassName = objectValuePair.getKey();
-				inferredClassPK = objectValuePair.getValue();
-			}
-
 			for (ObjectValuePair<String, Long> ovp :
 					_persistestedSubscribersOVPs) {
 
@@ -139,10 +141,9 @@ public class SubscriptionSender implements Serializable {
 
 				for (Subscription subscription : subscriptions) {
 					try {
-						notifySubscriber(
-							subscription, inferredClassName, inferredClassPK);
+						notifyPersistedSubscriber(subscription);
 					}
-					catch (PortalException pe) {
+					catch (Exception e) {
 						_log.error(
 							"Unable to process subscription: " + subscription);
 					}
@@ -191,7 +192,7 @@ public class SubscriptionSender implements Serializable {
 
 				InternetAddress to = new InternetAddress(toAddress, toName);
 
-				sendEmail(to, LocaleUtil.getDefault());
+				notifyRuntimeSubscriber(to, LocaleUtil.getDefault());
 			}
 
 			_runtimeSubscribersOVPs.clear();
@@ -206,11 +207,23 @@ public class SubscriptionSender implements Serializable {
 	}
 
 	public void flushNotificationsAsync() {
-		Thread currentThread = Thread.currentThread();
+		TransactionCommitCallbackRegistryUtil.registerCallback(
+			new Callable<Void>() {
 
-		_classLoader = currentThread.getContextClassLoader();
+				@Override
+				public Void call() throws Exception {
+					Thread currentThread = Thread.currentThread();
 
-		MessageBusUtil.sendMessage(DestinationNames.SUBSCRIPTION_SENDER, this);
+					_classLoader = currentThread.getContextClassLoader();
+
+					MessageBusUtil.sendMessage(
+						DestinationNames.SUBSCRIPTION_SENDER,
+						SubscriptionSender.this);
+
+					return null;
+				}
+			}
+		);
 	}
 
 	public Object getContextAttribute(String key) {
@@ -254,6 +267,11 @@ public class SubscriptionSender implements Serializable {
 				PortalUtil.getUserName(userId, StringPool.BLANK));
 		}
 
+		if (uniqueMailId) {
+			_mailIdIds = ArrayUtil.append(
+				_mailIdIds, PortalUUIDUtil.generate());
+		}
+
 		mailId = PortalUtil.getMailId(
 			company.getMx(), _mailIdPopPortletPrefix, _mailIdIds);
 	}
@@ -264,6 +282,14 @@ public class SubscriptionSender implements Serializable {
 
 	public void setBulk(boolean bulk) {
 		this.bulk = bulk;
+	}
+
+	public void setClassName(String className) {
+		_className = className;
+	}
+
+	public void setClassPK(long classPK) {
+		_classPK = classPK;
 	}
 
 	public void setCompanyId(long companyId) {
@@ -292,6 +318,14 @@ public class SubscriptionSender implements Serializable {
 
 	public void setContextUserPrefix(String contextUserPrefix) {
 		_contextUserPrefix = contextUserPrefix;
+	}
+
+	public void setEntryTitle(String entryTitle) {
+		this._entryTitle = entryTitle;
+	}
+
+	public void setEntryURL(String entryURL) {
+		_entryURL = entryURL;
 	}
 
 	public void setFrom(String fromAddress, String fromName) {
@@ -324,6 +358,17 @@ public class SubscriptionSender implements Serializable {
 	public void setMailId(String popPortletPrefix, Object... ids) {
 		_mailIdPopPortletPrefix = popPortletPrefix;
 		_mailIdIds = ids;
+	}
+
+	public void setNotificationClassNameId(long notificationClassNameId) {
+		_notificationClassNameId = notificationClassNameId;
+	}
+
+	/**
+	 * @see com.liferay.portal.kernel.notifications.UserNotificationDefinition
+	 */
+	public void setNotificationType(int notificationType) {
+		_notificationType = notificationType;
 	}
 
 	public void setPortletId(String portletId) {
@@ -366,6 +411,10 @@ public class SubscriptionSender implements Serializable {
 		this.subject = subject;
 	}
 
+	public void setUniqueMailId(boolean uniqueMailId) {
+		this.uniqueMailId = uniqueMailId;
+	}
+
 	public void setUserId(long userId) {
 		this.userId = userId;
 	}
@@ -378,43 +427,73 @@ public class SubscriptionSender implements Serializable {
 	}
 
 	protected boolean hasPermission(
-			Subscription subscription, String inferredClassName,
-			long inferredClassPK, User user)
+			Subscription subscription, String className, long classPK,
+			User user)
 		throws Exception {
+
+		if (subscription.getClassName() == null) {
+			return false;
+		}
 
 		PermissionChecker permissionChecker =
 			PermissionCheckerFactoryUtil.create(user);
 
-		return SubscriptionPermissionUtil.contains(
-			permissionChecker, subscription.getClassName(),
-			subscription.getClassPK(), inferredClassName, inferredClassPK);
+		Boolean hasPermission = null;
+
+		if (Validator.isNotNull(className)) {
+			hasPermission =
+				BaseModelPermissionCheckerUtil.containsBaseModelPermission(
+					permissionChecker, groupId, className, classPK,
+					ActionKeys.VIEW);
+
+			if ((hasPermission == null) || !hasPermission) {
+				return false;
+			}
+		}
+
+		hasPermission = hasSubscribePermission(permissionChecker, subscription);
+
+		if ((hasPermission == null) || !hasPermission) {
+			return false;
+		}
+
+		return true;
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #hasPermission(Subscription,
-	 *             String, long, User)}
-	 */
-	@Deprecated
 	protected boolean hasPermission(Subscription subscription, User user)
 		throws Exception {
 
-		return hasPermission(subscription, null, 0, user);
+		return hasPermission(subscription, _className, _classPK, user);
 	}
 
 	/**
-	 * @deprecated As of 6.2.0, replaced by {@link
-	 *             #notifySubscriber(Subscription, String, long)}
+	 * @throws PortalException
 	 */
-	@Deprecated
-	protected void notifySubscriber(Subscription subscription)
-		throws Exception {
+	protected Boolean hasSubscribePermission(
+			PermissionChecker permissionChecker, Subscription subscription)
+		throws PortalException {
 
-		notifySubscriber(subscription, null, 0);
+		ResourceAction resourceAction =
+			ResourceActionLocalServiceUtil.fetchResourceAction(
+				subscription.getClassName(), ActionKeys.SUBSCRIBE);
+
+		if (resourceAction != null) {
+			return BaseModelPermissionCheckerUtil.containsBaseModelPermission(
+				permissionChecker, groupId, subscription.getClassName(),
+				subscription.getClassPK(), ActionKeys.SUBSCRIBE);
+		}
+
+		return Boolean.TRUE;
 	}
 
-	protected void notifySubscriber(
-			Subscription subscription, String inferredClassName,
-			long inferredClassPK)
+	protected void notifyPersistedSubscriber(Subscription subscription)
+		throws Exception {
+
+		notifyPersistedSubscriber(subscription, _className, _classPK);
+	}
+
+	protected void notifyPersistedSubscriber(
+			Subscription subscription, String className, long classPK)
 		throws Exception {
 
 		User user = UserLocalServiceUtil.fetchUserById(
@@ -460,9 +539,7 @@ public class SubscriptionSender implements Serializable {
 		}
 
 		try {
-			if (!hasPermission(
-					subscription, inferredClassName, inferredClassPK, user)) {
-
+			if (!hasPermission(subscription, className, classPK, user)) {
 				if (_log.isDebugEnabled()) {
 					_log.debug("Skip unauthorized user " + user.getUserId());
 				}
@@ -477,26 +554,73 @@ public class SubscriptionSender implements Serializable {
 		}
 
 		if (bulk) {
-			InternetAddress bulkAddress = new InternetAddress(
-				user.getEmailAddress(), user.getFullName());
+			if (UserNotificationManagerUtil.isDeliver(
+					user.getUserId(), portletId, _notificationClassNameId,
+					_notificationType,
+					UserNotificationDeliveryConstants.TYPE_EMAIL)) {
 
-			if (_bulkAddresses == null) {
-				_bulkAddresses = new ArrayList<InternetAddress>();
-			}
-
-			_bulkAddresses.add(bulkAddress);
-		}
-		else {
-			try {
-				InternetAddress to = new InternetAddress(
+				InternetAddress bulkAddress = new InternetAddress(
 					user.getEmailAddress(), user.getFullName());
 
-				sendEmail(to, user.getLocale());
+				if (_bulkAddresses == null) {
+					_bulkAddresses = new ArrayList<>();
+				}
+
+				_bulkAddresses.add(bulkAddress);
 			}
-			catch (Exception e) {
-				_log.error(e, e);
-			}
+
+			sendUserNotification(user);
 		}
+		else {
+			sendNotification(user);
+		}
+	}
+
+	protected void notifyRuntimeSubscriber(InternetAddress to, Locale locale)
+		throws Exception {
+
+		String emailAddress = to.getAddress();
+
+		User user = UserLocalServiceUtil.fetchUserByEmailAddress(
+			companyId, emailAddress);
+
+		if (user == null) {
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					"User with email address " + emailAddress +
+						" does not exist for company " + companyId);
+			}
+
+			sendEmail(to, locale);
+		}
+		else {
+			sendNotification(user);
+		}
+	}
+
+	/**
+	 * @deprecated As of 6.2.0, replaced by {@link
+	 *             #notifyPersistedSubscriber(Subscription)}
+	 */
+	@Deprecated
+	protected void notifySubscriber(Subscription subscription)
+		throws Exception {
+
+		notifyPersistedSubscriber(subscription, null, 0);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link
+	 *             #notifyPersistedSubscriber(Subscription)}
+	 */
+	@Deprecated
+	protected void notifySubscriber(
+			Subscription subscription, String inferredClassName,
+			long inferredClassPK)
+		throws Exception {
+
+		notifyPersistedSubscriber(
+			subscription, inferredClassName, inferredClassPK);
 	}
 
 	protected void processMailMessage(MailMessage mailMessage, Locale locale)
@@ -676,11 +800,62 @@ public class SubscriptionSender implements Serializable {
 		MailServiceUtil.sendEmail(mailMessage);
 	}
 
+	protected void sendEmailNotification(User user) throws Exception {
+		if (UserNotificationManagerUtil.isDeliver(
+				user.getUserId(), portletId, _notificationClassNameId,
+				_notificationType,
+				UserNotificationDeliveryConstants.TYPE_EMAIL)) {
+
+			InternetAddress to = new InternetAddress(
+				user.getEmailAddress(), user.getFullName());
+
+			sendEmail(to, user.getLocale());
+		}
+	}
+
+	protected void sendNotification(User user) throws Exception {
+		sendEmailNotification(user);
+		sendUserNotification(user);
+	}
+
+	protected void sendUserNotification(User user) throws Exception {
+		JSONObject notificationEventJSONObject =
+			JSONFactoryUtil.createJSONObject();
+
+		notificationEventJSONObject.put("className", _className);
+		notificationEventJSONObject.put("classPK", _classPK);
+		notificationEventJSONObject.put("entryTitle", _entryTitle);
+		notificationEventJSONObject.put("entryURL", _entryURL);
+		notificationEventJSONObject.put("notificationType", _notificationType);
+		notificationEventJSONObject.put("userId", user.getUserId());
+
+		if (UserNotificationManagerUtil.isDeliver(
+				user.getUserId(), portletId, _notificationClassNameId,
+				_notificationType,
+				UserNotificationDeliveryConstants.TYPE_PUSH)) {
+
+			UserNotificationEventLocalServiceUtil.sendUserNotificationEvents(
+				user.getUserId(), portletId,
+				UserNotificationDeliveryConstants.TYPE_PUSH,
+				notificationEventJSONObject);
+		}
+
+		if (UserNotificationManagerUtil.isDeliver(
+				user.getUserId(), portletId, _notificationClassNameId,
+				_notificationType,
+				UserNotificationDeliveryConstants.TYPE_WEBSITE)) {
+
+			UserNotificationEventLocalServiceUtil.sendUserNotificationEvents(
+				user.getUserId(), portletId,
+				UserNotificationDeliveryConstants.TYPE_WEBSITE,
+				notificationEventJSONObject);
+		}
+	}
+
 	protected String body;
 	protected boolean bulk;
 	protected long companyId;
-	protected List<FileAttachment> fileAttachments =
-		new ArrayList<FileAttachment>();
+	protected List<FileAttachment> fileAttachments = new ArrayList<>();
 	protected String fromAddress;
 	protected String fromName;
 	protected long groupId;
@@ -695,6 +870,7 @@ public class SubscriptionSender implements Serializable {
 	protected ServiceContext serviceContext;
 	protected SMTPAccount smtpAccount;
 	protected String subject;
+	protected boolean uniqueMailId = true;
 	protected long userId;
 
 	private void readObject(ObjectInputStream objectInputStream)
@@ -723,20 +899,27 @@ public class SubscriptionSender implements Serializable {
 		objectOutputStream.writeUTF(servletContextName);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SubscriptionSender.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SubscriptionSender.class);
 
 	private List<InternetAddress> _bulkAddresses;
 	private transient ClassLoader _classLoader;
-	private Map<String, EscapableObject<String>> _context =
-		new HashMap<String, EscapableObject<String>>();
+	private String _className;
+	private long _classPK;
+	private final Map<String, EscapableObject<String>> _context =
+		new HashMap<>();
 	private String _contextUserPrefix;
+	private String _entryTitle;
+	private String _entryURL;
 	private boolean _initialized;
 	private Object[] _mailIdIds;
 	private String _mailIdPopPortletPrefix;
-	private List<ObjectValuePair<String, Long>> _persistestedSubscribersOVPs =
-		new ArrayList<ObjectValuePair<String, Long>>();
-	private List<ObjectValuePair<String, String>> _runtimeSubscribersOVPs =
-		new ArrayList<ObjectValuePair<String, String>>();
-	private Set<String> _sentEmailAddresses = new HashSet<String>();
+	private long _notificationClassNameId;
+	private int _notificationType;
+	private final List<ObjectValuePair<String, Long>>
+		_persistestedSubscribersOVPs = new ArrayList<>();
+	private final List<ObjectValuePair<String, String>>
+		_runtimeSubscribersOVPs = new ArrayList<>();
+	private final Set<String> _sentEmailAddresses = new HashSet<>();
 
 }

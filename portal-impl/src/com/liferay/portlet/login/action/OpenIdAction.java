@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.login.action;
 
-import com.liferay.portal.DuplicateUserEmailAddressException;
+import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PwdGenerator;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.User;
@@ -40,7 +41,6 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.ActionResponseImpl;
-import com.liferay.util.PwdGenerator;
 
 import java.net.URL;
 
@@ -123,15 +123,17 @@ public class OpenIdAction extends PortletAction {
 			}
 		}
 		catch (Exception e) {
-			if (e instanceof DuplicateUserEmailAddressException) {
-				SessionErrors.add(actionRequest, e.getClass());
-			}
-			else if (e instanceof OpenIDException) {
+			if (e instanceof OpenIDException) {
 				if (_log.isInfoEnabled()) {
 					_log.info(
 						"Error communicating with OpenID provider: " +
 							e.getMessage());
 				}
+
+				SessionErrors.add(actionRequest, e.getClass());
+			}
+			else if (e instanceof
+						UserEmailAddressException.MustNotBeDuplicate) {
 
 				SessionErrors.add(actionRequest, e.getClass());
 			}
@@ -446,7 +448,8 @@ public class OpenIdAction extends PortletAction {
 				openIdAXType,
 				PropsUtil.get(
 					_OPEN_ID_AX_TYPE.concat(openIdAXType),
-					new Filter(openIdProvider)), true);
+					new Filter(openIdProvider)),
+				true);
 		}
 
 		authRequest.addExtension(fetchRequest);
@@ -498,6 +501,6 @@ public class OpenIdAction extends PortletAction {
 
 	private static final String _OPEN_ID_SREG_ATTR_FULLNAME = "fullname";
 
-	private static Log _log = LogFactoryUtil.getLog(OpenIdAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(OpenIdAction.class);
 
 }

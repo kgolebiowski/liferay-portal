@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -126,19 +126,19 @@ public interface CounterModel extends BaseModel<Counter> {
 	public Object clone();
 
 	@Override
-	public int compareTo(Counter counter);
+	public int compareTo(com.liferay.counter.model.Counter counter);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Counter> toCacheModel();
+	public CacheModel<com.liferay.counter.model.Counter> toCacheModel();
 
 	@Override
-	public Counter toEscapedModel();
+	public com.liferay.counter.model.Counter toEscapedModel();
 
 	@Override
-	public Counter toUnescapedModel();
+	public com.liferay.counter.model.Counter toUnescapedModel();
 
 	@Override
 	public String toString();

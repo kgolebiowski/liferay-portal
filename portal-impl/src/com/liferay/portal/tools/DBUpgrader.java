@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -69,14 +69,14 @@ public class DBUpgrader {
 
 			stopWatch.start();
 
-			InitUtil.initWithSpring();
+			InitUtil.initWithSpring(true);
 
 			upgrade();
 			verify();
 
 			System.out.println(
-				"\nSuccessfully completed upgrade process in " +
-					(stopWatch.getTime() / Time.SECOND) + " seconds.");
+				"\nCompleted upgrade and verify processes in " +
+					(stopWatch.getTime() / Time.SECOND) + " seconds");
 
 			System.exit(0);
 		}
@@ -463,6 +463,6 @@ public class DBUpgrader {
 	private static final String _DELETE_TEMP_IMAGES_2 =
 		"delete from JournalArticleImage where tempImage = TRUE";
 
-	private static Log _log = LogFactoryUtil.getLog(DBUpgrader.class);
+	private static final Log _log = LogFactoryUtil.getLog(DBUpgrader.class);
 
 }

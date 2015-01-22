@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,53 +16,53 @@ package com.liferay.portlet.documentlibrary.service;
 
 import com.liferay.portal.events.AddDefaultDocumentLibraryStructuresAction;
 import com.liferay.portal.kernel.events.SimpleAction;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.User;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.TransactionalCallbackAwareExecutionTestListener;
-import com.liferay.portal.util.GroupTestUtil;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileEntry;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryType;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryTypeConstants;
 import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
-import com.liferay.portlet.dynamicdatamapping.util.DDMStructureTestUtil;
+import com.liferay.portlet.dynamicdatamapping.util.test.DDMStructureTestUtil;
 
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Alexander Chow
  */
-@ExecutionTestListeners(
-	listeners = {
-		EnvironmentExecutionTestListener.class,
-		TransactionalCallbackAwareExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class DLFileEntryTypeServiceTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -78,37 +78,35 @@ public class DLFileEntryTypeServiceTest {
 		_folder = DLAppLocalServiceUtil.addFolder(
 			TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Folder A", "",
-			ServiceTestUtil.getServiceContext(_group.getGroupId()));
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		_subfolder = DLAppLocalServiceUtil.addFolder(
 			TestPropsValues.getUserId(), _group.getGroupId(),
 			_folder.getFolderId(), "SubFolder AA", "",
-			ServiceTestUtil.getServiceContext(_group.getGroupId()));
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		_basicDocumentDLFileEntryType =
 			DLFileEntryTypeLocalServiceUtil.getFileEntryType(
 				DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT);
 
 		_dlFileEntryTypes = DLFileEntryTypeLocalServiceUtil.getFileEntryTypes(
-			PortalUtil.getSiteAndCompanyGroupIds(_group.getGroupId()));
+			PortalUtil.getCurrentAndAncestorSiteGroupIds(_group.getGroupId()));
 
 		for (DLFileEntryType dlFileEntryType : _dlFileEntryTypes) {
-			String name = dlFileEntryType.getName(LocaleUtil.getSiteDefault());
+			String fileEntryTypeKey = dlFileEntryType.getFileEntryTypeKey();
 
-			if (name.equals(DLFileEntryTypeConstants.NAME_CONTRACT)) {
+			if (fileEntryTypeKey.equals(
+					DLFileEntryTypeConstants.FILE_ENTRY_TYPE_KEY_CONTRACT)) {
+
 				_contractDLFileEntryType = dlFileEntryType;
 			}
-			else if (name.equals(
-						DLFileEntryTypeConstants.NAME_MARKETING_BANNER)) {
+			else if (fileEntryTypeKey.equals(
+						DLFileEntryTypeConstants.
+							FILE_ENTRY_TYPE_KEY_MARKETING_BANNER)) {
 
 				_marketingBannerDLFileEntryType = dlFileEntryType;
 			}
 		}
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		DLAppLocalServiceUtil.deleteFolder(_folder.getFolderId());
 	}
 
 	@Test
@@ -118,7 +116,7 @@ public class DLFileEntryTypeServiceTest {
 		byte[] testFileBytes = FileUtil.getBytes(
 			getClass(), _TEST_DDM_STRUCTURE);
 
-		serviceContext.setAttribute("xsd", new String(testFileBytes));
+		serviceContext.setAttribute("definition", new String(testFileBytes));
 
 		User user = TestPropsValues.getUser();
 
@@ -175,16 +173,11 @@ public class DLFileEntryTypeServiceTest {
 
 		// Configure folder
 
-		DLFolderLocalServiceUtil.updateFolder(
+		DLAppLocalServiceUtil.updateFolder(
 			_folder.getFolderId(), _folder.getParentFolderId(),
 			_folder.getName(), _folder.getDescription(),
-			_contractDLFileEntryType.getPrimaryKey(),
-			ListUtil.toList(
-				new long[] {
-					_contractDLFileEntryType.getPrimaryKey(),
-					_marketingBannerDLFileEntryType.getPrimaryKey()
-				}),
-			true, ServiceTestUtil.getServiceContext(_group.getGroupId()));
+			_getFolderServiceContext(
+				_contractDLFileEntryType, _marketingBannerDLFileEntryType));
 
 		// Add file to folder
 
@@ -194,7 +187,7 @@ public class DLFileEntryTypeServiceTest {
 		FileEntry fileEntry = DLAppServiceUtil.addFileEntry(
 			_group.getGroupId(), _folder.getFolderId(), name,
 			ContentTypes.TEXT_PLAIN, name, "", "", bytes,
-			ServiceTestUtil.getServiceContext(_group.getGroupId()));
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		assertFileEntryType(fileEntry, _contractDLFileEntryType);
 
@@ -203,19 +196,16 @@ public class DLFileEntryTypeServiceTest {
 		fileEntry = DLAppServiceUtil.addFileEntry(
 			_group.getGroupId(), _subfolder.getFolderId(), name,
 			ContentTypes.TEXT_PLAIN, name, "", "", bytes,
-			ServiceTestUtil.getServiceContext(_group.getGroupId()));
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		assertFileEntryType(fileEntry, _contractDLFileEntryType);
 
 		// Configure subfolder
 
-		DLFolderLocalServiceUtil.updateFolder(
+		DLAppLocalServiceUtil.updateFolder(
 			_subfolder.getFolderId(), _subfolder.getParentFolderId(),
 			_subfolder.getName(), _subfolder.getDescription(),
-			_basicDocumentDLFileEntryType.getPrimaryKey(),
-			ListUtil.toList(
-				new long[] {_basicDocumentDLFileEntryType.getPrimaryKey()}),
-			true, ServiceTestUtil.getServiceContext(_group.getGroupId()));
+			_getFolderServiceContext(_basicDocumentDLFileEntryType));
 
 		fileEntry = DLAppServiceUtil.getFileEntry(fileEntry.getFileEntryId());
 
@@ -223,20 +213,19 @@ public class DLFileEntryTypeServiceTest {
 	}
 
 	@Test
-	@Transactional
 	public void testLocalizedSiteAddFileEntryType() throws Exception {
 		Group group = GroupTestUtil.addGroup();
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			group.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(group.getGroupId());
 
 		Locale locale = LocaleThreadLocal.getSiteDefaultLocale();
 
 		try {
 			LocaleThreadLocal.setSiteDefaultLocale(LocaleUtil.SPAIN);
 
-			String name = ServiceTestUtil.randomString();
-			String description = ServiceTestUtil.randomString();
+			String name = RandomTestUtil.randomString();
+			String description = RandomTestUtil.randomString();
 			DDMStructure ddmStructure = DDMStructureTestUtil.addStructure(
 				DLFileEntry.class.getName(), new Locale[] {LocaleUtil.SPAIN},
 				LocaleUtil.SPAIN);
@@ -259,20 +248,19 @@ public class DLFileEntryTypeServiceTest {
 	}
 
 	@Test
-	@Transactional
 	public void testLocalizedSiteUpdateFileEntryType() throws Exception {
 		Group group = GroupTestUtil.addGroup();
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			group.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(group.getGroupId());
 
 		Locale locale = LocaleThreadLocal.getSiteDefaultLocale();
 
 		try {
 			LocaleThreadLocal.setSiteDefaultLocale(LocaleUtil.SPAIN);
 
-			String name = ServiceTestUtil.randomString();
-			String description = ServiceTestUtil.randomString();
+			String name = RandomTestUtil.randomString();
+			String description = RandomTestUtil.randomString();
 			DDMStructure ddmStructure = DDMStructureTestUtil.addStructure(
 				DLFileEntry.class.getName(), new Locale[] {LocaleUtil.SPAIN},
 				LocaleUtil.SPAIN);
@@ -283,8 +271,8 @@ public class DLFileEntryTypeServiceTest {
 					description, new long[] {ddmStructure.getStructureId()},
 					serviceContext);
 
-			name = ServiceTestUtil.randomString();
-			description = ServiceTestUtil.randomString();
+			name = RandomTestUtil.randomString();
+			description = RandomTestUtil.randomString();
 
 			DLFileEntryTypeLocalServiceUtil.updateFileEntryType(
 				TestPropsValues.getUserId(),
@@ -316,6 +304,25 @@ public class DLFileEntryTypeServiceTest {
 			dlFileEntryType.getPrimaryKey(), dlFileEntry.getFileEntryTypeId());
 	}
 
+	private ServiceContext _getFolderServiceContext(
+			DLFileEntryType... dlFileEntryTypes)
+		throws PortalException {
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		serviceContext.setAttribute(
+			"defaultFileEntryTypeId", dlFileEntryTypes[0].getPrimaryKey());
+		serviceContext.setAttribute(
+			"dlFileEntryTypesSearchContainerPrimaryKeys",
+			ArrayUtil.toString(dlFileEntryTypes, "primaryKey"));
+		serviceContext.setAttribute(
+			"restrictionType",
+			DLFolderConstants.RESTRICTION_TYPE_FILE_ENTRY_TYPES_AND_WORKFLOW);
+
+		return serviceContext;
+	}
+
 	private static final String _CONTENT =
 		"Content: Enterprise. Open Source. For Life.";
 
@@ -326,7 +333,10 @@ public class DLFileEntryTypeServiceTest {
 	private DLFileEntryType _contractDLFileEntryType;
 	private List<DLFileEntryType> _dlFileEntryTypes;
 	private Folder _folder;
+
+	@DeleteAfterTestRun
 	private Group _group;
+
 	private DLFileEntryType _marketingBannerDLFileEntryType;
 	private Folder _subfolder;
 

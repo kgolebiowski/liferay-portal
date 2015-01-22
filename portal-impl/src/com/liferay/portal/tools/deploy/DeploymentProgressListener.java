@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -107,11 +107,11 @@ public class DeploymentProgressListener implements ProgressListener {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DeploymentProgressListener.class);
 
-	private DeploymentHandler _deploymentHandler;
-	private DeploymentManager _deploymentManager;
-	private String _warContext;
+	private final DeploymentHandler _deploymentHandler;
+	private final DeploymentManager _deploymentManager;
+	private final String _warContext;
 
 }

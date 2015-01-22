@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,6 +23,12 @@ import javax.servlet.http.HttpServletRequest;
  * @author Brian Wing Shun Chan
  */
 public abstract class BaseCometRequest implements CometRequest {
+
+	public BaseCometRequest(HttpServletRequest request) {
+		_request = request;
+
+		setRequest(request);
+	}
 
 	@Override
 	public long getCompanyId() {
@@ -77,7 +83,7 @@ public abstract class BaseCometRequest implements CometRequest {
 
 	private long _companyId;
 	private String _pathInfo;
-	private HttpServletRequest _request;
+	private final HttpServletRequest _request;
 	private long _timestamp = System.currentTimeMillis();
 	private long _userId;
 

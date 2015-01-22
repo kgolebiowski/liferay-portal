@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.repository.model;
 
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.model.StagedGroupedModel;
 
 import java.io.Serializable;
@@ -24,6 +25,9 @@ import java.util.Map;
  * @author Alexander Chow
  */
 public interface RepositoryModel<T> extends StagedGroupedModel, Serializable {
+
+	public void execute(RepositoryModelOperation repositoryModelOperation)
+		throws PortalException;
 
 	public Map<String, Serializable> getAttributes();
 

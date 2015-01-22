@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -98,14 +98,14 @@ public class NetrServerAuthenticate3 extends DcerpcMessage {
 		return _status;
 	}
 
-	private String _accountName;
+	private final String _accountName;
 	private int _accountRid;
-	private byte[] _clientCredential;
-	private String _computerName;
+	private final byte[] _clientCredential;
+	private final String _computerName;
 	private int _negotiateFlags;
-	private String _primaryName;
-	private short _secureChannelType;
-	private byte[] _serverCredential;
+	private final String _primaryName;
+	private final short _secureChannelType;
+	private final byte[] _serverCredential;
 	private int _status;
 
 }

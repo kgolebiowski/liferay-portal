@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,80 +14,153 @@
 
 package com.liferay.portal.staging;
 
+import com.liferay.portal.kernel.lar.ExportImportDateUtil;
 import com.liferay.portal.kernel.lar.PortletDataHandlerKeys;
 import com.liferay.portal.kernel.staging.StagingUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.model.Group;
-import com.liferay.portal.service.GroupLocalServiceUtil;
+import com.liferay.portal.model.Layout;
+import com.liferay.portal.model.LayoutSet;
+import com.liferay.portal.model.LayoutSetBranch;
+import com.liferay.portal.model.LayoutSetBranchConstants;
+import com.liferay.portal.model.impl.LayoutImpl;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
+import com.liferay.portal.service.LayoutSetBranchLocalServiceUtil;
+import com.liferay.portal.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceTestUtil;
+import com.liferay.portal.service.ServiceContextThreadLocal;
 import com.liferay.portal.service.StagingLocalServiceUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationExecutionTestListener;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.LayoutTestUtil;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
 import com.liferay.portal.util.PortletKeys;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
+import com.liferay.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portlet.asset.model.AssetCategory;
 import com.liferay.portlet.asset.model.AssetVocabulary;
 import com.liferay.portlet.asset.service.AssetCategoryLocalServiceUtil;
 import com.liferay.portlet.asset.service.AssetVocabularyLocalServiceUtil;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.service.JournalArticleLocalServiceUtil;
-import com.liferay.portlet.journal.util.JournalTestUtil;
+import com.liferay.portlet.journal.util.test.JournalTestUtil;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.After;
+import javax.portlet.PortletPreferences;
+
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Julio Camarero
+ * @author Daniel Kocsis
  */
-@ExecutionTestListeners(listeners = {
-	MainServletExecutionTestListener.class,
-	SynchronousDestinationExecutionTestListener.class
-})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-@Sync
+@Sync(cleanTransaction = true)
 public class StagingImplTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
 	}
 
-	@After
-	public void tearDown() throws Exception {
-		GroupLocalServiceUtil.deleteGroup(_group);
+	@Test
+	public void testLocalStaging() throws Exception {
+		enableLocalStaging(false);
 	}
 
 	@Test
-	public void testLocalStagingCategories() throws Exception {
-		enableLocalStaging(false, true);
+	public void testLocalStagingAssetCategories() throws Exception {
+		enableLocalStagingWithContent(false, true, false);
 	}
 
 	@Test
 	public void testLocalStagingJournal() throws Exception {
-		enableLocalStaging(true, false);
+		enableLocalStagingWithContent(true, false, false);
+	}
+
+	@Test
+	public void testLocalStagingUpdateLastPublishDate() throws Exception {
+		enableLocalStagingWithContent(true, false, false);
+
+		Group stagingGroup = _group.getStagingGroup();
+
+		LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
+			_group.getGroupId(), false);
+
+		Assert.assertNull(ExportImportDateUtil.getLastPublishDate(layoutSet));
+
+		layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
+			stagingGroup.getGroupId(), false);
+
+		Assert.assertNotNull(
+			ExportImportDateUtil.getLastPublishDate(layoutSet));
+
+		Layout layout = new LayoutImpl();
+
+		layout.setCompanyId(_group.getCompanyId());
+		layout.setGroupId(_group.getGroupId());
+
+		PortletPreferences portletPreferences =
+			PortletPreferencesFactoryUtil.getStrictPortletSetup(
+				layout, PortletKeys.JOURNAL);
+
+		Assert.assertNull(
+			ExportImportDateUtil.getLastPublishDate(portletPreferences));
+
+		layout.setGroupId(stagingGroup.getGroupId());
+
+		portletPreferences =
+			PortletPreferencesFactoryUtil.getStrictPortletSetup(
+				layout, PortletKeys.JOURNAL);
+
+		Assert.assertNotNull(
+			ExportImportDateUtil.getLastPublishDate(portletPreferences));
+	}
+
+	@Test
+	public void testLocalStagingWithLayoutVersioning() throws Exception {
+		enableLocalStaging(true);
+	}
+
+	@Test
+	public void testLocalStagingWithLayoutVersioningAssetCategories()
+		throws Exception {
+
+		enableLocalStagingWithContent(false, true, true);
+	}
+
+	@Test
+	public void testLocalStagingWithLayoutVersioningJournal() throws Exception {
+		enableLocalStagingWithContent(true, false, true);
 	}
 
 	protected AssetCategory addAssetCategory(
 			long groupId, String title, String description)
 		throws Exception {
 
-		Map<Locale, String> titleMap = new HashMap<Locale, String>();
-		Map<Locale, String> descriptionMap = new HashMap<Locale, String>();
+		Map<Locale, String> titleMap = new HashMap<>();
+		Map<Locale, String> descriptionMap = new HashMap<>();
 
 		for (Locale locale : _locales) {
 			titleMap.put(locale, title.concat(LocaleUtil.toLanguageId(locale)));
@@ -95,8 +168,8 @@ public class StagingImplTest {
 				locale, description.concat(LocaleUtil.toLanguageId(locale)));
 		}
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			groupId);
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(groupId);
 
 		AssetVocabulary assetVocabulary =
 			AssetVocabularyLocalServiceUtil.addVocabulary(
@@ -108,15 +181,87 @@ public class StagingImplTest {
 			assetVocabulary.getVocabularyId(), new String[0], serviceContext);
 	}
 
+	protected void enableLocalStaging(boolean branching) throws Exception {
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		Map<String, String[]> stagingParameters =
+			StagingUtil.getStagingParameters();
+
+		for (String stagingParameterName : stagingParameters.keySet()) {
+			serviceContext.setAttribute(
+				stagingParameterName,
+				stagingParameters.get(stagingParameterName)[0]);
+		}
+
+		if (branching) {
+			serviceContext.setSignedIn(true);
+		}
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+		enableLocalStaging(branching, serviceContext);
+
+		ServiceContextThreadLocal.popServiceContext();
+
+		if (!branching) {
+			return;
+		}
+
+		UnicodeProperties typeSettingsProperties =
+			_group.getTypeSettingsProperties();
+
+		Assert.assertTrue(
+			GetterUtil.getBoolean(
+				typeSettingsProperties.getProperty("branchingPrivate")));
+		Assert.assertTrue(
+			GetterUtil.getBoolean(
+				typeSettingsProperties.getProperty("branchingPublic")));
+
+		Group stagingGroup = _group.getStagingGroup();
+
+		LayoutSetBranch layoutSetBranch =
+			LayoutSetBranchLocalServiceUtil.fetchLayoutSetBranch(
+				stagingGroup.getGroupId(), false,
+				LayoutSetBranchConstants.MASTER_BRANCH_NAME);
+
+		Assert.assertNotNull(layoutSetBranch);
+
+		layoutSetBranch = LayoutSetBranchLocalServiceUtil.fetchLayoutSetBranch(
+			stagingGroup.getGroupId(), true,
+			LayoutSetBranchConstants.MASTER_BRANCH_NAME);
+
+		Assert.assertNotNull(layoutSetBranch);
+	}
+
 	protected void enableLocalStaging(
-			boolean stageJournal, boolean stageCategories)
+			boolean branching, ServiceContext serviceContext)
 		throws Exception {
 
-		LayoutTestUtil.addLayout(_group.getGroupId(), "Page1");
-		LayoutTestUtil.addLayout(_group.getGroupId(), "Page2");
-
-		int initialPagesCount = LayoutLocalServiceUtil.getLayoutsCount(
+		int initialLayoutsCount = LayoutLocalServiceUtil.getLayoutsCount(
 			_group, false);
+
+		StagingLocalServiceUtil.enableLocalStaging(
+			TestPropsValues.getUserId(), _group, branching, branching,
+			serviceContext);
+
+		Group stagingGroup = _group.getStagingGroup();
+
+		Assert.assertNotNull(stagingGroup);
+		Assert.assertEquals(
+			initialLayoutsCount,
+			LayoutLocalServiceUtil.getLayoutsCount(stagingGroup, false));
+	}
+
+	protected void enableLocalStagingWithContent(
+			boolean stageJournal, boolean stageAssetCategories,
+			boolean branching)
+		throws Exception {
+
+		// Layouts
+
+		LayoutTestUtil.addLayout(_group);
+		LayoutTestUtil.addLayout(_group);
 
 		// Create content
 
@@ -125,21 +270,22 @@ public class StagingImplTest {
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(), "Title", "content");
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			_group.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 		Map<String, String[]> parameters = StagingUtil.getStagingParameters();
 
 		parameters.put(
-			PortletDataHandlerKeys.CATEGORIES,
-			new String[] {String.valueOf(stageCategories)});
-		parameters.put(
-			PortletDataHandlerKeys.PORTLET_CONFIGURATION + "_" +
-				PortletKeys.JOURNAL,
+			PortletDataHandlerKeys.PORTLET_CONFIGURATION +
+				StringPool.UNDERLINE + PortletKeys.JOURNAL,
 			new String[] {String.valueOf(stageJournal)});
 		parameters.put(
 			PortletDataHandlerKeys.PORTLET_CONFIGURATION_ALL,
 			new String[] {Boolean.FALSE.toString()});
+		parameters.put(
+			PortletDataHandlerKeys.PORTLET_DATA + StringPool.UNDERLINE +
+				PortletKeys.ASSET_CATEGORIES_ADMIN,
+			new String[] {String.valueOf(stageAssetCategories)});
 		parameters.put(
 			PortletDataHandlerKeys.PORTLET_DATA + StringPool.UNDERLINE +
 				PortletKeys.JOURNAL,
@@ -153,9 +299,6 @@ public class StagingImplTest {
 			new String[] {String.valueOf(stageJournal)});
 
 		serviceContext.setAttribute(
-			StagingUtil.getStagedPortletId(PortletDataHandlerKeys.CATEGORIES),
-			stageCategories);
-		serviceContext.setAttribute(
 			StagingUtil.getStagedPortletId(PortletKeys.JOURNAL), stageJournal);
 
 		for (String parameterName : parameters.keySet()) {
@@ -163,18 +306,9 @@ public class StagingImplTest {
 				parameterName, parameters.get(parameterName)[0]);
 		}
 
-		// Enable staging
-
-		StagingLocalServiceUtil.enableLocalStaging(
-			TestPropsValues.getUserId(), _group, false, false, serviceContext);
+		enableLocalStaging(branching, serviceContext);
 
 		Group stagingGroup = _group.getStagingGroup();
-
-		Assert.assertNotNull(stagingGroup);
-
-		Assert.assertEquals(
-			initialPagesCount,
-			LayoutLocalServiceUtil.getLayoutsCount(stagingGroup, false));
 
 		// Update content in staging
 
@@ -206,7 +340,7 @@ public class StagingImplTest {
 		journalArticle = JournalArticleLocalServiceUtil.getArticle(
 			_group.getGroupId(), journalArticle.getArticleId());
 
-		if (stageCategories) {
+		if (stageAssetCategories) {
 			for (Locale locale : _locales) {
 				Assert.assertEquals(
 					assetCategory.getTitle(locale),
@@ -241,7 +375,7 @@ public class StagingImplTest {
 			AssetCategory category, String name)
 		throws Exception {
 
-		Map<Locale, String> titleMap = new HashMap<Locale, String>();
+		Map<Locale, String> titleMap = new HashMap<>();
 
 		for (Locale locale : _locales) {
 			titleMap.put(locale, name.concat(LocaleUtil.toLanguageId(locale)));
@@ -251,13 +385,14 @@ public class StagingImplTest {
 			TestPropsValues.getUserId(), category.getCategoryId(),
 			category.getParentCategoryId(), titleMap,
 			category.getDescriptionMap(), category.getVocabularyId(), null,
-			ServiceTestUtil.getServiceContext());
+			ServiceContextTestUtil.getServiceContext());
 	}
 
-	private static Locale[] _locales = {
+	private static final Locale[] _locales = {
 		LocaleUtil.GERMANY, LocaleUtil.SPAIN, LocaleUtil.US
 	};
 
+	@DeleteAfterTestRun
 	private Group _group;
 
 }

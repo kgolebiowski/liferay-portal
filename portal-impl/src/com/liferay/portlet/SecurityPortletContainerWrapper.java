@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.ActionResult;
@@ -321,7 +320,7 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 
 	protected boolean hasAccessPermission(
 			HttpServletRequest request, Portlet portlet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
@@ -348,7 +347,7 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 
 	protected void isAccessAllowedToControlPanelPortlet(
 			HttpServletRequest request, Portlet portlet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
@@ -375,7 +374,7 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 
 	protected boolean isAccessAllowedToLayoutPortlet(
 			HttpServletRequest request, Portlet portlet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (isAccessGrantedByRuntimePortlet(request, portlet)) {
 			return true;
@@ -444,7 +443,7 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 
 	protected boolean isAccessGrantedByPortletOnPage(
 			HttpServletRequest request, Portlet portlet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -490,7 +489,7 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 
 	protected boolean isLayoutConfigurationAllowed(
 			HttpServletRequest request, Portlet portlet)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -606,7 +605,7 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 				continue;
 			}
 
-			if (c == CharPool.UNDERLINE) {
+			if ((c == CharPool.POUND) || (c == CharPool.UNDERLINE)) {
 				continue;
 			}
 
@@ -682,9 +681,9 @@ public class SecurityPortletContainerWrapper implements PortletContainer {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		SecurityPortletContainerWrapper.class);
 
-	private PortletContainer _portletContainer;
+	private final PortletContainer _portletContainer;
 
 }

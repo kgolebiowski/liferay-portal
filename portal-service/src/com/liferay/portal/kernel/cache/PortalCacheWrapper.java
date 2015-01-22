@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,6 +15,8 @@
 package com.liferay.portal.kernel.cache;
 
 import java.io.Serializable;
+
+import java.util.List;
 
 /**
  * @author Shuyang Zhou
@@ -32,8 +34,18 @@ public class PortalCacheWrapper<K extends Serializable, V>
 	}
 
 	@Override
+	public List<K> getKeys() {
+		return portalCache.getKeys();
+	}
+
+	@Override
 	public String getName() {
 		return portalCache.getName();
+	}
+
+	@Override
+	public PortalCacheManager<K, V> getPortalCacheManager() {
+		return portalCache.getPortalCacheManager();
 	}
 
 	public PortalCache<K, V> getWrappedPortalCache() {
@@ -48,16 +60,6 @@ public class PortalCacheWrapper<K extends Serializable, V>
 	@Override
 	public void put(K key, V value, int timeToLive) {
 		portalCache.put(key, value, timeToLive);
-	}
-
-	@Override
-	public void putQuiet(K key, V value) {
-		portalCache.putQuiet(key, value);
-	}
-
-	@Override
-	public void putQuiet(K key, V value, int timeToLive) {
-		portalCache.putQuiet(key, value, timeToLive);
 	}
 
 	@Override
@@ -81,6 +83,10 @@ public class PortalCacheWrapper<K extends Serializable, V>
 	@Override
 	public void removeAll() {
 		portalCache.removeAll();
+	}
+
+	public void setPortalCache(PortalCache<K, V> portalCache) {
+		this.portalCache = portalCache;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,8 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.model.UserNotificationDelivery;
 import com.liferay.portal.service.UserNotificationDeliveryLocalServiceUtil;
 
@@ -30,6 +31,7 @@ import com.liferay.portal.service.UserNotificationDeliveryLocalServiceUtil;
  * @see com.liferay.portal.model.UserNotificationDelivery
  * @generated
  */
+@ProviderType
 public abstract class UserNotificationDeliveryBaseImpl
 	extends UserNotificationDeliveryModelImpl
 	implements UserNotificationDelivery {
@@ -39,7 +41,7 @@ public abstract class UserNotificationDeliveryBaseImpl
 	 * Never modify or reference this class directly. All methods that expect a user notification delivery model instance should use the {@link UserNotificationDelivery} interface instead.
 	 */
 	@Override
-	public void persist() throws SystemException {
+	public void persist() {
 		if (this.isNew()) {
 			UserNotificationDeliveryLocalServiceUtil.addUserNotificationDelivery(this);
 		}

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,74 +15,65 @@
 package com.liferay.portal.service.persistence;
 
 import com.liferay.portal.NoSuchPortletException;
-import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.impl.PortletModelImpl;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.service.persistence.BasePersistence;
-import com.liferay.portal.service.persistence.PersistenceExecutionTestListener;
-import com.liferay.portal.test.LiferayPersistenceIntegrationJUnitTestRunner;
-import com.liferay.portal.test.persistence.TransactionalPersistenceAdvice;
+import com.liferay.portal.service.PortletLocalServiceUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.PersistenceTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.util.test.RandomTestUtil;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Brian Wing Shun Chan
+ * @generated
  */
-@ExecutionTestListeners(listeners =  {
-	PersistenceExecutionTestListener.class})
-@RunWith(LiferayPersistenceIntegrationJUnitTestRunner.class)
 public class PortletPersistenceTest {
+	@Rule
+	public final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
+			PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(Propagation.REQUIRED));
+
 	@After
 	public void tearDown() throws Exception {
-		Map<Serializable, BasePersistence<?>> basePersistences = _transactionalPersistenceAdvice.getBasePersistences();
+		Iterator<Portlet> iterator = _portlets.iterator();
 
-		Set<Serializable> primaryKeys = basePersistences.keySet();
+		while (iterator.hasNext()) {
+			_persistence.remove(iterator.next());
 
-		for (Serializable primaryKey : primaryKeys) {
-			BasePersistence<?> basePersistence = basePersistences.get(primaryKey);
-
-			try {
-				basePersistence.remove(primaryKey);
-			}
-			catch (Exception e) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("The model with primary key " + primaryKey +
-						" was already deleted");
-				}
-			}
+			iterator.remove();
 		}
-
-		_transactionalPersistenceAdvice.reset();
 	}
 
 	@Test
 	public void testCreate() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		Portlet portlet = _persistence.create(pk);
 
@@ -109,21 +100,21 @@ public class PortletPersistenceTest {
 
 	@Test
 	public void testUpdateExisting() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		Portlet newPortlet = _persistence.create(pk);
 
-		newPortlet.setMvccVersion(ServiceTestUtil.nextLong());
+		newPortlet.setMvccVersion(RandomTestUtil.nextLong());
 
-		newPortlet.setCompanyId(ServiceTestUtil.nextLong());
+		newPortlet.setCompanyId(RandomTestUtil.nextLong());
 
-		newPortlet.setPortletId(ServiceTestUtil.randomString());
+		newPortlet.setPortletId(RandomTestUtil.randomString());
 
-		newPortlet.setRoles(ServiceTestUtil.randomString());
+		newPortlet.setRoles(RandomTestUtil.randomString());
 
-		newPortlet.setActive(ServiceTestUtil.randomBoolean());
+		newPortlet.setActive(RandomTestUtil.randomBoolean());
 
-		_persistence.update(newPortlet);
+		_portlets.add(_persistence.update(newPortlet));
 
 		Portlet existingPortlet = _persistence.findByPrimaryKey(newPortlet.getPrimaryKey());
 
@@ -139,6 +130,32 @@ public class PortletPersistenceTest {
 	}
 
 	@Test
+	public void testCountByCompanyId() {
+		try {
+			_persistence.countByCompanyId(RandomTestUtil.nextLong());
+
+			_persistence.countByCompanyId(0L);
+		}
+		catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testCountByC_P() {
+		try {
+			_persistence.countByC_P(RandomTestUtil.nextLong(), StringPool.BLANK);
+
+			_persistence.countByC_P(0L, StringPool.NULL);
+
+			_persistence.countByC_P(0L, (String)null);
+		}
+		catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
 	public void testFindByPrimaryKeyExisting() throws Exception {
 		Portlet newPortlet = addPortlet();
 
@@ -149,7 +166,7 @@ public class PortletPersistenceTest {
 
 	@Test
 	public void testFindByPrimaryKeyMissing() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		try {
 			_persistence.findByPrimaryKey(pk);
@@ -171,7 +188,7 @@ public class PortletPersistenceTest {
 		}
 	}
 
-	protected OrderByComparator getOrderByComparator() {
+	protected OrderByComparator<Portlet> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create("Portlet", "mvccVersion",
 			true, "id", true, "companyId", true, "portletId", true, "roles",
 			true, "active", true);
@@ -188,7 +205,7 @@ public class PortletPersistenceTest {
 
 	@Test
 	public void testFetchByPrimaryKeyMissing() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		Portlet missingPortlet = _persistence.fetchByPrimaryKey(pk);
 
@@ -196,19 +213,101 @@ public class PortletPersistenceTest {
 	}
 
 	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
+		throws Exception {
+		Portlet newPortlet1 = addPortlet();
+		Portlet newPortlet2 = addPortlet();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newPortlet1.getPrimaryKey());
+		primaryKeys.add(newPortlet2.getPrimaryKey());
+
+		Map<Serializable, Portlet> portlets = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(2, portlets.size());
+		Assert.assertEquals(newPortlet1,
+			portlets.get(newPortlet1.getPrimaryKey()));
+		Assert.assertEquals(newPortlet2,
+			portlets.get(newPortlet2.getPrimaryKey()));
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
+		throws Exception {
+		long pk1 = RandomTestUtil.nextLong();
+
+		long pk2 = RandomTestUtil.nextLong();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(pk1);
+		primaryKeys.add(pk2);
+
+		Map<Serializable, Portlet> portlets = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertTrue(portlets.isEmpty());
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
+		throws Exception {
+		Portlet newPortlet = addPortlet();
+
+		long pk = RandomTestUtil.nextLong();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newPortlet.getPrimaryKey());
+		primaryKeys.add(pk);
+
+		Map<Serializable, Portlet> portlets = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(1, portlets.size());
+		Assert.assertEquals(newPortlet, portlets.get(newPortlet.getPrimaryKey()));
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
+		throws Exception {
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		Map<Serializable, Portlet> portlets = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertTrue(portlets.isEmpty());
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithOnePrimaryKey()
+		throws Exception {
+		Portlet newPortlet = addPortlet();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newPortlet.getPrimaryKey());
+
+		Map<Serializable, Portlet> portlets = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(1, portlets.size());
+		Assert.assertEquals(newPortlet, portlets.get(newPortlet.getPrimaryKey()));
+	}
+
+	@Test
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = new PortletActionableDynamicQuery() {
+		ActionableDynamicQuery actionableDynamicQuery = PortletLocalServiceUtil.getActionableDynamicQuery();
+
+		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod() {
 				@Override
-				protected void performAction(Object object) {
+				public void performAction(Object object) {
 					Portlet portlet = (Portlet)object;
 
 					Assert.assertNotNull(portlet);
 
 					count.increment();
 				}
-			};
+			});
 
 		actionableDynamicQuery.performActions();
 
@@ -240,7 +339,7 @@ public class PortletPersistenceTest {
 				Portlet.class.getClassLoader());
 
 		dynamicQuery.add(RestrictionsFactoryUtil.eq("id",
-				ServiceTestUtil.nextLong()));
+				RandomTestUtil.nextLong()));
 
 		List<Portlet> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -278,7 +377,7 @@ public class PortletPersistenceTest {
 		dynamicQuery.setProjection(ProjectionFactoryUtil.property("id"));
 
 		dynamicQuery.add(RestrictionsFactoryUtil.in("id",
-				new Object[] { ServiceTestUtil.nextLong() }));
+				new Object[] { RandomTestUtil.nextLong() }));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -305,26 +404,25 @@ public class PortletPersistenceTest {
 	}
 
 	protected Portlet addPortlet() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		Portlet portlet = _persistence.create(pk);
 
-		portlet.setMvccVersion(ServiceTestUtil.nextLong());
+		portlet.setMvccVersion(RandomTestUtil.nextLong());
 
-		portlet.setCompanyId(ServiceTestUtil.nextLong());
+		portlet.setCompanyId(RandomTestUtil.nextLong());
 
-		portlet.setPortletId(ServiceTestUtil.randomString());
+		portlet.setPortletId(RandomTestUtil.randomString());
 
-		portlet.setRoles(ServiceTestUtil.randomString());
+		portlet.setRoles(RandomTestUtil.randomString());
 
-		portlet.setActive(ServiceTestUtil.randomBoolean());
+		portlet.setActive(RandomTestUtil.randomBoolean());
 
-		_persistence.update(portlet);
+		_portlets.add(_persistence.update(portlet));
 
 		return portlet;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(PortletPersistenceTest.class);
-	private PortletPersistence _persistence = (PortletPersistence)PortalBeanLocatorUtil.locate(PortletPersistence.class.getName());
-	private TransactionalPersistenceAdvice _transactionalPersistenceAdvice = (TransactionalPersistenceAdvice)PortalBeanLocatorUtil.locate(TransactionalPersistenceAdvice.class.getName());
+	private List<Portlet> _portlets = new ArrayList<Portlet>();
+	private PortletPersistence _persistence = PortletUtil.getPersistence();
 }

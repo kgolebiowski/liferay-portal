@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
  */
 --%>
 
-<ul class="lfr-tree unstyled">
+<ul class="lfr-tree list-unstyled">
 	<li class="tree-item">
 		<aui:input checked="<%= true %>" id="publishingEventNow" label="now" name="schedule" type="radio" value="<%= false %>" />
 
@@ -38,31 +38,29 @@
 		<portlet:param name="tabs2" value="scheduled" />
 		<portlet:param name="closeRedirect" value="<%= closeRedirect %>" />
 		<portlet:param name="groupId" value="<%= String.valueOf(stagingGroupId) %>" />
+		<portlet:param name="layoutSetBranchId" value="<%= String.valueOf(layoutSetBranchId) %>" />
+		<portlet:param name="layoutSetBranchName" value="<%= layoutSetBranchName %>" />
 		<portlet:param name="privateLayout" value="<%= String.valueOf(privateLayout) %>" />
 	</portlet:renderURL>
 
-	Liferay.provide(
-		window,
-		'<portlet:namespace />schedulePublishEvent',
-		function() {
-			document.<portlet:namespace />exportPagesFm.<portlet:namespace /><%= Constants.CMD %>.value = '<%= scheduleCMD %>';
-			document.<portlet:namespace />exportPagesFm.<portlet:namespace />redirect.value = '<%= scheduledEventsURL %>';
+	function <portlet:namespace />schedulePublishEvent() {
+		var form = AUI.$(document.<portlet:namespace />exportPagesFm);
 
-			submitForm(document.<portlet:namespace />exportPagesFm);
+		form.fm('<%= Constants.CMD %>').val('<%= scheduleCMD %>');
+		form.fm('redirect').val('<%= scheduledEventsURL %>');
+
+		submitForm(form);
+	}
+
+	function <portlet:namespace />unschedulePublishEvent(jobName) {
+		if (confirm('<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-delete-the-scheduled-event") %>')) {
+			var form = AUI.$(document.<portlet:namespace />exportPagesFm);
+
+			form.fm('<%= Constants.CMD %>').val('<%= unscheduleCMD %>');
+			form.fm('redirect').val('<%= scheduledEventsURL %>');
+			form.fm('jobName').val(jobName);
+
+			submitForm(form);
 		}
-	);
-
-	Liferay.provide(
-		window,
-		'<portlet:namespace />unschedulePublishEvent',
-		function(jobName) {
-			if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "are-you-sure-you-want-to-delete-the-scheduled-event") %>')) {
-				document.<portlet:namespace />exportPagesFm.<portlet:namespace /><%= Constants.CMD %>.value = '<%= unscheduleCMD %>';
-				document.<portlet:namespace />exportPagesFm.<portlet:namespace />redirect.value = '<%= scheduledEventsURL %>';
-				document.<portlet:namespace />exportPagesFm.<portlet:namespace />jobName.value = jobName;
-
-				submitForm(document.<portlet:namespace />exportPagesFm);
-			}
-		}
-	);
+	}
 </aui:script>

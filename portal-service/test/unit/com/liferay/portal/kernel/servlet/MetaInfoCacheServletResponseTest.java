@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,12 +49,12 @@ import org.junit.Test;
 public class MetaInfoCacheServletResponseTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Test
 	public void testAddCookie() {
-		final List<Cookie> cookies = new ArrayList<Cookie>();
+		final List<Cookie> cookies = new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -146,7 +146,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testAddDateHeader() {
 		final List<ObjectValuePair<String, Long>> objectValuePairs =
-			new ArrayList<ObjectValuePair<String, Long>>();
+			new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -219,9 +219,9 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testAddHeader() {
 		final AtomicReference<String> contentTypeReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final List<ObjectValuePair<String, String>> objectValuePairs =
-			new ArrayList<ObjectValuePair<String, String>>();
+			new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -315,7 +315,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testAddIntHeader() {
 		final List<ObjectValuePair<String, Integer>> objectValuePairs =
-			new ArrayList<ObjectValuePair<String, Integer>>();
+			new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -402,9 +402,9 @@ public class MetaInfoCacheServletResponseTest {
 	public void testFinishResponse() throws IOException {
 		final AtomicLong contentLengthReference = new AtomicLong();
 		final AtomicReference<String> locationReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicReference<String> messageReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicInteger statusReference = new AtomicInteger();
 
 		StubHttpServletResponse stubHttpServletResponse =
@@ -421,6 +421,11 @@ public class MetaInfoCacheServletResponseTest {
 
 				@Override
 				public void resetBuffer() {
+				}
+
+				@Override
+				public void sendError(int status) {
+					statusReference.set(status);
 				}
 
 				@Override
@@ -455,6 +460,15 @@ public class MetaInfoCacheServletResponseTest {
 				public void setLocale(Locale locale) {
 				}
 
+				@Override
+				public void setStatus(int status) {
+					statusReference.set(status);
+				}
+
+				/**
+				 * @deprecated As of 7.0.0
+				 */
+				@Deprecated
 				@Override
 				public void setStatus(int status, String message) {
 					statusReference.set(status);
@@ -713,7 +727,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testGetSetCharacterEncoding() throws IOException {
 		final AtomicReference<String> characterEncodingReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -792,9 +806,9 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testGetSetContentType() throws IOException {
 		final AtomicReference<String> characterEncodingReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicReference<String> contentTypeReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -895,8 +909,7 @@ public class MetaInfoCacheServletResponseTest {
 
 	@Test
 	public void testGetSetLocale() throws IOException {
-		final AtomicReference<Locale> localeReference =
-			new AtomicReference<Locale>();
+		final AtomicReference<Locale> localeReference = new AtomicReference<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -1090,7 +1103,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testSendError() throws IOException {
 		final AtomicReference<String> messageReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicInteger statusReference = new AtomicInteger();
 
 		StubHttpServletResponse stubHttpServletResponse =
@@ -1106,6 +1119,11 @@ public class MetaInfoCacheServletResponseTest {
 				}
 
 				@Override
+				public void sendError(int status) {
+					statusReference.set(status);
+				}
+
+				@Override
 				public void sendError(int status, String message) {
 					statusReference.set(status);
 					messageReference.set(message);
@@ -1116,7 +1134,7 @@ public class MetaInfoCacheServletResponseTest {
 		MetaInfoCacheServletResponse metaInfoCacheServletResponse =
 			new MetaInfoCacheServletResponse(stubHttpServletResponse);
 
-		// Set both status and message
+		// Set status and message
 
 		metaInfoCacheServletResponse.sendError(400, "Bad Page");
 
@@ -1143,7 +1161,7 @@ public class MetaInfoCacheServletResponseTest {
 		messageReference.set(null);
 		statusReference.set(0);
 
-		// Set after commit
+		// Set status and message after commit
 
 		metaInfoCacheServletResponse = new MetaInfoCacheServletResponse(
 			stubHttpServletResponse);
@@ -1157,14 +1175,29 @@ public class MetaInfoCacheServletResponseTest {
 		}
 		catch (IllegalStateException ise) {
 		}
+
+		// Set status after commit
+
+		metaInfoCacheServletResponse = new MetaInfoCacheServletResponse(
+			stubHttpServletResponse);
+
+		metaInfoCacheServletResponse.flushBuffer();
+
+		try {
+			metaInfoCacheServletResponse.sendError(500);
+
+			Assert.fail();
+		}
+		catch (IllegalStateException ise) {
+		}
 	}
 
 	@Test
 	public void testSendRedirect() throws IOException {
 		final AtomicReference<String> locationReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicReference<String> messageReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicInteger statusReference = new AtomicInteger();
 
 		StubHttpServletResponse stubHttpServletResponse =
@@ -1184,6 +1217,15 @@ public class MetaInfoCacheServletResponseTest {
 				locationReference.set(location);
 			}
 
+			@Override
+			public void setStatus(int status) {
+				statusReference.set(status);
+			}
+
+			/**
+			 * @deprecated As of 7.0.0
+			 */
+			@Deprecated
 			@Override
 			public void setStatus(int status, String message) {
 				statusReference.set(status);
@@ -1256,7 +1298,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testSetDateHeader() {
 		final List<ObjectValuePair<String, Long>> objectValuePairs =
-			new ArrayList<ObjectValuePair<String, Long>>();
+			new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -1329,7 +1371,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testSetGetStatus() throws IOException {
 		final AtomicReference<String> messageReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final AtomicInteger statusReference = new AtomicInteger();
 
 		StubHttpServletResponse stubHttpServletResponse =
@@ -1341,6 +1383,15 @@ public class MetaInfoCacheServletResponseTest {
 				}
 
 				@Override
+				public void setStatus(int status) {
+					statusReference.set(status);
+				}
+
+				/**
+				 * @deprecated As of 7.0.0
+				 */
+				@Deprecated
+				@Override
 				public void setStatus(int status, String message) {
 					statusReference.set(status);
 					messageReference.set(message);
@@ -1351,7 +1402,7 @@ public class MetaInfoCacheServletResponseTest {
 		MetaInfoCacheServletResponse metaInfoCacheServletResponse =
 			new MetaInfoCacheServletResponse(stubHttpServletResponse);
 
-		// Set both status and message
+		// Set status and message
 
 		metaInfoCacheServletResponse.setStatus(400, "Bad Page");
 
@@ -1373,11 +1424,21 @@ public class MetaInfoCacheServletResponseTest {
 		messageReference.set(null);
 		statusReference.set(0);
 
-		// Set after commit
+		// Set status and message after commit
 
 		metaInfoCacheServletResponse.flushBuffer();
 
 		metaInfoCacheServletResponse.setStatus(500, "After commit");
+
+		Assert.assertNull(messageReference.get());
+		Assert.assertEquals(404, metaInfoCacheServletResponse.getStatus());
+		Assert.assertEquals(0, statusReference.get());
+
+		// Set status after commit
+
+		metaInfoCacheServletResponse.flushBuffer();
+
+		metaInfoCacheServletResponse.setStatus(500);
 
 		Assert.assertNull(messageReference.get());
 		Assert.assertEquals(404, metaInfoCacheServletResponse.getStatus());
@@ -1387,9 +1448,9 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testSetHeader() {
 		final AtomicReference<String> contentTypeReference =
-			new AtomicReference<String>();
+			new AtomicReference<>();
 		final List<ObjectValuePair<String, String>> objectValuePairs =
-			new ArrayList<ObjectValuePair<String, String>>();
+			new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {
@@ -1483,7 +1544,7 @@ public class MetaInfoCacheServletResponseTest {
 	@Test
 	public void testSetIntHeader() {
 		final List<ObjectValuePair<String, Integer>> objectValuePairs =
-			new ArrayList<ObjectValuePair<String, Integer>>();
+			new ArrayList<>();
 
 		StubHttpServletResponse stubHttpServletResponse =
 			new StubHttpServletResponse() {

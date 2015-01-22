@@ -1,4 +1,4 @@
-@import "compass";
+@import "bourbon";
 @import "mixins";
 
 .taglib-discussion {
@@ -19,7 +19,7 @@
 
 		&:after {
 			clear: both;
-			content: ".";
+			content: '';
 			display: block;
 			height: 0;
 			visibility: hidden;
@@ -47,8 +47,8 @@
 
 			.user-details .user-name, .user-profile-image {
 				clear: none;
-				vertical-align: top;
 				text-align: center;
+				vertical-align: top;
 			}
 
 			.user-profile-image img {
@@ -78,7 +78,7 @@
 	.lfr-discussion-message {
 		padding-bottom: 1em;
 
-		@include word-break(break-all);
+		@include word-wrap(break-all);
 	}
 
 	.taglib-ratings {
@@ -135,7 +135,6 @@
 				textarea {
 					max-width: 100%;
 					width: 100%;
-					@include box-sizing(border-box);
 				}
 			}
 
@@ -182,7 +181,7 @@
 
 .lfr-discussion-controls:after {
 	clear: both;
-	content: "";
+	content: '';
 	display: block;
 	height: 0;
 }
@@ -197,8 +196,8 @@
 
 .taglib-discussion {
 	table.tree-walker {
-		border-width: 0;
 		border-collapse: collapse;
+		border-width: 0;
 	}
 
 	.lfr-discussion {
@@ -207,7 +206,9 @@
 
 	.lfr-discussion-details {
 		.taglib-user-display {
-			word-wrap: break-word;
+			@include respond-to(desktop, tablet) {
+				word-wrap: break-word;
+			}
 
 			.user-details .user-name {
 				font-weight: bold;
@@ -222,7 +223,7 @@
 
 	.lfr-discussion-posted-on {
 		color: #999;
-		font-size: .9em;
+		font-size: 0.9em;
 
 		.lfr-discussion-parent-link {
 			cursor: pointer;

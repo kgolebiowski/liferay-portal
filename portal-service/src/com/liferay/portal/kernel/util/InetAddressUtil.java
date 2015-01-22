@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,7 +30,7 @@ import java.util.Enumeration;
 public class InetAddressUtil {
 
 	public static String getLocalHostName() throws Exception {
-		return LocalHostNameHolder._localHostName;
+		return LocalHostNameHolder._LOCAL_HOST_NAME;
 	}
 
 	public static InetAddress getLocalInetAddress() throws Exception {
@@ -64,13 +64,13 @@ public class InetAddressUtil {
 
 	private static class LocalHostNameHolder {
 
-		private static final String _localHostName;
+		private static final String _LOCAL_HOST_NAME;
 
 		static {
 			try {
 				InetAddress inetAddress = getLocalInetAddress();
 
-				_localHostName = inetAddress.getHostName();
+				_LOCAL_HOST_NAME = inetAddress.getHostName();
 			}
 			catch (Exception e) {
 				throw new ExceptionInInitializerError(e);

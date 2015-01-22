@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,14 +28,14 @@ import javax.portlet.PortletURL;
  */
 public class FeedSearch extends SearchContainer<JournalFeed> {
 
-	static List<String> headerNames = new ArrayList<String>();
+	public static final String EMPTY_RESULTS_MESSAGE = "no-feeds-were-found";
+
+	public static List<String> headerNames = new ArrayList<>();
 
 	static {
 		headerNames.add("id");
 		headerNames.add("description");
 	}
-
-	public static final String EMPTY_RESULTS_MESSAGE = "no-feeds-were-found";
 
 	public FeedSearch(PortletRequest portletRequest, PortletURL iteratorURL) {
 		super(

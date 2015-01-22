@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -110,9 +109,8 @@ public interface PasswordTrackerModel extends BaseModel<PasswordTracker>,
 	 * Returns the user uuid of this password tracker.
 	 *
 	 * @return the user uuid of this password tracker
-	 * @throws SystemException if a system exception occurred
 	 */
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this password tracker.
@@ -187,19 +185,20 @@ public interface PasswordTrackerModel extends BaseModel<PasswordTracker>,
 	public Object clone();
 
 	@Override
-	public int compareTo(PasswordTracker passwordTracker);
+	public int compareTo(
+		com.liferay.portal.model.PasswordTracker passwordTracker);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<PasswordTracker> toCacheModel();
+	public CacheModel<com.liferay.portal.model.PasswordTracker> toCacheModel();
 
 	@Override
-	public PasswordTracker toEscapedModel();
+	public com.liferay.portal.model.PasswordTracker toEscapedModel();
 
 	@Override
-	public PasswordTracker toUnescapedModel();
+	public com.liferay.portal.model.PasswordTracker toUnescapedModel();
 
 	@Override
 	public String toString();

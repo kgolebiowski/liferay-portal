@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -41,6 +41,9 @@ public class PKUpgradeColumnImpl extends BaseUpgradeColumnImpl {
 		if (_trackValues) {
 			_valueMapper = ValueMapperFactoryUtil.getValueMapper();
 		}
+		else {
+			_valueMapper = null;
+		}
 	}
 
 	@Override
@@ -67,8 +70,8 @@ public class PKUpgradeColumnImpl extends BaseUpgradeColumnImpl {
 		return _trackValues;
 	}
 
-	private Integer _newColumnType;
-	private boolean _trackValues;
-	private ValueMapper _valueMapper;
+	private final Integer _newColumnType;
+	private final boolean _trackValues;
+	private final ValueMapper _valueMapper;
 
 }

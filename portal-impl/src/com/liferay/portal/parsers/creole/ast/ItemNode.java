@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,17 +20,14 @@ package com.liferay.portal.parsers.creole.ast;
 public abstract class ItemNode extends BaseParentableNode {
 
 	public ItemNode(int tokenType) {
-		super(tokenType);
+		this(tokenType, 0, null, null);
 	}
 
 	public ItemNode(
 		int level, BaseParentableNode baseParentableNode,
 		CollectionNode collectionNode) {
 
-		super(collectionNode);
-
-		_level = level;
-		_baseParentableNode = baseParentableNode;
+		this(0, level, baseParentableNode, collectionNode);
 	}
 
 	public BaseParentableNode getBaseParentableNode() {
@@ -45,7 +42,17 @@ public abstract class ItemNode extends BaseParentableNode {
 		_baseParentableNode = baseParentableNode;
 	}
 
+	protected ItemNode(
+		int tokenType, int level, BaseParentableNode baseParentableNode,
+		CollectionNode collectionNode) {
+
+		super(collectionNode, tokenType);
+
+		_level = level;
+		_baseParentableNode = baseParentableNode;
+	}
+
 	private BaseParentableNode _baseParentableNode;
-	private int _level;
+	private final int _level;
 
 }

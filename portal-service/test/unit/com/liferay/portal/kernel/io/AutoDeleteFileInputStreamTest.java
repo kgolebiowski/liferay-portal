@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,13 +15,10 @@
 package com.liferay.portal.kernel.io;
 
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
-import com.liferay.portal.kernel.util.ReflectionUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.SwappableSecurityManager;
 
 import java.io.File;
-
-import java.lang.reflect.Field;
-
-import java.security.Permission;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,8 +33,8 @@ import org.junit.Test;
 public class AutoDeleteFileInputStreamTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Test
 	public void testAutoRemoveFileInputStream() throws Exception {
@@ -50,28 +47,24 @@ public class AutoDeleteFileInputStreamTest {
 
 		final AtomicInteger checkDeleteCount = new AtomicInteger();
 
-		SecurityManager securityManager = new SecurityManager() {
+		SwappableSecurityManager swappableSecurityManager =
+			new SwappableSecurityManager() {
 
-			@Override
-			public void checkDelete(String file) {
-				if (file.contains("tempFile")) {
-					checkDeleteCount.getAndIncrement();
+				@Override
+				public void checkDelete(String file) {
+					if (file.contains("tempFile")) {
+						checkDeleteCount.getAndIncrement();
+					}
 				}
-			}
 
-			@Override
-			public void checkPermission(Permission permission) {
-			}
+			};
 
-		};
+		try (SwappableSecurityManager autoCloseSwappableSecurityManager =
+				swappableSecurityManager) {
 
-		System.setSecurityManager(securityManager);
+			autoCloseSwappableSecurityManager.install();
 
-		try {
 			autoRemoveFileInputStream.close();
-		}
-		finally {
-			System.setSecurityManager(null);
 		}
 
 		Assert.assertFalse(tempFile.exists());
@@ -85,23 +78,19 @@ public class AutoDeleteFileInputStreamTest {
 
 		Assert.assertTrue(tempFile.delete());
 
-		System.setSecurityManager(securityManager);
+		try (SwappableSecurityManager autoCloseSwappableSecurityManager =
+				swappableSecurityManager) {
 
-		try {
+			autoCloseSwappableSecurityManager.install();
+
 			autoRemoveFileInputStream.close();
-		}
-		finally {
-			System.setSecurityManager(null);
 		}
 
 		Assert.assertFalse(tempFile.exists());
 		Assert.assertEquals(2, checkDeleteCount.get());
 
-		Class<?> clazz = Class.forName("java.io.DeleteOnExitHook");
-
-		Field filesField = ReflectionUtil.getDeclaredField(clazz, "files");
-
-		Set<String> files = (Set<String>)filesField.get(null);
+		Set<String> files = ReflectionTestUtil.getFieldValue(
+			Class.forName("java.io.DeleteOnExitHook"), "files");
 
 		Assert.assertTrue(files.contains(tempFile.getPath()));
 	}

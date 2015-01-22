@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portal.webdav.methods;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -73,7 +72,7 @@ public class ProppatchMethodImpl extends BasePropMethodImpl {
 	}
 
 	protected WebDAVProps getStoredProperties(WebDAVRequest webDAVRequest)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		WebDAVStorage storage = webDAVRequest.getWebDAVStorage();
 
@@ -109,7 +108,7 @@ public class ProppatchMethodImpl extends BasePropMethodImpl {
 		throws InvalidRequestException, LockException {
 
 		try {
-			Set<QName> newProps = new HashSet<QName>();
+			Set<QName> newProps = new HashSet<>();
 
 			HttpServletRequest request = webDAVRequest.getHttpServletRequest();
 
@@ -199,6 +198,7 @@ public class ProppatchMethodImpl extends BasePropMethodImpl {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ProppatchMethodImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ProppatchMethodImpl.class);
 
 }

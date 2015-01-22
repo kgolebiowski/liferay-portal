@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,17 +21,18 @@ import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.service.persistence.PersistenceExecutionTestListener;
-import com.liferay.portal.test.LiferayPersistenceIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
 
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * This test shows the SQL <code>Null</code> comparison differences across all
@@ -437,13 +438,14 @@ import org.junit.runner.RunWith;
  *
  * @author Shuyang Zhou
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		PersistenceExecutionTestListener.class
-	})
-@RunWith(LiferayPersistenceIntegrationJUnitTestRunner.class)
 public class SQLNullTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
 
 	@Test
 	public void testBlankStringEqualsNull() {
@@ -467,7 +469,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -498,7 +500,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -529,7 +531,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -550,7 +552,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -581,7 +583,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -607,7 +609,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -638,7 +640,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -664,7 +666,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -690,7 +692,7 @@ public class SQLNullTest {
 			Assert.assertFalse(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -711,7 +713,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -737,7 +739,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -763,7 +765,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -784,7 +786,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -805,7 +807,7 @@ public class SQLNullTest {
 			Assert.assertFalse(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -826,7 +828,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -855,7 +857,7 @@ public class SQLNullTest {
 			Assert.assertTrue(list.isEmpty());
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -881,7 +883,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -915,7 +917,7 @@ public class SQLNullTest {
 			}
 		}
 		finally {
-			session.close();
+			_sessionFactory.closeSession(session);
 		}
 	}
 
@@ -946,24 +948,24 @@ public class SQLNullTest {
 	}
 
 	private static final String _SQL_EQUALS_NULL =
-		"SELECT DISTINCT 1 FROM ClassName_ WHERE ? = NULL";
+		"SELECT DISTINCT 1 FROM Counter WHERE ? = NULL";
 
 	private static final String _SQL_IS_NOT_NULL =
-		"SELECT DISTINCT 1 FROM ClassName_ WHERE ? IS NOT NULL";
+		"SELECT DISTINCT 1 FROM Counter WHERE ? IS NOT NULL";
 
 	private static final String _SQL_IS_NULL =
-		"SELECT DISTINCT 1 FROM ClassName_ WHERE ? IS NULL";
+		"SELECT DISTINCT 1 FROM Counter WHERE ? IS NULL";
 
 	private static final String _SQL_LIKE_NULL =
-		"SELECT DISTINCT 1 FROM ClassName_ WHERE ? LIKE NULL";
+		"SELECT DISTINCT 1 FROM Counter WHERE ? LIKE NULL";
 
 	private static final String _SQL_NOT_EQUALS_NULL =
-		"SELECT DISTINCT 1 FROM ClassName_ WHERE ? != NULL";
+		"SELECT DISTINCT 1 FROM Counter WHERE ? != NULL";
 
 	private static final String _SQL_NOT_LIKE_NULL =
-		"SELECT DISTINCT 1 FROM ClassName_ WHERE ? NOT LIKE NULL";
+		"SELECT DISTINCT 1 FROM Counter WHERE ? NOT LIKE NULL";
 
-	private SessionFactory _sessionFactory =
+	private final SessionFactory _sessionFactory =
 		(SessionFactory)PortalBeanLocatorUtil.locate("liferaySessionFactory");
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * <p>
- * See http://issues.liferay.com/browse/LPS-14986.
+ * See https://issues.liferay.com/browse/LPS-14986.
  * </p>
  *
  * @author Shuyang Zhou
@@ -78,8 +79,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 		_rejectedExecutionHandler = rejectedExecutionHandler;
 		_threadFactory = threadFactory;
 		_threadPoolHandler = threadPoolHandler;
-		_taskQueue = new TaskQueue<Runnable>(maxQueueSize);
-		_workerTasks = new HashSet<WorkerTask>();
+		_taskQueue = new TaskQueue<>(maxQueueSize);
+		_workerTasks = new HashSet<>();
 	}
 
 	public void adjustPoolSize(int newCorePoolSize, int newMaxPoolSize) {
@@ -391,7 +392,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 				workerTask._thread.interrupt();
 			}
 
-			List<Runnable> runnables = new ArrayList<Runnable>();
+			List<Runnable> runnables = new ArrayList<>();
 
 			_taskQueue.drainTo(runnables);
 
@@ -402,6 +403,39 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 		finally {
 			_mainLock.unlock();
 		}
+	}
+
+	@Override
+	public <T> NoticeableFuture<T> submit(Callable<T> callable) {
+		if (callable == null) {
+			throw new NullPointerException("Callable is null");
+		}
+
+		DefaultNoticeableFuture<T> defaultNoticeableFuture = newTaskFor(
+			callable);
+
+		execute(defaultNoticeableFuture);
+
+		return defaultNoticeableFuture;
+	}
+
+	@Override
+	public NoticeableFuture<?> submit(Runnable runnable) {
+		return submit(runnable, null);
+	}
+
+	@Override
+	public <T> NoticeableFuture<T> submit(Runnable runnable, T result) {
+		if (runnable == null) {
+			throw new NullPointerException("Runnable is null");
+		}
+
+		DefaultNoticeableFuture<T> defaultNoticeableFuture = newTaskFor(
+			runnable, result);
+
+		execute(defaultNoticeableFuture);
+
+		return defaultNoticeableFuture;
 	}
 
 	@Override
@@ -419,6 +453,18 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
 	protected Set<WorkerTask> getWorkerTasks() {
 		return _workerTasks;
+	}
+
+	@Override
+	protected <T> DefaultNoticeableFuture<T> newTaskFor(Callable<T> callable) {
+		return new DefaultNoticeableFuture<>(callable);
+	}
+
+	@Override
+	protected <T> DefaultNoticeableFuture<T> newTaskFor(
+		Runnable runnable, T value) {
+
+		return new DefaultNoticeableFuture<>(runnable, value);
 	}
 
 	private void _addWorkerThread() {

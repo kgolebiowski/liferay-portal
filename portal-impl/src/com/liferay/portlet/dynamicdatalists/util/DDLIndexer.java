@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,28 +18,27 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.BaseIndexer;
-import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
-import com.liferay.portal.kernel.search.BooleanQueryFactoryUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchEngineUtil;
 import com.liferay.portal.kernel.search.Summary;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecord;
+import com.liferay.portlet.dynamicdatalists.model.DDLRecordConstants;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecordSet;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecordSetConstants;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordLocalServiceUtil;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordSetLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
-import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
-import com.liferay.portlet.dynamicdatamapping.storage.Fields;
+import com.liferay.portlet.dynamicdatamapping.storage.DDMFormValues;
 import com.liferay.portlet.dynamicdatamapping.storage.StorageEngineUtil;
 import com.liferay.portlet.dynamicdatamapping.util.DDMIndexerUtil;
 
@@ -47,9 +46,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import java.util.TreeSet;
 
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 
 /**
@@ -62,6 +61,10 @@ public class DDLIndexer extends BaseIndexer {
 	public static final String PORTLET_ID = PortletKeys.DYNAMIC_DATA_LISTS;
 
 	public DDLIndexer() {
+		setDefaultSelectedFieldNames(
+			Field.COMPANY_ID, Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK,
+			Field.UID);
+		setDefaultSelectedLocalizedFieldNames(Field.DESCRIPTION, Field.TITLE);
 		setFilterSearch(true);
 	}
 
@@ -94,6 +97,8 @@ public class DDLIndexer extends BaseIndexer {
 		if (recordSetId > 0) {
 			contextQuery.addRequiredTerm("recordSetId", recordSetId);
 		}
+
+		addSearchClassTypeIds(contextQuery, searchContext);
 	}
 
 	@Override
@@ -101,40 +106,9 @@ public class DDLIndexer extends BaseIndexer {
 			BooleanQuery searchQuery, SearchContext searchContext)
 		throws Exception {
 
-		Set<DDMStructure> ddmStructuresSet = new TreeSet<DDMStructure>();
-
-		long recordSetId = GetterUtil.getLong(
-			searchContext.getAttribute("recordSetId"));
-
-		if (recordSetId > 0) {
-			DDLRecordSet recordSet = DDLRecordSetLocalServiceUtil.getRecordSet(
-				recordSetId);
-
-			ddmStructuresSet.add(recordSet.getDDMStructure());
-		}
-		else {
-			long[] groupIds = searchContext.getGroupIds();
-
-			if (ArrayUtil.isNotEmpty(groupIds)) {
-				List<DDMStructure> ddmStructures =
-					DDMStructureLocalServiceUtil.getStructures(groupIds);
-
-				ddmStructuresSet.addAll(ddmStructures);
-			}
-		}
-
-		BooleanQuery ddmStructureQuery = BooleanQueryFactoryUtil.create(
-			searchContext);
-
-		for (DDMStructure ddmStructure : ddmStructuresSet) {
-			addSearchDDMStruture(searchQuery, searchContext, ddmStructure);
-		}
-
-		if (ddmStructureQuery.hasClauses()) {
-			searchQuery.add(ddmStructureQuery, BooleanClauseOccur.MUST);
-		}
-
 		addSearchTerm(searchQuery, searchContext, Field.USER_NAME, false);
+
+		addSearchTerm(searchQuery, searchContext, "ddmContent", false);
 	}
 
 	@Override
@@ -152,27 +126,32 @@ public class DDLIndexer extends BaseIndexer {
 
 		DDLRecordVersion recordVersion = record.getRecordVersion();
 
+		document.addKeyword(
+			Field.CLASS_TYPE_ID, recordVersion.getRecordSetId());
 		document.addKeyword(Field.STATUS, recordVersion.getStatus());
 		document.addKeyword(Field.VERSION, recordVersion.getVersion());
 
+		document.addText(
+			"ddmContent",
+			extractDDMContent(recordVersion, LocaleUtil.getSiteDefault()));
 		document.addKeyword("recordSetId", recordVersion.getRecordSetId());
 
 		DDLRecordSet recordSet = recordVersion.getRecordSet();
 
 		DDMStructure ddmStructure = recordSet.getDDMStructure();
 
-		Fields fields = StorageEngineUtil.getFields(
+		DDMFormValues ddmFormValues = StorageEngineUtil.getDDMFormValues(
 			recordVersion.getDDMStorageId());
 
-		DDMIndexerUtil.addAttributes(document, ddmStructure, fields);
+		DDMIndexerUtil.addAttributes(document, ddmStructure, ddmFormValues);
 
 		return document;
 	}
 
 	@Override
 	protected Summary doGetSummary(
-		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		Document document, Locale locale, String snippet, PortletURL portletURL,
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		long recordSetId = GetterUtil.getLong(document.get("recordSetId"));
 
@@ -183,6 +162,7 @@ public class DDLIndexer extends BaseIndexer {
 		portletURL.setParameter(
 			"struts_action", "/dynamic_data_lists/view_record");
 		portletURL.setParameter("recordId", recordId);
+		portletURL.setParameter("version", document.get(Field.VERSION));
 
 		Summary summary = createSummary(
 			document, Field.TITLE, Field.DESCRIPTION);
@@ -200,15 +180,25 @@ public class DDLIndexer extends BaseIndexer {
 
 		DDLRecordVersion recordVersion = record.getRecordVersion();
 
+		Document document = getDocument(record);
+
 		if (!recordVersion.isApproved()) {
+			if (Validator.equals(
+					recordVersion.getVersion(),
+					DDLRecordConstants.VERSION_DEFAULT)) {
+
+				SearchEngineUtil.deleteDocument(
+					getSearchEngineId(), record.getCompanyId(),
+					document.get(Field.UID), isCommitImmediately());
+			}
+
 			return;
 		}
 
-		Document document = getDocument(record);
-
 		if (document != null) {
 			SearchEngineUtil.updateDocument(
-				getSearchEngineId(), record.getCompanyId(), document);
+				getSearchEngineId(), record.getCompanyId(), document,
+				isCommitImmediately());
 		}
 	}
 
@@ -224,6 +214,23 @@ public class DDLIndexer extends BaseIndexer {
 		long companyId = GetterUtil.getLong(ids[0]);
 
 		reindexRecords(companyId);
+	}
+
+	protected String extractDDMContent(
+			DDLRecordVersion recordVersion, Locale locale)
+		throws Exception {
+
+		DDMFormValues ddmFormValues = StorageEngineUtil.getDDMFormValues(
+			recordVersion.getDDMStorageId());
+
+		if (ddmFormValues == null) {
+			return StringPool.BLANK;
+		}
+
+		DDLRecordSet recordSet = recordVersion.getRecordSet();
+
+		return DDMIndexerUtil.extractAttributes(
+			recordSet.getDDMStructure(), ddmFormValues, locale);
 	}
 
 	@Override
@@ -289,8 +296,7 @@ public class DDLIndexer extends BaseIndexer {
 				DDLRecordSetConstants.SCOPE_DYNAMIC_DATA_LISTS, startRecordId,
 				endRecordId);
 
-		Collection<Document> documents = new ArrayList<Document>(
-			records.size());
+		Collection<Document> documents = new ArrayList<>(records.size());
 
 		for (DDLRecord record : records) {
 			Document document = getDocument(record);
@@ -299,9 +305,9 @@ public class DDLIndexer extends BaseIndexer {
 		}
 
 		SearchEngineUtil.updateDocuments(
-			getSearchEngineId(), companyId, documents);
+			getSearchEngineId(), companyId, documents, isCommitImmediately());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(DDLIndexer.class);
+	private static final Log _log = LogFactoryUtil.getLog(DDLIndexer.class);
 
 }

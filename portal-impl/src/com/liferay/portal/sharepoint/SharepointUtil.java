@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -105,7 +105,7 @@ public class SharepointUtil {
 	}
 
 	public static String replaceBackSlashes(String value) {
-		return value.replaceAll("\\\\", StringPool.BLANK);
+		return StringUtil.replace(value, "\\", StringPool.BLANK);
 	}
 
 	public static String stripService(String url, boolean trailingSlash) {
@@ -113,7 +113,7 @@ public class SharepointUtil {
 	}
 
 	private SharepointUtil() {
-		_storageMap = new HashMap<String, String>();
+		_storageMap = new HashMap<>();
 
 		String[] tokens = PropsUtil.getArray(
 			PropsKeys.SHAREPOINT_STORAGE_TOKENS);
@@ -176,9 +176,9 @@ public class SharepointUtil {
 		return url;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SharepointUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(SharepointUtil.class);
 
-	private static SharepointUtil _instance = new SharepointUtil();
+	private static final SharepointUtil _instance = new SharepointUtil();
 
 	private final Map<String, String> _storageMap;
 

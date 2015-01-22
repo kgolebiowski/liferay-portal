@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -211,19 +211,20 @@ public interface SocialActivitySettingModel extends BaseModel<SocialActivitySett
 	public Object clone();
 
 	@Override
-	public int compareTo(SocialActivitySetting socialActivitySetting);
+	public int compareTo(
+		com.liferay.portlet.social.model.SocialActivitySetting socialActivitySetting);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<SocialActivitySetting> toCacheModel();
+	public CacheModel<com.liferay.portlet.social.model.SocialActivitySetting> toCacheModel();
 
 	@Override
-	public SocialActivitySetting toEscapedModel();
+	public com.liferay.portlet.social.model.SocialActivitySetting toEscapedModel();
 
 	@Override
-	public SocialActivitySetting toUnescapedModel();
+	public com.liferay.portlet.social.model.SocialActivitySetting toUnescapedModel();
 
 	@Override
 	public String toString();

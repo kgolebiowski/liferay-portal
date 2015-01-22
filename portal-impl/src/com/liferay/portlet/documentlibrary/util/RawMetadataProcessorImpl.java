@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portlet.documentlibrary.util;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.PortletDataContext;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -28,12 +27,14 @@ import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.repository.liferayrepository.model.LiferayFileEntry;
 import com.liferay.portal.repository.liferayrepository.model.LiferayFileVersion;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryConstants;
 import com.liferay.portlet.documentlibrary.service.DLFileEntryMetadataLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
@@ -74,17 +75,12 @@ public class RawMetadataProcessorImpl
 
 	@Override
 	public void exportGeneratedFiles(
-			PortletDataContext portletDataContext, FileEntry fileEntry,
-			Element fileEntryElement)
-		throws Exception {
-
-		return;
+		PortletDataContext portletDataContext, FileEntry fileEntry,
+		Element fileEntryElement) {
 	}
 
 	@Override
-	public void generateMetadata(FileVersion fileVersion)
-		throws SystemException {
-
+	public void generateMetadata(FileVersion fileVersion) {
 		long fileEntryMetadataCount =
 			DLFileEntryMetadataLocalServiceUtil.
 				getFileVersionFileEntryMetadatasCount(
@@ -97,27 +93,25 @@ public class RawMetadataProcessorImpl
 
 	@Override
 	public void importGeneratedFiles(
-			PortletDataContext portletDataContext, FileEntry fileEntry,
-			FileEntry importedFileEntry, Element fileEntryElement)
-		throws Exception {
-
-		return;
+		PortletDataContext portletDataContext, FileEntry fileEntry,
+		FileEntry importedFileEntry, Element fileEntryElement) {
 	}
 
 	@Override
 	public boolean isSupported(FileVersion fileVersion) {
-		return true;
+		return isSupported(fileVersion.getMimeType());
 	}
 
 	@Override
 	public boolean isSupported(String mimeType) {
-		return true;
+		return !ArrayUtil.contains(
+			PropsValues.
+				DL_FILE_ENTRY_RAW_METADATA_PROCESSOR_EXCLUDED_MIME_TYPES,
+			mimeType);
 	}
 
 	@Override
-	public void saveMetadata(FileVersion fileVersion)
-		throws PortalException, SystemException {
-
+	public void saveMetadata(FileVersion fileVersion) throws PortalException {
 		Map<String, Fields> rawMetadataMap = null;
 
 		if (fileVersion instanceof LiferayFileVersion) {
@@ -202,7 +196,7 @@ public class RawMetadataProcessorImpl
 			destinationFileVersion);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		RawMetadataProcessorImpl.class);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 
 /**
  * <p>
- * See http://issues.liferay.com/browse/LPS-38327.
+ * See https://issues.liferay.com/browse/LPS-38327.
  * </p>
  *
  * @author Raymond Augé
@@ -42,17 +42,22 @@ public class Reflection extends SecurityManager {
 	private Reflection() {
 		Method[] methods = sun.reflect.Reflection.class.getMethods();
 
+		boolean useOldReflection = true;
+
 		for (Method method : methods) {
 			String methodName = method.getName();
 
 			if (methodName.equals("isCallerSensitive")) {
-				_useOldReflection = false;
+				useOldReflection = false;
 
 				break;
 			}
 		}
+
+		_useOldReflection = useOldReflection;
 	}
 
+	@SuppressWarnings("deprecation")
 	private Class<?> _getCallerClass(int depth) {
 		if (_useOldReflection) {
 
@@ -121,6 +126,6 @@ public class Reflection extends SecurityManager {
 
 	private static final Reflection _instance = new Reflection();
 
-	private boolean _useOldReflection = true;
+	private final boolean _useOldReflection;
 
 }

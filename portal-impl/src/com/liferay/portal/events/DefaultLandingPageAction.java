@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -97,7 +97,7 @@ public class DefaultLandingPageAction extends Action {
 		// for forwarding a user to his landing page. See the references to this
 		// class in portal.properties.
 
-		/*Map<String, String[]> params = new HashMap<String, String[]>();
+		/*Map<String, String[]> params = new HashMap<>();
 
 		params.put("p_l_id", new String[] {"1806"});
 
@@ -106,7 +106,7 @@ public class DefaultLandingPageAction extends Action {
 		session.setAttribute(WebKeys.LAST_PATH, lastPath);*/
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DefaultLandingPageAction.class);
 
 }

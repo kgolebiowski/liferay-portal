@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,13 +19,14 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.BaseUpgradePortletPreferences;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.upgrade.v6_2_0.util.JournalFeedTable;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PortletKeys;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
@@ -33,8 +34,6 @@ import com.liferay.portlet.dynamicdatamapping.model.DDMStructureConstants;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplateConstants;
 import com.liferay.portlet.journal.model.JournalArticle;
-import com.liferay.portlet.journal.model.JournalStructure;
-import com.liferay.portlet.journal.model.JournalTemplate;
 import com.liferay.portlet.journal.util.JournalConverterUtil;
 
 import java.sql.Connection;
@@ -44,6 +43,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.portlet.PortletPreferences;
@@ -96,7 +96,9 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 			ps.setString(11, ddmStructureKey);
 			ps.setString(12, name);
 			ps.setString(13, description);
-			ps.setString(14, JournalConverterUtil.getDDMXSD(xsd));
+			ps.setString(
+				14,
+				JournalConverterUtil.getDDMXSD(xsd, getDefaultLocale(name)));
 			ps.setString(15, storageType);
 			ps.setInt(16, type);
 
@@ -222,6 +224,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 		updateStructures();
 		updateTemplates();
 
+		updateAssetEntryClassTypeId();
+
 		super.doUpgrade();
 	}
 
@@ -254,11 +258,48 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 		return ddmStructureId;
 	}
 
+	protected Locale getDefaultLocale(String xml) {
+		String defaultLanguageId = LocalizationUtil.getDefaultLanguageId(xml);
+
+		return LocaleUtil.fromLanguageId(defaultLanguageId);
+	}
+
 	@Override
 	protected String[] getPortletIds() {
 		return new String[] {
 			"56_INSTANCE_%", "62_INSTANCE_%", "101_INSTANCE_%"
 		};
+	}
+
+	protected void updateAssetEntryClassTypeId() throws Exception {
+		Connection con = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			con = DataAccess.getUpgradeOptimizedConnection();
+
+			ps = con.prepareStatement(
+				"select groupId, resourcePrimKey, structureId from " +
+					"JournalArticle where structureId != ''");
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				long groupId = rs.getLong("groupId");
+				long resourcePrimKey = rs.getLong("resourcePrimKey");
+				String structureId = rs.getString("structureId");
+
+				long ddmStructureId = getDDMStructureId(groupId, structureId);
+
+				runSQL(
+					"update AssetEntry set classTypeId = " +
+						ddmStructureId + " where classPK = " + resourcePrimKey);
+			}
+		}
+		finally {
+			DataAccess.cleanUp(con, ps, rs);
+		}
 	}
 
 	protected void updatePreferencesClassPKs(
@@ -322,6 +363,44 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 		runSQL(sb.toString());
 	}
 
+	protected long updateStructure(ResultSet rs) throws Exception {
+		String uuid_ = rs.getString("uuid_");
+		long id_ = rs.getLong("id_");
+		long groupId = rs.getLong("groupId");
+		long companyId = rs.getLong("companyId");
+		long userId = rs.getLong("userId");
+		String userName = rs.getString("userName");
+		Timestamp createDate = rs.getTimestamp("createDate");
+		Timestamp modifiedDate = rs.getTimestamp("modifiedDate");
+		String structureId = rs.getString("structureId");
+		String parentStructureId = rs.getString("parentStructureId");
+		String name = rs.getString("name");
+		String description = rs.getString("description");
+		String xsd = rs.getString("xsd");
+
+		Long ddmStructureId = _ddmStructureIds.get(groupId + "#" + structureId);
+
+		if (ddmStructureId != null) {
+			return ddmStructureId;
+		}
+
+		ddmStructureId = increment();
+
+		addDDMStructure(
+			uuid_, ddmStructureId, groupId, companyId, userId, userName,
+			createDate, modifiedDate, parentStructureId, structureId, name,
+			description, xsd);
+
+		updateResourcePermission(
+			companyId, "com.liferay.portlet.journal.model.JournalStructure",
+			DDMStructure.class.getName(), id_, ddmStructureId);
+
+		_ddmStructureIds.put(groupId + "#" + structureId, ddmStructureId);
+		_ddmStructurePKs.put(id_, ddmStructureId);
+
+		return ddmStructureId;
+	}
+
 	protected long updateStructure(String structureId) throws Exception {
 		Connection con = null;
 		PreparedStatement ps = null;
@@ -338,39 +417,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 			rs = ps.executeQuery();
 
 			if (rs.next()) {
-				String uuid_ = rs.getString("uuid_");
-				long id_ = rs.getLong("id_");
-				long groupId = rs.getLong("groupId");
-				long companyId = rs.getLong("companyId");
-				long userId = rs.getLong("userId");
-				String userName = rs.getString("userName");
-				Timestamp createDate = rs.getTimestamp("createDate");
-				Timestamp modifiedDate = rs.getTimestamp("modifiedDate");
-				String parentStructureId = rs.getString("parentStructureId");
-				String name = rs.getString("name");
-				String description = rs.getString("description");
-				String xsd = rs.getString("xsd");
-
-				Long ddmStructureId = _ddmStructureIds.get(
-					groupId + "#" + structureId);
-
-				if (ddmStructureId != null) {
-					return ddmStructureId;
-				}
-
-				ddmStructureId = increment();
-
-				addDDMStructure(
-					uuid_, ddmStructureId, groupId, companyId, userId, userName,
-					createDate, modifiedDate, parentStructureId, structureId,
-					name, description, xsd);
-
-				updateResourcePermission(
-					companyId, JournalStructure.class.getName(),
-					DDMStructure.class.getName(), id_, ddmStructureId);
-
-				_ddmStructureIds.put(
-					groupId + "#" + structureId, ddmStructureId);
+				return updateStructure(rs);
 			}
 
 			return 0;
@@ -400,34 +447,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 			rs = ps.executeQuery();
 
 			while (rs.next()) {
-				String uuid_ = rs.getString("uuid_");
-				long id_ = rs.getLong("id_");
-				long groupId = rs.getLong("groupId");
-				long companyId = rs.getLong("companyId");
-				long userId = rs.getLong("userId");
-				String userName = rs.getString("userName");
-				Timestamp createDate = rs.getTimestamp("createDate");
-				Timestamp modifiedDate = rs.getTimestamp("modifiedDate");
-				String structureId = rs.getString("structureId");
-				String parentStructureId = rs.getString("parentStructureId");
-				String name = rs.getString("name");
-				String description = rs.getString("description");
-				String xsd = rs.getString("xsd");
-
-				long ddmStructureId = increment();
-
-				addDDMStructure(
-					uuid_, ddmStructureId, groupId, companyId, userId, userName,
-					createDate, modifiedDate, parentStructureId, structureId,
-					name, description, xsd);
-
-				updateResourcePermission(
-					companyId, JournalStructure.class.getName(),
-					DDMStructure.class.getName(), id_, ddmStructureId);
-
-				_ddmStructureIds.put(
-					groupId + "#" + structureId, ddmStructureId);
-				_ddmStructurePKs.put(id_, ddmStructureId);
+				updateStructure(rs);
 			}
 		}
 		finally {
@@ -485,7 +505,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 					cacheable, smallImage, smallImageId, smallImageURL);
 
 				updateResourcePermission(
-					companyId, JournalTemplate.class.getName(),
+					companyId,
+					"com.liferay.portlet.journal.model.JournalTemplate",
 					DDMTemplate.class.getName(), id_, ddmTemplateId);
 			}
 		}
@@ -505,14 +526,14 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 		PortletPreferences preferences = PortletPreferencesFactoryUtil.fromXML(
 			companyId, ownerId, ownerType, plid, portletId, xml);
 
-		if (portletId.startsWith(PortletKeys.ASSET_PUBLISHER)) {
+		if (portletId.startsWith(_PORTLET_ID_ASSET_PUBLISHER)) {
 			updatePreferencesClassPKs(
 				preferences, "anyClassTypeJournalArticleAssetRendererFactory");
 			updatePreferencesClassPKs(preferences, "classTypeIds");
 			updatePreferencesClassPKs(
 				preferences, "classTypeIdsJournalArticleAssetRendererFactory");
 		}
-		else if (portletId.startsWith(PortletKeys.JOURNAL_CONTENT)) {
+		else if (portletId.startsWith(_PORTLET_ID_JOURNAL_CONTENT)) {
 			String templateId = preferences.getValue(
 				"templateId", StringPool.BLANK);
 
@@ -522,7 +543,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 				preferences.setValue("ddmTemplateKey", templateId);
 			}
 		}
-		else if (portletId.startsWith(PortletKeys.JOURNAL_CONTENT_LIST)) {
+		else if (portletId.startsWith(_PORTLET_ID_JOURNAL_CONTENT_LIST)) {
 			String structureId = preferences.getValue(
 				"structureId", StringPool.BLANK);
 
@@ -536,9 +557,15 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 		return PortletPreferencesFactoryUtil.toXML(preferences);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(UpgradeJournal.class);
+	private static final String _PORTLET_ID_ASSET_PUBLISHER = "101";
 
-	private Map<String, Long> _ddmStructureIds = new HashMap<String, Long>();
-	private Map<Long, Long> _ddmStructurePKs = new HashMap<Long, Long>();
+	private static final String _PORTLET_ID_JOURNAL_CONTENT = "56";
+
+	private static final String _PORTLET_ID_JOURNAL_CONTENT_LIST = "62";
+
+	private static final Log _log = LogFactoryUtil.getLog(UpgradeJournal.class);
+
+	private final Map<String, Long> _ddmStructureIds = new HashMap<>();
+	private final Map<Long, Long> _ddmStructurePKs = new HashMap<>();
 
 }

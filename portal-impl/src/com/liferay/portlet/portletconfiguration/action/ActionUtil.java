@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.portletconfiguration.action;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.portlet.PortletConfigurationLayoutUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -70,8 +69,7 @@ public class ActionUtil {
 	public static final String PRESELECTED = "_PRESELECTED_";
 
 	public static PortletPreferences getLayoutPortletSetup(
-			PortletRequest portletRequest, Portlet portlet)
-		throws SystemException {
+		PortletRequest portletRequest, Portlet portlet) {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -89,11 +87,10 @@ public class ActionUtil {
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		Set<String> identifiers = new HashSet<String>();
+		Set<String> identifiers = new HashSet<>();
 
-		Set<PublicRenderParameter> publicRenderParameters =
-			new TreeSet<PublicRenderParameter>(
-				new PublicRenderParameterIdentifierComparator());
+		Set<PublicRenderParameter> publicRenderParameters = new TreeSet<>(
+			new PublicRenderParameterIdentifierComparator());
 
 		LayoutTypePortlet layoutTypePortlet =
 			themeDisplay.getLayoutTypePortlet();
@@ -130,8 +127,7 @@ public class ActionUtil {
 				layout, portlet.getPortletId());
 
 		List<PublicRenderParameterConfiguration>
-			publicRenderParameterConfigurations =
-				new ArrayList<PublicRenderParameterConfiguration>();
+			publicRenderParameterConfigurations = new ArrayList<>();
 
 		for (PublicRenderParameter publicRenderParameter :
 				portlet.getPublicRenderParameters()) {
@@ -172,7 +168,7 @@ public class ActionUtil {
 
 	public static ActionRequest getWrappedActionRequest(
 			ActionRequest actionRequest, PortletPreferences portletPreferences)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		HttpServletRequest request = PortalUtil.getHttpServletRequest(
 			actionRequest);
@@ -186,7 +182,7 @@ public class ActionUtil {
 
 	public static RenderRequest getWrappedRenderRequest(
 			RenderRequest renderRequest, PortletPreferences portletPreferences)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		HttpServletRequest request = PortalUtil.getHttpServletRequest(
 			renderRequest);
@@ -206,7 +202,7 @@ public class ActionUtil {
 	public static ResourceRequest getWrappedResourceRequest(
 			ResourceRequest resourceRequest,
 			PortletPreferences portletPreferences)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		HttpServletRequest request = PortalUtil.getHttpServletRequest(
 			resourceRequest);
@@ -247,7 +243,7 @@ public class ActionUtil {
 			HttpServletRequest request,
 			PortletPreferences portletConfigPortletPreferences,
 			PortletPreferences portletPreferences)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		String portletResource = ParamUtil.getString(
 			request, "portletResource");
@@ -268,7 +264,7 @@ public class ActionUtil {
 			HttpServletRequest request,
 			PortletPreferences portletConfigPortletSetup,
 			PortletPreferences portletSetup)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		String portletResource = ParamUtil.getString(
 			request, "portletResource");

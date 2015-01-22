@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portal.model;
 
 import aQute.bnd.annotation.ProviderType;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -106,9 +105,8 @@ public interface BrowserTrackerModel extends BaseModel<BrowserTracker>, MVCCMode
 	 * Returns the user uuid of this browser tracker.
 	 *
 	 * @return the user uuid of this browser tracker
-	 * @throws SystemException if a system exception occurred
 	 */
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this browser tracker.
@@ -168,19 +166,19 @@ public interface BrowserTrackerModel extends BaseModel<BrowserTracker>, MVCCMode
 	public Object clone();
 
 	@Override
-	public int compareTo(BrowserTracker browserTracker);
+	public int compareTo(com.liferay.portal.model.BrowserTracker browserTracker);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<BrowserTracker> toCacheModel();
+	public CacheModel<com.liferay.portal.model.BrowserTracker> toCacheModel();
 
 	@Override
-	public BrowserTracker toEscapedModel();
+	public com.liferay.portal.model.BrowserTracker toEscapedModel();
 
 	@Override
-	public BrowserTracker toUnescapedModel();
+	public com.liferay.portal.model.BrowserTracker toUnescapedModel();
 
 	@Override
 	public String toString();

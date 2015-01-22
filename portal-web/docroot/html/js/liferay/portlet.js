@@ -1,7 +1,6 @@
 ;(function(A, Liferay) {
 	var Util = Liferay.Util;
-
-	var arrayIndexOf = A.Array.indexOf;
+	var AArray = A.Array;
 
 	var STR_HEAD = 'head';
 
@@ -9,6 +8,8 @@
 
 	var Portlet = {
 		list: [],
+
+		readyCounter: 0,
 
 		isStatic: function(portletId) {
 			var instance = this;
@@ -83,7 +84,7 @@
 								A.all('body link').appendTo(head);
 
 								A.all('link.lfr-css-file').each(
-									function(item, index, collection) {
+									function(item, index) {
 										document.createStyleSheet(item.get('href'));
 									}
 								);
@@ -121,6 +122,17 @@
 			}
 		},
 
+		_mergeOptions: function(portlet, options) {
+			options = options || {};
+
+			options.doAsUserId = options.doAsUserId || themeDisplay.getDoAsUserIdEncoded();
+			options.plid = options.plid || themeDisplay.getPlid();
+			options.portlet = portlet;
+			options.portletId = portlet.portletId;
+
+			return options;
+		},
+
 		_staticPortlets: {}
 	};
 
@@ -155,6 +167,8 @@
 				if (onCompleteFn) {
 					onCompleteFn(portlet, portletId);
 				}
+
+				instance.list.push(portlet.portletId);
 
 				Liferay.fire(
 					'addPortlet',
@@ -195,17 +209,17 @@
 
 			var data = {
 				cmd: 'add',
-				dataType: 'json',
+				dataType: 'JSON',
 				doAsUserId: doAsUserId,
-				portletData: portletData,
 				p_auth: Liferay.authToken,
 				p_l_id: plid,
 				p_p_col_id: currentColumnId,
 				p_p_col_pos: portletPosition,
-				p_p_id: portletId,
 				p_p_i_id: portletItemId,
+				p_p_id: portletId,
 				p_p_isolated: true,
-				p_v_l_s_g_id: themeDisplay.getSiteGroupId()
+				p_v_l_s_g_id: themeDisplay.getSiteGroupId(),
+				portletData: portletData
 			};
 
 			var firstPortlet = container.one('.portlet-boundary');
@@ -249,7 +263,7 @@
 
 			var beforePortletLoaded = options.beforePortletLoaded;
 			var data = options.data;
-			var dataType = 'html';
+			var dataType = 'HTML';
 			var onComplete = options.onComplete;
 			var placeHolder = options.placeHolder;
 			var url = options.url;
@@ -257,6 +271,8 @@
 			if (data && data.dataType) {
 				dataType = data.dataType;
 			}
+
+			dataType = dataType.toUpperCase();
 
 			var addPortletReturn = function(html) {
 				var container = placeHolder.get('parentNode');
@@ -281,8 +297,6 @@
 				placeHolder.remove();
 
 				instance.refreshLayout(portletBound);
-
-				Util.addInputType(portletBound);
 
 				if (window.location.hash) {
 					window.location.hash = 'p_p_id_' + portletId + '_';
@@ -328,16 +342,26 @@
 					dataType: dataType,
 					on: {
 						failure: function(event, id, obj) {
-							placeHolder.hide();
+							var statusText = obj.statusText;
 
-							placeHolder.placeAfter('<div class="alert alert-error">' + Liferay.Language.get('there-was-an-unexpected-error.-please-refresh-the-current-page') + '</div>');
+							if (statusText) {
+								var status = Liferay.Language.get('there-was-an-unexpected-error.-please-refresh-the-current-page');
+
+								if (statusText == 'timeout') {
+									status = Liferay.Language.get('request-timeout');
+								}
+
+								placeHolder.hide();
+
+								placeHolder.placeAfter('<div class="alert alert-danger">' + status + '</div>');
+							}
 						},
 						success: function(event, id, obj) {
 							var instance = this;
 
 							var response = instance.get('responseData');
 
-							if (dataType == 'html') {
+							if (dataType == 'HTML') {
 								addPortletReturn(response);
 							}
 							else if (response.refresh) {
@@ -364,20 +388,36 @@
 			portlet = A.one(portlet);
 
 			if (portlet && (skipConfirm || confirm(Liferay.Language.get('are-you-sure-you-want-to-remove-this-component')))) {
-				options = options || {};
+				var portletIndex = AArray.indexOf(instance.list, portlet.portletId);
 
-				options.plid = options.plid || themeDisplay.getPlid();
-				options.doAsUserId = options.doAsUserId || themeDisplay.getDoAsUserIdEncoded();
-				options.portlet = portlet;
-				options.portletId = portlet.portletId;
+				if (portletIndex >= 0) {
+					instance.list.splice(portletIndex, 1);
+				}
+
+				options = Portlet._mergeOptions(portlet, options);
+
+				Liferay.fire('destroyPortlet', options);
 
 				Liferay.fire('closePortlet', options);
 			}
 			else {
-				self.focus();
+				A.config.win.focus();
 			}
 		},
 		['aui-io-request']
+	);
+
+	Liferay.provide(
+		Portlet,
+		'destroy',
+		function(portlet, options) {
+			portlet = A.one(portlet);
+
+			if (portlet) {
+				Liferay.fire('destroyPortlet', Portlet._mergeOptions(portlet, options));
+			}
+		},
+		['aui-node-base']
 	);
 
 	Liferay.provide(
@@ -527,21 +567,15 @@
 					}
 				);
 
-				var list = instance.list;
+				instance.readyCounter++;
 
-				var index = arrayIndexOf(list, portletId);
-
-				if (index > -1) {
-					list.splice(index, 1);
-
-					if (!list.length) {
-						Liferay.fire(
-							'allPortletsReady',
-							{
-								portletId: portletId
-							}
-						);
-					}
+				if (instance.readyCounter === instance.list.length) {
+					Liferay.fire(
+						'allPortletsReady',
+						{
+							portletId: portletId
+						}
+					);
 				}
 			}
 		},
@@ -567,7 +601,7 @@
 
 				var url = portlet.refreshURL;
 
-				var placeHolder = A.Node.create('<div class="loading-animation" id="p_load' + id + '" />');
+				var placeHolder = A.Node.create('<div class="loading-animation" id="p_p_id' + id + '" />');
 
 				if (data.portletAjaxable && url) {
 					portlet.placeBefore(placeHolder);

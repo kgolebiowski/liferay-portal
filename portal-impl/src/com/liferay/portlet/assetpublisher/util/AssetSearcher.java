@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,17 +14,14 @@
 
 package com.liferay.portlet.assetpublisher.util;
 
-import com.liferay.portal.kernel.search.BaseIndexer;
+import com.liferay.portal.kernel.search.BaseSearcher;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.BooleanQueryFactoryUtil;
-import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Indexer;
-import com.liferay.portal.kernel.search.IndexerPostProcessor;
 import com.liferay.portal.kernel.search.SearchContext;
-import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.PermissionThreadLocal;
@@ -37,20 +34,19 @@ import com.liferay.portlet.asset.util.AssetUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-
-import javax.portlet.PortletURL;
 
 /**
  * @author Eudaldo Alonso
  */
-public class AssetSearcher extends BaseIndexer {
+public class AssetSearcher extends BaseSearcher {
 
 	public static Indexer getInstance() {
 		return new AssetSearcher();
 	}
 
 	public AssetSearcher() {
+		setDefaultSelectedFieldNames(
+			Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK, Field.UID);
 		setFilterSearch(true);
 		setPermissionAware(true);
 	}
@@ -68,23 +64,6 @@ public class AssetSearcher extends BaseIndexer {
 		}
 
 		return classNames;
-	}
-
-	@Override
-	public IndexerPostProcessor[] getIndexerPostProcessors() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public String getPortletId() {
-		return null;
-	}
-
-	@Override
-	public void registerIndexerPostProcessor(
-		IndexerPostProcessor indexerPostProcessor) {
-
-		throw new UnsupportedOperationException();
 	}
 
 	public void setAssetEntryQuery(AssetEntryQuery assetEntryQuery) {
@@ -130,11 +109,12 @@ public class AssetSearcher extends BaseIndexer {
 				continue;
 			}
 
-			List<Long> categoryIds = new ArrayList<Long>();
+			List<Long> categoryIds = new ArrayList<>();
 
 			if (PropsValues.ASSET_CATEGORIES_SEARCH_HIERARCHICAL) {
-				categoryIds = AssetCategoryLocalServiceUtil.getSubcategoryIds(
-					allCategoryId);
+				categoryIds.addAll(
+					AssetCategoryLocalServiceUtil.getSubcategoryIds(
+						allCategoryId));
 			}
 
 			if (categoryIds.isEmpty()) {
@@ -161,29 +141,40 @@ public class AssetSearcher extends BaseIndexer {
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
 
-		long[] allTagIds = _assetEntryQuery.getAllTagIds();
+		long[][] allTagIdsArray = _assetEntryQuery.getAllTagIdsArray();
 
-		if (allTagIds.length == 0) {
+		if (allTagIdsArray.length == 0) {
 			return;
 		}
 
-		long[] filteredAllTagIds = AssetUtil.filterTagIds(
-			permissionChecker, allTagIds);
-
-		if (allTagIds.length != filteredAllTagIds.length) {
-			addImpossibleTerm(contextQuery, Field.ASSET_TAG_IDS);
-
-			return;
-		}
-
-		BooleanQuery tagIdsQuery = BooleanQueryFactoryUtil.create(
+		BooleanQuery tagIdsArrayQuery = BooleanQueryFactoryUtil.create(
 			searchContext);
 
-		for (long tagId : allTagIds) {
-			tagIdsQuery.addRequiredTerm(Field.ASSET_TAG_IDS, tagId);
+		for (long[] allTagIds : allTagIdsArray) {
+			if (allTagIds.length == 0) {
+				continue;
+			}
+
+			long[] filteredAllTagIds = AssetUtil.filterTagIds(
+				permissionChecker, allTagIds);
+
+			if (allTagIds.length != filteredAllTagIds.length) {
+				addImpossibleTerm(contextQuery, Field.ASSET_TAG_IDS);
+
+				return;
+			}
+
+			BooleanQuery tagIdsQuery = BooleanQueryFactoryUtil.create(
+				searchContext);
+
+			for (long tagId : allTagIds) {
+				tagIdsQuery.addTerm(Field.ASSET_TAG_IDS, tagId);
+			}
+
+			tagIdsArrayQuery.add(tagIdsQuery, BooleanClauseOccur.MUST);
 		}
 
-		contextQuery.add(tagIdsQuery, BooleanClauseOccur.MUST);
+		contextQuery.add(tagIdsArrayQuery, BooleanClauseOccur.MUST);
 	}
 
 	protected void addSearchAnyCategories(
@@ -219,11 +210,12 @@ public class AssetSearcher extends BaseIndexer {
 				continue;
 			}
 
-			List<Long> categoryIds = new ArrayList<Long>();
+			List<Long> categoryIds = new ArrayList<>();
 
 			if (PropsValues.ASSET_CATEGORIES_SEARCH_HIERARCHICAL) {
-				categoryIds = AssetCategoryLocalServiceUtil.getSubcategoryIds(
-					anyCategoryId);
+				categoryIds.addAll(
+					AssetCategoryLocalServiceUtil.getSubcategoryIds(
+						anyCategoryId));
 			}
 
 			if (categoryIds.isEmpty()) {
@@ -346,11 +338,12 @@ public class AssetSearcher extends BaseIndexer {
 				continue;
 			}
 
-			List<Long> categoryIds = new ArrayList<Long>();
+			List<Long> categoryIds = new ArrayList<>();
 
 			if (PropsValues.ASSET_CATEGORIES_SEARCH_HIERARCHICAL) {
-				categoryIds = AssetCategoryLocalServiceUtil.getSubcategoryIds(
-					notAllCategoryId);
+				categoryIds.addAll(
+					AssetCategoryLocalServiceUtil.getSubcategoryIds(
+						notAllCategoryId));
 			}
 
 			if (categoryIds.isEmpty()) {
@@ -374,20 +367,31 @@ public class AssetSearcher extends BaseIndexer {
 			BooleanQuery contextQuery, SearchContext searchContext)
 		throws Exception {
 
-		long[] notAllTagIds = _assetEntryQuery.getNotAllTagIds();
+		long[][] notAllTagIdsArray = _assetEntryQuery.getNotAllTagIdsArray();
 
-		if (notAllTagIds.length == 0) {
+		if (notAllTagIdsArray.length == 0) {
 			return;
 		}
 
-		BooleanQuery tagIdsQuery = BooleanQueryFactoryUtil.create(
+		BooleanQuery tagIdsArrayQuery = BooleanQueryFactoryUtil.create(
 			searchContext);
 
-		for (long tagId : notAllTagIds) {
-			tagIdsQuery.addRequiredTerm(Field.ASSET_TAG_IDS, tagId);
+		for (long[] notAllTagIds : notAllTagIdsArray) {
+			if (notAllTagIds.length == 0) {
+				continue;
+			}
+
+			BooleanQuery tagIdsQuery = BooleanQueryFactoryUtil.create(
+				searchContext);
+
+			for (long tagId : notAllTagIds) {
+				tagIdsQuery.addTerm(Field.ASSET_TAG_IDS, tagId);
+			}
+
+			tagIdsArrayQuery.add(tagIdsQuery, BooleanClauseOccur.MUST);
 		}
 
-		contextQuery.add(tagIdsQuery, BooleanClauseOccur.MUST_NOT);
+		contextQuery.add(tagIdsArrayQuery, BooleanClauseOccur.MUST_NOT);
 	}
 
 	protected void addSearchNotAnyCategories(
@@ -412,11 +416,12 @@ public class AssetSearcher extends BaseIndexer {
 				continue;
 			}
 
-			List<Long> categoryIds = new ArrayList<Long>();
+			List<Long> categoryIds = new ArrayList<>();
 
 			if (PropsValues.ASSET_CATEGORIES_SEARCH_HIERARCHICAL) {
-				categoryIds = AssetCategoryLocalServiceUtil.getSubcategoryIds(
-					notAnyCategoryId);
+				categoryIds.addAll(
+					AssetCategoryLocalServiceUtil.getSubcategoryIds(
+						notAnyCategoryId));
 			}
 
 			if (categoryIds.isEmpty()) {
@@ -452,42 +457,11 @@ public class AssetSearcher extends BaseIndexer {
 	}
 
 	@Override
-	protected void doDelete(Object obj) throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected Document doGetDocument(Object obj) throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected Summary doGetSummary(
-			Document document, Locale locale, String snippet,
-			PortletURL portletURL)
+	protected void postProcessFullQuery(
+			BooleanQuery fullQuery, SearchContext searchContext)
 		throws Exception {
 
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected void doReindex(Object obj) throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected void doReindex(String className, long classPK) throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected void doReindex(String[] ids) throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	protected String getPortletId(SearchContext searchContext) {
-		return null;
+		fullQuery.addRequiredTerm("visible", true);
 	}
 
 	private AssetEntryQuery _assetEntryQuery;

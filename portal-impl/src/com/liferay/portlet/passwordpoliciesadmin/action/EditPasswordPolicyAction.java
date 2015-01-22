@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -141,9 +141,16 @@ public class EditPasswordPolicyAction extends PortletAction {
 		String name = ParamUtil.getString(actionRequest, "name");
 		String description = ParamUtil.getString(actionRequest, "description");
 		boolean changeable = ParamUtil.getBoolean(actionRequest, "changeable");
-		boolean changeRequired = ParamUtil.getBoolean(
-			actionRequest, "changeRequired");
-		long minAge = ParamUtil.getLong(actionRequest, "minAge");
+
+		boolean changeRequired = false;
+		long minAge = 0;
+
+		if (changeable) {
+			changeRequired = ParamUtil.getBoolean(
+				actionRequest, "changeRequired");
+			minAge = ParamUtil.getLong(actionRequest, "minAge");
+		}
+
 		boolean checkSyntax = ParamUtil.getBoolean(
 			actionRequest, "checkSyntax");
 		boolean allowDictionaryWords = ParamUtil.getBoolean(

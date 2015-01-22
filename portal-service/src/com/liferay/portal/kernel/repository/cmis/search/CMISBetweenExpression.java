@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -61,10 +61,10 @@ public class CMISBetweenExpression implements CMISCriterion {
 		return sb.toString();
 	}
 
-	private String _field;
-	private boolean _includesLower;
-	private boolean _includesUpper;
-	private String _lowerTerm;
-	private String _upperTerm;
+	private final String _field;
+	private final boolean _includesLower;
+	private final boolean _includesUpper;
+	private final String _lowerTerm;
+	private final String _upperTerm;
 
 }

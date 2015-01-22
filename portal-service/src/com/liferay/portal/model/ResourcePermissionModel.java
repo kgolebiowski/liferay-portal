@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -226,19 +226,20 @@ public interface ResourcePermissionModel extends BaseModel<ResourcePermission>,
 	public Object clone();
 
 	@Override
-	public int compareTo(ResourcePermission resourcePermission);
+	public int compareTo(
+		com.liferay.portal.model.ResourcePermission resourcePermission);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<ResourcePermission> toCacheModel();
+	public CacheModel<com.liferay.portal.model.ResourcePermission> toCacheModel();
 
 	@Override
-	public ResourcePermission toEscapedModel();
+	public com.liferay.portal.model.ResourcePermission toEscapedModel();
 
 	@Override
-	public ResourcePermission toUnescapedModel();
+	public com.liferay.portal.model.ResourcePermission toUnescapedModel();
 
 	@Override
 	public String toString();

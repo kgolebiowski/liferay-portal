@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,11 +17,15 @@ package com.liferay.portal.resiliency.spi.agent;
 import com.liferay.portal.cache.MultiVMPoolImpl;
 import com.liferay.portal.cache.memory.MemoryPortalCacheManager;
 import com.liferay.portal.kernel.cache.MultiVMPoolUtil;
-import com.liferay.portal.kernel.process.ProcessExecutor;
+import com.liferay.portal.kernel.process.local.LocalProcessLauncher;
 import com.liferay.portal.kernel.resiliency.spi.MockSPI;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
-import com.liferay.portal.kernel.test.NewClassLoaderJUnitTestRunner;
+import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.test.NewEnv;
+import com.liferay.portal.kernel.test.NewEnvTestRule;
 import com.liferay.portal.kernel.upload.FileItem;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.CookieUtil;
@@ -56,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
@@ -63,11 +68,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -75,12 +81,13 @@ import org.springframework.mock.web.MockHttpSession;
 /**
  * @author Shuyang Zhou
  */
-@RunWith(NewClassLoaderJUnitTestRunner.class)
 public class SPIAgentRequestTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			CodeCoverageAssertor.INSTANCE, NewEnvTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -103,15 +110,12 @@ public class SPIAgentRequestTest {
 			}
 		);
 
-		MemoryPortalCacheManager<Serializable, Serializable>
-			memoryPortalCacheManager =
-				new MemoryPortalCacheManager<Serializable, Serializable>();
-
-		memoryPortalCacheManager.afterPropertiesSet();
-
 		MultiVMPoolImpl multiVMPoolImpl = new MultiVMPoolImpl();
 
-		multiVMPoolImpl.setPortalCacheManager(memoryPortalCacheManager);
+		multiVMPoolImpl.setPortalCacheManager(
+			MemoryPortalCacheManager.
+				<Serializable, Serializable>createMemoryPortalCacheManager(
+					SPIAgentRequestTest.class.getName()));
 
 		MultiVMPoolUtil multiVMPoolUtil = new MultiVMPoolUtil();
 
@@ -150,9 +154,8 @@ public class SPIAgentRequestTest {
 
 			@Override
 			public Map<String, String[]> getParameterMap() {
-				Map<String, String[]> parameterMap =
-					new LinkedHashMap<String, String[]>(
-						super.getParameterMap());
+				Map<String, String[]> parameterMap = new LinkedHashMap<>(
+					super.getParameterMap());
 
 				// Parameter with no value
 
@@ -204,6 +207,14 @@ public class SPIAgentRequestTest {
 			_SESSION_ATTRIBUTE_NAME_2, _SESSION_ATTRIBUTE_VALUE_2);
 		session.setAttribute(
 			_SESSION_ATTRIBUTE_NAME_3, _SESSION_ATTRIBUTE_VALUE_3);
+
+		_captureHandler = JDKLoggerTestUtil.configureJDKLogger(
+			SPIAgentSerializable.class.getName(), Level.OFF);
+	}
+
+	@After
+	public void tearDown() {
+		_captureHandler.close();
 	}
 
 	@Test
@@ -246,8 +257,7 @@ public class SPIAgentRequestTest {
 
 		// Upload servlet request with multipart data
 
-		Map<String, FileItem[]> fileParameters =
-			new HashMap<String, FileItem[]>();
+		Map<String, FileItem[]> fileParameters = new HashMap<>();
 
 		String fileParameter = "fileParameter";
 
@@ -285,12 +295,11 @@ public class SPIAgentRequestTest {
 
 		// Upload servlet request with multipart and regular data
 
-		Map<String, List<String>> regularParameters =
-			new HashMap<String, List<String>>();
+		Map<String, List<String>> regularParameters = new HashMap<>();
 
 		String regularParameter = "regularParameter";
 
-		List<String> parameters = new ArrayList<String>();
+		List<String> parameters = new ArrayList<>();
 
 		regularParameters.put(regularParameter, parameters);
 
@@ -727,17 +736,18 @@ public class SPIAgentRequestTest {
 		Assert.assertFalse(enumeration.hasMoreElements());
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testPopulatePortletSessionAttributes2() {
 
 		// SPI, already populated
 
 		ConcurrentMap<String, Object> attributes =
-			ProcessExecutor.ProcessContext.getAttributes();
+			LocalProcessLauncher.ProcessContext.getAttributes();
 
 		attributes.put(SPI.SPI_INSTANCE_PUBLICATION_KEY, new MockSPI());
 
-		final List<String> names = new ArrayList<String>();
+		final List<String> names = new ArrayList<>();
 
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest() {
@@ -774,17 +784,18 @@ public class SPIAgentRequestTest {
 		Assert.assertFalse(enumeration.hasMoreElements());
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testPopulatePortletSessionAttributes3() {
 
 		// SPI, not populated, no SPI agent request
 
 		ConcurrentMap<String, Object> attributes =
-			ProcessExecutor.ProcessContext.getAttributes();
+			LocalProcessLauncher.ProcessContext.getAttributes();
 
 		attributes.put(SPI.SPI_INSTANCE_PUBLICATION_KEY, new MockSPI());
 
-		final List<String> names = new ArrayList<String>();
+		final List<String> names = new ArrayList<>();
 
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest() {
@@ -817,6 +828,7 @@ public class SPIAgentRequestTest {
 		Assert.assertFalse(enumeration.hasMoreElements());
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testPopulatePortletSessionAttributes4() throws IOException {
 
@@ -824,7 +836,7 @@ public class SPIAgentRequestTest {
 		// attributes
 
 		ConcurrentMap<String, Object> attributes =
-			ProcessExecutor.ProcessContext.getAttributes();
+			LocalProcessLauncher.ProcessContext.getAttributes();
 
 		attributes.put(SPI.SPI_INSTANCE_PUBLICATION_KEY, new MockSPI());
 
@@ -868,6 +880,7 @@ public class SPIAgentRequestTest {
 		Assert.assertFalse(enumeration.hasMoreElements());
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
 	public void testPopulatePortletSessionAttributes5() throws IOException {
 
@@ -875,7 +888,7 @@ public class SPIAgentRequestTest {
 		// attributes
 
 		ConcurrentMap<String, Object> attributes =
-			ProcessExecutor.ProcessContext.getAttributes();
+			LocalProcessLauncher.ProcessContext.getAttributes();
 
 		attributes.put(SPI.SPI_INSTANCE_PUBLICATION_KEY, new MockSPI());
 
@@ -901,8 +914,7 @@ public class SPIAgentRequestTest {
 
 		MockHttpSession originalHttpSession = new MockHttpSession();
 
-		Map<String, Serializable> portletSessionAttributes =
-			new HashMap<String, Serializable>();
+		Map<String, Serializable> portletSessionAttributes = new HashMap<>();
 
 		portletSessionAttributes.put("key1", "value1");
 		portletSessionAttributes.put("key2", "value2");
@@ -1053,10 +1065,11 @@ public class SPIAgentRequestTest {
 
 	private static final Object _SESSION_ATTRIBUTE_VALUE_3 = new Object();
 
-	private static Cookie _cookie1 = new Cookie("name1", "value1");
-	private static Cookie _cookie2 = new Cookie("name2", "value2");
-	private static ThreadLocal<String> _threadLocal = new ThreadLocal<String>();
+	private static final Cookie _cookie1 = new Cookie("name1", "value1");
+	private static final Cookie _cookie2 = new Cookie("name2", "value2");
+	private static final ThreadLocal<String> _threadLocal = new ThreadLocal<>();
 
+	private CaptureHandler _captureHandler;
 	private MockHttpServletRequest _mockHttpServletRequest;
 
 }

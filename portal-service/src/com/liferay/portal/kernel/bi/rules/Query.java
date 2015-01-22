@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -95,9 +95,9 @@ public class Query implements Serializable {
 		_queryName = queryName;
 	}
 
-	private List<Object> _arguments = new ArrayList<Object>();
-	private String _identifier;
-	private String _queryName;
-	private QueryType _queryType;
+	private final List<Object> _arguments = new ArrayList<>();
+	private final String _identifier;
+	private final String _queryName;
+	private final QueryType _queryType;
 
 }

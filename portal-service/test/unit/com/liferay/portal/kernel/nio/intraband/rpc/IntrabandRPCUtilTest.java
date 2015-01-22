@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,30 +14,25 @@
 
 package com.liferay.portal.kernel.nio.intraband.rpc;
 
+import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
-import com.liferay.portal.kernel.nio.intraband.CompletionHandler;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
-import com.liferay.portal.kernel.nio.intraband.DatagramHelper;
-import com.liferay.portal.kernel.nio.intraband.MockIntraband;
-import com.liferay.portal.kernel.nio.intraband.MockRegistrationReference;
-import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
 import com.liferay.portal.kernel.nio.intraband.SystemDataType;
 import com.liferay.portal.kernel.nio.intraband.rpc.IntrabandRPCUtil.FutureCompletionHandler;
-import com.liferay.portal.kernel.nio.intraband.rpc.IntrabandRPCUtil.FutureResult;
+import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
+import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
 import com.liferay.portal.kernel.process.ProcessCallable;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
 
-import java.lang.reflect.Method;
-
 import java.nio.ByteBuffer;
 
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -52,8 +47,15 @@ import org.junit.Test;
 public class IntrabandRPCUtilTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		new CodeCoverageAssertor() {
+
+			@Override
+			public void appendAssertClasses(List<Class<?>> assertClasses) {
+				assertClasses.add(RPCResponse.class);
+			}
+
+		};
 
 	@Test
 	public void testConstructor() {
@@ -61,37 +63,45 @@ public class IntrabandRPCUtilTest {
 	}
 
 	@Test
-	public void testEmptyCallable() throws Exception {
-		Assert.assertNull(IntrabandRPCUtil.emptyCallable.call());
-	}
-
-	@Test
-	public void testExecuteFail() {
+	public void testExecuteFail() throws Exception {
 		PortalClassLoaderUtil.setClassLoader(getClass().getClassLoader());
+
+		final Exception exception = new Exception("Execution error");
 
 		MockIntraband mockIntraband = new MockIntraband() {
 
 			@Override
-			protected void doSendDatagram(
-				RegistrationReference registrationReference,
-				Datagram datagram) {
+			protected Datagram processDatagram(Datagram datagram) {
+				try {
+					Serializer serializer = new Serializer();
 
-				throw new RuntimeException();
+					serializer.writeObject(new RPCResponse(exception));
+
+					return Datagram.createResponseDatagram(
+						datagram, serializer.toByteBuffer());
+				}
+				catch (Exception e) {
+					throw new RuntimeException();
+				}
 			}
 
 		};
 
+		MockRegistrationReference mockRegistrationReference =
+			new MockRegistrationReference(mockIntraband);
+
+		Future<String> futureResult = IntrabandRPCUtil.execute(
+			mockRegistrationReference, new TestProcessCallable());
+
 		try {
-			IntrabandRPCUtil.execute(
-				new MockRegistrationReference(mockIntraband),
-				new TestProcessCallable());
+			futureResult.get();
 
 			Assert.fail();
 		}
-		catch (IntrabandRPCException ibrpce) {
-			Throwable throwable = ibrpce.getCause();
+		catch (ExecutionException ee) {
+			Throwable t = ee.getCause();
 
-			Assert.assertSame(RuntimeException.class, throwable.getClass());
+			Assert.assertEquals(exception.getMessage(), t.getMessage());
 		}
 	}
 
@@ -102,33 +112,24 @@ public class IntrabandRPCUtilTest {
 		MockIntraband mockIntraband = new MockIntraband() {
 
 			@Override
-			protected void doSendDatagram(
-				RegistrationReference registrationReference,
-				Datagram datagram) {
-
+			protected Datagram processDatagram(Datagram datagram) {
 				Deserializer deserializer = new Deserializer(
 					datagram.getDataByteBuffer());
 
 				try {
+					Serializer serializer = new Serializer();
+
 					ProcessCallable<Serializable> processCallable =
 						deserializer.readObject();
 
-					Serializable result = processCallable.call();
+					serializer.writeObject(
+						new RPCResponse(processCallable.call()));
 
-					Serializer serializer = new Serializer();
-
-					serializer.writeObject(result);
-
-					CompletionHandler<Object> completionHandler =
-						DatagramHelper.getCompletionHandler(datagram);
-
-					completionHandler.replied(
-						null,
-						Datagram.createResponseDatagram(
-							datagram, serializer.toByteBuffer()));
+					return Datagram.createResponseDatagram(
+						datagram, serializer.toByteBuffer());
 				}
 				catch (Exception e) {
-					Assert.fail(e.getMessage());
+					throw new RuntimeException(e);
 				}
 			}
 
@@ -149,10 +150,11 @@ public class IntrabandRPCUtilTest {
 
 		// Failed
 
-		FutureResult<String> futureResult = new FutureResult<String>();
+		DefaultNoticeableFuture<String> defaultNoticeableFuture =
+			new DefaultNoticeableFuture<>();
 
 		FutureCompletionHandler<String> futureCompletionHandler =
-			new FutureCompletionHandler<String>(futureResult);
+			new FutureCompletionHandler<>(defaultNoticeableFuture);
 
 		futureCompletionHandler.delivered(null);
 		futureCompletionHandler.submitted(null);
@@ -162,7 +164,7 @@ public class IntrabandRPCUtilTest {
 		futureCompletionHandler.failed(null, ioe);
 
 		try {
-			futureResult.get();
+			defaultNoticeableFuture.get();
 
 			Assert.fail();
 		}
@@ -172,10 +174,10 @@ public class IntrabandRPCUtilTest {
 
 		// Class not found exception
 
-		futureResult = new FutureResult<String>();
+		defaultNoticeableFuture = new DefaultNoticeableFuture<>();
 
-		futureCompletionHandler = new FutureCompletionHandler<String>(
-			futureResult);
+		futureCompletionHandler = new FutureCompletionHandler<>(
+			defaultNoticeableFuture);
 
 		Serializer serializer = new Serializer();
 
@@ -190,7 +192,7 @@ public class IntrabandRPCUtilTest {
 			byteBuffer));
 
 		try {
-			futureResult.get();
+			defaultNoticeableFuture.get();
 
 			Assert.fail();
 		}
@@ -203,53 +205,19 @@ public class IntrabandRPCUtilTest {
 
 		// Timed out
 
-		futureResult = new FutureResult<String>();
+		defaultNoticeableFuture = new DefaultNoticeableFuture<>();
 
-		futureCompletionHandler = new FutureCompletionHandler<String>(
-			futureResult);
+		futureCompletionHandler = new FutureCompletionHandler<>(
+			defaultNoticeableFuture);
 
 		futureCompletionHandler.timedOut(null);
 
 		try {
-			futureResult.get();
+			defaultNoticeableFuture.get();
 
 			Assert.fail();
 		}
 		catch (CancellationException ce) {
-		}
-	}
-
-	@Test
-	public void testFutureResult() throws Exception {
-
-		// Bridge set
-
-		Method bridgeSetMethod = ReflectionUtil.getDeclaredBridgeMethod(
-			FutureResult.class, "set", Serializable.class);
-
-		FutureResult<String> futureResult = new FutureResult<String>();
-
-		String s = new String();
-
-		bridgeSetMethod.invoke(futureResult, s);
-
-		Assert.assertSame(s, futureResult.get());
-
-		// Setter
-
-		futureResult = new FutureResult<String>();
-
-		Exception exception = new Exception();
-
-		futureResult.setException(exception);
-
-		try {
-			futureResult.get();
-
-			Assert.fail();
-		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
 		}
 	}
 
@@ -262,6 +230,7 @@ public class IntrabandRPCUtilTest {
 		}
 
 		private static final long serialVersionUID = 1L;
+
 	}
 
 }

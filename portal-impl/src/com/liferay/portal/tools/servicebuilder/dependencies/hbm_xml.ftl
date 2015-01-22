@@ -24,7 +24,7 @@
 							column="${column.DBName}"
 						</#if>
 
-						<#if column.isPrimitiveType() || column.type == "String">
+						<#if column.isPrimitiveType() || (column.type == "Map") || (column.type == "String")>
 							type="com.liferay.portal.dao.orm.hibernate.${serviceBuilder.getPrimitiveObj("${column.type}")}Type"
 						</#if>
 
@@ -94,7 +94,7 @@
 						access="com.liferay.portal.dao.orm.hibernate.CamelCasePropertyAccessor"
 					</#if>
 
-					<#if column.isPrimitiveType() || column.type == "String">
+					<#if column.isPrimitiveType() || (column.type == "Map") || (column.type == "String")>
 						type="com.liferay.portal.dao.orm.hibernate.${serviceBuilder.getPrimitiveObj("${column.type}")}Type"
 					<#else>
 						<#if column.type == "Date">
@@ -125,7 +125,7 @@
 				>
 					<#assign column = entity.getPKList()?first>
 
-					<id name="${column.name}" column="${column.name}">
+					<id name="${column.name}" column="${column.DBName}">
 						<generator class="foreign">
 							<param name="property">${packagePath}.model.impl.${entity.name}Impl</param>
 						</generator>

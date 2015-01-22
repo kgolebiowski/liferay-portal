@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -116,7 +116,6 @@ public class WebXML24Descriptor extends SimpleXMLDescriptor {
 		"session-config", "welcome-file-list", "jsp-config", "login-config"
 	};
 
-	private Map<String, String[]> _orderedChildren =
-		new HashMap<String, String[]>();
+	private final Map<String, String[]> _orderedChildren = new HashMap<>();
 
 }

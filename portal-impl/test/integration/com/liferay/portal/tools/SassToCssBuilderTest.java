@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,8 +17,6 @@ package com.liferay.portal.tools;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 
-import java.util.List;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,11 +33,9 @@ public class SassToCssBuilderTest {
 
 	@Test
 	public void testSassToCssBuilder() throws Exception {
-		List<String> dirNames = ListUtil.fromArray(new String[]{ _DIR_NAME});
-		String docrootDirName = _DOCROOT_DIR_NAME;
-		String portalCommonDirName = _DOCROOT_DIR_NAME;
-
-		new SassToCssBuilder(dirNames, docrootDirName, portalCommonDirName);
+		new SassToCssBuilder(
+			ListUtil.fromArray(new String[]{ _DIR_NAME}), _DOCROOT_DIR_NAME,
+			"portal-web/docroot/html/css/common");
 
 		String expectedCacheContent = FileUtil.read(
 			_DOCROOT_DIR_NAME + _EXPECTED_DIR_NAME + _FILE_NAME);

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,7 +18,6 @@ import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.CacheModel;
@@ -153,10 +152,9 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	 * Returns the user uuid of this blogs entry.
 	 *
 	 * @return the user uuid of this blogs entry
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this blogs entry.
@@ -229,6 +227,21 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	 * @param title the title of this blogs entry
 	 */
 	public void setTitle(String title);
+
+	/**
+	 * Returns the subtitle of this blogs entry.
+	 *
+	 * @return the subtitle of this blogs entry
+	 */
+	@AutoEscape
+	public String getSubtitle();
+
+	/**
+	 * Sets the subtitle of this blogs entry.
+	 *
+	 * @param subtitle the subtitle of this blogs entry
+	 */
+	public void setSubtitle(String subtitle);
 
 	/**
 	 * Returns the url title of this blogs entry.
@@ -347,6 +360,35 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	public void setTrackbacks(String trackbacks);
 
 	/**
+	 * Returns the cover image file entry ID of this blogs entry.
+	 *
+	 * @return the cover image file entry ID of this blogs entry
+	 */
+	public long getCoverImageFileEntryId();
+
+	/**
+	 * Sets the cover image file entry ID of this blogs entry.
+	 *
+	 * @param coverImageFileEntryId the cover image file entry ID of this blogs entry
+	 */
+	public void setCoverImageFileEntryId(long coverImageFileEntryId);
+
+	/**
+	 * Returns the cover image u r l of this blogs entry.
+	 *
+	 * @return the cover image u r l of this blogs entry
+	 */
+	@AutoEscape
+	public String getCoverImageURL();
+
+	/**
+	 * Sets the cover image u r l of this blogs entry.
+	 *
+	 * @param coverImageURL the cover image u r l of this blogs entry
+	 */
+	public void setCoverImageURL(String coverImageURL);
+
+	/**
 	 * Returns the small image of this blogs entry.
 	 *
 	 * @return the small image of this blogs entry
@@ -366,6 +408,20 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	 * @param smallImage the small image of this blogs entry
 	 */
 	public void setSmallImage(boolean smallImage);
+
+	/**
+	 * Returns the small image file entry ID of this blogs entry.
+	 *
+	 * @return the small image file entry ID of this blogs entry
+	 */
+	public long getSmallImageFileEntryId();
+
+	/**
+	 * Sets the small image file entry ID of this blogs entry.
+	 *
+	 * @param smallImageFileEntryId the small image file entry ID of this blogs entry
+	 */
+	public void setSmallImageFileEntryId(long smallImageFileEntryId);
 
 	/**
 	 * Returns the small image ID of this blogs entry.
@@ -432,10 +488,9 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	 * Returns the status by user uuid of this blogs entry.
 	 *
 	 * @return the status by user uuid of this blogs entry
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getStatusByUserUuid() throws SystemException;
+	public String getStatusByUserUuid();
 
 	/**
 	 * Sets the status by user uuid of this blogs entry.
@@ -482,10 +537,9 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	 * Returns the trash entry created when this blogs entry was moved to the Recycle Bin. The trash entry may belong to one of the ancestors of this blogs entry.
 	 *
 	 * @return the trash entry created when this blogs entry was moved to the Recycle Bin
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public TrashEntry getTrashEntry() throws PortalException, SystemException;
+	public TrashEntry getTrashEntry() throws PortalException;
 
 	/**
 	 * Returns the class primary key of the trash entry for this blogs entry.
@@ -515,13 +569,15 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	 * Returns <code>true</code> if the parent of this blogs entry is in the Recycle Bin.
 	 *
 	 * @return <code>true</code> if the parent of this blogs entry is in the Recycle Bin; <code>false</code> otherwise
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
 	public boolean isInTrashContainer();
 
 	@Override
-	public boolean isInTrashExplicitly() throws SystemException;
+	public boolean isInTrashExplicitly();
+
+	@Override
+	public boolean isInTrashImplicitly();
 
 	/**
 	 * @deprecated As of 6.1.0, replaced by {@link #isApproved()}
@@ -631,19 +687,19 @@ public interface BlogsEntryModel extends BaseModel<BlogsEntry>,
 	public Object clone();
 
 	@Override
-	public int compareTo(BlogsEntry blogsEntry);
+	public int compareTo(com.liferay.portlet.blogs.model.BlogsEntry blogsEntry);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<BlogsEntry> toCacheModel();
+	public CacheModel<com.liferay.portlet.blogs.model.BlogsEntry> toCacheModel();
 
 	@Override
-	public BlogsEntry toEscapedModel();
+	public com.liferay.portlet.blogs.model.BlogsEntry toEscapedModel();
 
 	@Override
-	public BlogsEntry toUnescapedModel();
+	public com.liferay.portlet.blogs.model.BlogsEntry toUnescapedModel();
 
 	@Override
 	public String toString();

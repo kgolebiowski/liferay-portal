@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@
 <%@ include file="/html/portlet/sites_admin/init.jsp" %>
 
 <%
-Group group = (Group)request.getAttribute("site.group");
 Group liveGroup = (Group)request.getAttribute("site.liveGroup");
 Long liveGroupId = (Long)request.getAttribute("site.liveGroupId");
 Group stagingGroup = (Group)request.getAttribute("site.stagingGroup");
@@ -82,7 +81,7 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 	</c:if>
 
 	<c:if test="<%= gfurle.getType() == GroupFriendlyURLException.KEYWORD_CONFLICT %>">
-		<%= LanguageUtil.format(pageContext, "please-enter-a-friendly-url-that-does-not-conflict-with-the-keyword-x", gfurle.getKeywordConflict(), false) %>
+		<%= LanguageUtil.format(request, "please-enter-a-friendly-url-that-does-not-conflict-with-the-keyword-x", gfurle.getKeywordConflict(), false) %>
 	</c:if>
 
 	<c:if test="<%= gfurle.getType() == GroupFriendlyURLException.POSSIBLE_DUPLICATE %>">
@@ -113,7 +112,7 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 	String taglibLabel = "site-friendly-url";
 
 	if (!liveGroup.hasStagingGroup()) {
-		taglibLabel = "<span class=\"hide-accessible\">" + LanguageUtil.get(pageContext, taglibLabel) + "</span>";
+		taglibLabel = "<span class=\"hide-accessible\">" + LanguageUtil.get(request, taglibLabel) + "</span>";
 	}
 	%>
 
@@ -165,33 +164,13 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 	</c:if>
 </aui:fieldset>
 
-<aui:fieldset label="documents-and-media">
-	<c:if test="<%= (group != null) && !group.isCompany() %>">
-
-		<%
-		UnicodeProperties typeSettingsProperties = null;
-
-		if (liveGroup != null) {
-			typeSettingsProperties = liveGroup.getTypeSettingsProperties();
-		}
-		else {
-			typeSettingsProperties = group.getTypeSettingsProperties();
-		}
-
-		boolean directoryIndexingEnabled = PropertiesParamUtil.getBoolean(typeSettingsProperties, request, "directoryIndexingEnabled");
-		%>
-
-		<aui:input helpMessage='<%= LanguageUtil.format(pageContext, "directory-indexing-help", new Object[] {HtmlUtil.escape(group.getDescriptiveName(themeDisplay.getLocale())), themeDisplay.getPortalURL() + "/documents" + group.getFriendlyURL()}, false) %>' label="directory-indexing-enabled" name="TypeSettingsProperties--directoryIndexingEnabled--" type="checkbox" value="<%= directoryIndexingEnabled %>" />
-	</c:if>
-</aui:fieldset>
-
-<aui:script use="aui-base">
-	var friendlyURL = A.one('#<portlet:namespace />friendlyURL');
+<aui:script sandbox="<%= true %>">
+	var friendlyURL = $('#<portlet:namespace />friendlyURL');
 
 	friendlyURL.on(
-		['blur', 'change', 'focus'],
+		'change',
 		function(event) {
-			var value = A.Lang.trim(friendlyURL.val());
+			var value = friendlyURL.val().trim();
 
 			if (value == '/') {
 				value = '';
@@ -203,7 +182,7 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 						var str = '';
 
 						if (index == 0) {
-							str = '/' + match
+							str = '/' + match;
 						}
 
 						return str;

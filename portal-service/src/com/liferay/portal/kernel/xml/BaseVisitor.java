@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,12 +14,15 @@
 
 package com.liferay.portal.kernel.xml;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author Marcellus Tavares
  */
+@ProviderType
 public abstract class BaseVisitor<T> implements Visitor<T> {
 
 	@Override
@@ -39,7 +42,7 @@ public abstract class BaseVisitor<T> implements Visitor<T> {
 
 	@Override
 	public T visitDocument(Document document) {
-		List<T> nodeResults = new ArrayList<T>(document.nodeCount());
+		List<T> nodeResults = new ArrayList<>(document.nodeCount());
 
 		for (int i = 0, size = document.nodeCount(); i < size; i++) {
 			Node node = document.node(i);
@@ -56,7 +59,7 @@ public abstract class BaseVisitor<T> implements Visitor<T> {
 	public T visitElement(Element element) {
 		List<Attribute> attributes = element.attributes();
 
-		List<T> attributeResults = new ArrayList<T>(attributes.size());
+		List<T> attributeResults = new ArrayList<>(attributes.size());
 
 		for (int i = 0, size = element.attributeCount(); i < size; i++) {
 			Attribute attribute = element.attribute(i);
@@ -66,7 +69,7 @@ public abstract class BaseVisitor<T> implements Visitor<T> {
 			attributeResults.add(atrributeResult);
 		}
 
-		List<T> nodeResults = new ArrayList<T>(element.nodeCount());
+		List<T> nodeResults = new ArrayList<>(element.nodeCount());
 
 		for (int i = 0, size = element.nodeCount(); i < size; i++) {
 			Node node = element.node(i);

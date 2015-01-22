@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,7 +26,7 @@ import java.util.concurrent.SynchronousQueue;
 public class SPISynchronousQueueUtil {
 
 	public static SynchronousQueue<SPI> createSynchronousQueue(String spiUUID) {
-		SynchronousQueue<SPI> synchronousQueue = new SynchronousQueue<SPI>();
+		SynchronousQueue<SPI> synchronousQueue = new SynchronousQueue<>();
 
 		_synchronousQueues.put(spiUUID, synchronousQueue);
 
@@ -51,7 +51,7 @@ public class SPISynchronousQueueUtil {
 		synchronousQueue.put(spi);
 	}
 
-	private static Map<String, SynchronousQueue<SPI>> _synchronousQueues =
-		new ConcurrentHashMap<String, SynchronousQueue<SPI>>();
+	private static final Map<String, SynchronousQueue<SPI>> _synchronousQueues =
+		new ConcurrentHashMap<>();
 
 }

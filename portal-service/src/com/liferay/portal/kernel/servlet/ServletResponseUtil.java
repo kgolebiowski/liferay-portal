@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -77,7 +77,7 @@ public class ServletResponseUtil {
 					rangeString);
 		}
 
-		List<Range> ranges = new ArrayList<Range>();
+		List<Range> ranges = new ArrayList<>();
 
 		String[] rangeFields = StringUtil.split(rangeString.substring(6));
 
@@ -180,7 +180,8 @@ public class ServletResponseUtil {
 		throws IOException {
 
 		sendFile(
-			request, response, fileName, inputStream, 0, contentType, null);
+			request, response, fileName, inputStream, contentLength,
+			contentType, null);
 	}
 
 	public static void sendFile(
@@ -529,9 +530,7 @@ public class ServletResponseUtil {
 		else {
 			FileInputStream fileInputStream = new FileInputStream(file);
 
-			FileChannel fileChannel = fileInputStream.getChannel();
-
-			try {
+			try (FileChannel fileChannel = fileInputStream.getChannel()) {
 				int contentLength = (int)fileChannel.size();
 
 				response.setContentLength(contentLength);
@@ -541,9 +540,6 @@ public class ServletResponseUtil {
 				fileChannel.transferTo(
 					0, contentLength,
 					Channels.newChannel(response.getOutputStream()));
-			}
-			finally {
-				fileChannel.close();
 			}
 		}
 	}
@@ -560,25 +556,20 @@ public class ServletResponseUtil {
 			long contentLength)
 		throws IOException {
 
-		OutputStream outputStream = null;
+		if (response.isCommitted()) {
+			StreamUtil.cleanUp(inputStream);
 
-		try {
-			if (response.isCommitted()) {
-				return;
-			}
-
-			if (contentLength > 0) {
-				response.setHeader(
-					HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
-			}
-
-			response.flushBuffer();
-
-			StreamUtil.transfer(inputStream, response.getOutputStream(), false);
+			return;
 		}
-		finally {
-			StreamUtil.cleanUp(inputStream, outputStream);
+
+		if (contentLength > 0) {
+			response.setHeader(
+				HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
 		}
+
+		response.flushBuffer();
+
+		StreamUtil.transfer(inputStream, response.getOutputStream());
 	}
 
 	public static void write(HttpServletResponse response, String s)
@@ -752,6 +743,7 @@ public class ServletResponseUtil {
 	private static final String _RANGE_REGEX =
 		"^bytes=\\d*-\\d*(,\\s?\\d*-\\d*)*$";
 
-	private static Log _log = LogFactoryUtil.getLog(ServletResponseUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ServletResponseUtil.class);
 
 }

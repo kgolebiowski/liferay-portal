@@ -1,17 +1,19 @@
 <#include "copyright.txt" parse="false">
 
 
-package ${packagePath};
+<#if osgiModule>package ${packagePath}.exception;<#else>package ${packagePath};</#if>
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.exception.PortalException;
 
 /**
  * @author ${author}
  */
+@ProviderType
 public class ${exception}Exception extends PortalException {
 
 	public ${exception}Exception() {
-		super();
 	}
 
 	public ${exception}Exception(String msg) {

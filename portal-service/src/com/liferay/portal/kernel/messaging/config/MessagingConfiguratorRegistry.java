@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -38,7 +38,7 @@ public class MessagingConfiguratorRegistry {
 			_messagingConfigurators.get(servletContextName);
 
 		if (messagingConfigurators == null) {
-			messagingConfigurators = new ArrayList<MessagingConfigurator>();
+			messagingConfigurators = new ArrayList<>();
 
 			_messagingConfigurators.put(
 				servletContextName, messagingConfigurators);
@@ -64,7 +64,6 @@ public class MessagingConfiguratorRegistry {
 	}
 
 	private static final Map<String, List<MessagingConfigurator>>
-		_messagingConfigurators =
-			new ConcurrentHashMap<String, List<MessagingConfigurator>>();
+		_messagingConfigurators = new ConcurrentHashMap<>();
 
 }

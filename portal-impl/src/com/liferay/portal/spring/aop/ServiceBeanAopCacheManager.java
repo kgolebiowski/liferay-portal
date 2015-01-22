@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -139,9 +139,8 @@ public class ServiceBeanAopCacheManager {
 			return;
 		}
 
-		ArrayList<MethodInterceptor> methodInterceptors =
-			new ArrayList<MethodInterceptor>(
-				methodInterceptorsBag.getMergedMethodInterceptors());
+		ArrayList<MethodInterceptor> methodInterceptors = new ArrayList<>(
+			methodInterceptorsBag.getMergedMethodInterceptors());
 
 		methodInterceptors.remove(methodInterceptor);
 
@@ -172,17 +171,16 @@ public class ServiceBeanAopCacheManager {
 		_methodInterceptorBags.clear();
 	}
 
-	private static Map<MethodInvocation, Annotation[]> _annotations =
-		new ConcurrentHashMap<MethodInvocation, Annotation[]>();
-	private static Annotation[] _nullAnnotations = new Annotation[0];
+	private static final Map<MethodInvocation, Annotation[]> _annotations =
+		new ConcurrentHashMap<>();
+	private static final Annotation[] _nullAnnotations = new Annotation[0];
 
 	private
 		Map<Class<? extends Annotation>, AnnotationChainableMethodAdvice<?>[]>
 			_annotationChainableMethodAdvices = new HashMap
 				<Class<? extends Annotation>,
 				 AnnotationChainableMethodAdvice<?>[]>();
-	private Map<MethodInvocation, MethodInterceptorsBag>
-		_methodInterceptorBags =
-			new ConcurrentHashMap<MethodInvocation, MethodInterceptorsBag>();
+	private final Map<MethodInvocation, MethodInterceptorsBag>
+		_methodInterceptorBags = new ConcurrentHashMap<>();
 
 }

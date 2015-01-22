@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -122,11 +122,11 @@ public class SourceFormatterHelper {
 		return fileNames;
 	}
 
-	private static FileImpl _fileUtil = FileImpl.getInstance();
+	private static final FileImpl _fileUtil = FileImpl.getInstance();
 
-	private Properties _properties = new Properties();
+	private final Properties _properties = new Properties();
 	private String _propertiesContent = StringPool.BLANK;
 	private File _propertiesFile;
-	private boolean _useProperties;
+	private final boolean _useProperties;
 
 }

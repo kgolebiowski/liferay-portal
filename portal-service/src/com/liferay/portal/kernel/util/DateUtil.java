@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -75,29 +75,17 @@ public class DateUtil {
 	}
 
 	public static boolean equals(Date date1, Date date2) {
-		if (compareTo(date1, date2) == 0) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return equals(date1, date2, false);
 	}
 
 	public static boolean equals(
 		Date date1, Date date2, boolean ignoreMilliseconds) {
 
-		if (!ignoreMilliseconds) {
-			return equals(date1, date2);
-		}
-
-		long deltaTime = date1.getTime() - date2.getTime();
-
-		if ((deltaTime > -1000) && (deltaTime < 1000)) {
+		if (compareTo(date1, date2, ignoreMilliseconds) == 0) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static String getCurrentDate(String pattern, Locale locale) {
@@ -282,7 +270,6 @@ public class DateUtil {
 		return dateFormat.parse(dateString);
 	}
 
-	private static Map<Locale, Boolean> _formatAmPmMap =
-		new HashMap<Locale, Boolean>();
+	private static final Map<Locale, Boolean> _formatAmPmMap = new HashMap<>();
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -108,8 +108,7 @@ public interface SchedulerEngineHelper {
 			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException;
 
-	public List<SchedulerResponse> getScheduledJobs()
-		throws SchedulerException;
+	public List<SchedulerResponse> getScheduledJobs() throws SchedulerException;
 
 	public List<SchedulerResponse> getScheduledJobs(StorageType storageType)
 		throws SchedulerException;
@@ -125,8 +124,6 @@ public interface SchedulerEngineHelper {
 		throws SchedulerException;
 
 	public void initialize() throws SchedulerException;
-
-	public String namespaceGroupName(String groupName, StorageType storageType);
 
 	public void pause(String groupName, StorageType storageType)
 		throws SchedulerException;
@@ -182,9 +179,6 @@ public interface SchedulerEngineHelper {
 		throws SchedulerException;
 
 	public void update(Trigger trigger, StorageType storageType)
-		throws SchedulerException;
-
-	public void updateMemorySchedulerClusterMaster()
 		throws SchedulerException;
 
 }

@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,8 +40,6 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 		portletURL.setWindowState(WindowState.NORMAL);
 
 		for (Group mySiteGroup : mySiteGroups) {
-			String escapedSiteName = HtmlUtil.escape(mySiteGroup.getName());
-
 			boolean showPublicSite = mySiteGroup.isShowSite(permissionChecker, false);
 			boolean showPrivateSite = mySiteGroup.isShowSite(permissionChecker, true);
 		%>
@@ -131,10 +129,7 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 									String siteName = StringPool.BLANK;
 
 									if (mySiteGroup.isUser()) {
-										siteName = LanguageUtil.get(pageContext, "my-profile");
-									}
-									else if (escapedSiteName.equals(GroupConstants.GUEST)) {
-										siteName = themeDisplay.getAccount().getName();
+										siteName = LanguageUtil.get(request, "my-profile");
 									}
 									else {
 										siteName = mySiteGroup.getDescriptiveName(locale);
@@ -146,7 +141,7 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 										sb.append(HtmlUtil.escape(siteName));
 										sb.append(StringPool.SPACE);
 										sb.append(StringPool.OPEN_PARENTHESIS);
-										sb.append(LanguageUtil.get(pageContext, "staging"));
+										sb.append(LanguageUtil.get(request, "staging"));
 										sb.append(StringPool.CLOSE_PARENTHESIS);
 
 										siteName = sb.toString();
@@ -192,10 +187,7 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 									String siteName = StringPool.BLANK;
 
 									if (mySiteGroup.isUser()) {
-										siteName = LanguageUtil.get(pageContext, "my-dashboard");
-									}
-									else if (escapedSiteName.equals(GroupConstants.GUEST)) {
-										siteName = themeDisplay.getAccount().getName();
+										siteName = LanguageUtil.get(request, "my-dashboard");
 									}
 									else {
 										siteName = mySiteGroup.getDescriptiveName(locale);
@@ -207,7 +199,7 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 										sb.append(siteName);
 										sb.append(StringPool.SPACE);
 										sb.append(StringPool.OPEN_PARENTHESIS);
-										sb.append(LanguageUtil.get(pageContext, "staging"));
+										sb.append(LanguageUtil.get(request, "staging"));
 										sb.append(StringPool.CLOSE_PARENTHESIS);
 
 										siteName = sb.toString();
@@ -294,7 +286,7 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 								<c:when test="<%= mySiteGroup.isControlPanel() %>">
 									<h3>
 										<a href="<%= themeDisplay.getURLControlPanel() %>">
-											<%= escapedSiteName %>
+											<%= HtmlUtil.escape(mySiteGroup.getDescriptiveName(locale)) %>
 										</a>
 									</h3>
 								</c:when>
@@ -306,7 +298,7 @@ List<Group> mySiteGroups = user.getMySiteGroups(classNames, includeControlPanel,
 													<liferay-ui:message key="my-site" />
 												</c:when>
 												<c:otherwise>
-													<%= escapedSiteName %>
+													<%= HtmlUtil.escape(mySiteGroup.getDescriptiveName(locale)) %>
 												</c:otherwise>
 											</c:choose>
 										</a>

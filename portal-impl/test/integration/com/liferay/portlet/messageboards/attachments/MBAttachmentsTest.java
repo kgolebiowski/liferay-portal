@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,23 +14,20 @@
 
 package com.liferay.portlet.messageboards.attachments;
 
-import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.User;
 import com.liferay.portal.portletfilerepository.PortletFileRepositoryUtil;
-import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
-import com.liferay.portal.util.GroupTestUtil;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryConstants;
 import com.liferay.portlet.documentlibrary.service.DLFileEntryLocalServiceUtil;
 import com.liferay.portlet.documentlibrary.service.DLFolderLocalServiceUtil;
@@ -39,7 +36,7 @@ import com.liferay.portlet.messageboards.model.MBCategoryConstants;
 import com.liferay.portlet.messageboards.model.MBMessage;
 import com.liferay.portlet.messageboards.model.MBMessageConstants;
 import com.liferay.portlet.messageboards.service.MBMessageLocalServiceUtil;
-import com.liferay.portlet.messageboards.util.MBTestUtil;
+import com.liferay.portlet.messageboards.util.test.MBTestUtil;
 import com.liferay.portlet.trash.service.TrashEntryServiceUtil;
 
 import java.io.InputStream;
@@ -47,41 +44,31 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Julio Camarero
  * @author Roberto Díaz
  * @author Sergio González
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class MBAttachmentsTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
-		FinderCacheUtil.clearCache();
-
 		_group = GroupTestUtil.addGroup();
 	}
 
-	@After
-	public void tearDown() throws Exception {
-		_category = null;
-		_group = null;
-		_message = null;
-	}
-
 	@Test
-	@Transactional
 	public void testDeleteAttachmentsWhenDeletingMessage() throws Exception {
 		int initialFileEntriesCount =
 			DLFileEntryLocalServiceUtil.getFileEntriesCount();
@@ -106,7 +93,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testDeleteAttachmentsWhenDeletingRootMessage()
 		throws Exception {
 
@@ -127,7 +113,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenAddingAttachmentsToSameMessage()
 		throws Exception {
 
@@ -147,7 +132,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenAddingMessage() throws Exception {
 		int initialFoldersCount = DLFolderLocalServiceUtil.getDLFoldersCount();
 
@@ -162,7 +146,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenAddingMessageAttachment() throws Exception {
 		int initialFoldersCount = DLFolderLocalServiceUtil.getDLFoldersCount();
 
@@ -174,7 +157,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenAddingMessageAttachments()
 		throws Exception {
 
@@ -217,7 +199,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenAddingRootMessage() throws Exception {
 		int initialFoldersCount = DLFolderLocalServiceUtil.getDLFoldersCount();
 
@@ -228,7 +209,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenDeletingMessageWithAttachments()
 		throws Exception {
 
@@ -254,7 +234,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenDeletingMessageWithoutAttachments()
 		throws Exception {
 
@@ -276,7 +255,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenDeletingRootMessageWithAttachments()
 		throws Exception {
 
@@ -296,7 +274,6 @@ public class MBAttachmentsTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFoldersCountWhenDeletingRootMessageWithoutAttachments()
 		throws Exception {
 
@@ -318,8 +295,6 @@ public class MBAttachmentsTest {
 		addMessageAttachment();
 
 		_trashMBAttachments(false);
-
-		GroupLocalServiceUtil.deleteGroup(_group);
 	}
 
 	@Test
@@ -327,8 +302,6 @@ public class MBAttachmentsTest {
 		addMessageAttachment();
 
 		_trashMBAttachments(true);
-
-		GroupLocalServiceUtil.deleteGroup(_group);
 	}
 
 	protected void addCategory() throws Exception {
@@ -336,8 +309,8 @@ public class MBAttachmentsTest {
 			_group = GroupTestUtil.addGroup();
 		}
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			_group.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 		_category = MBTestUtil.addCategory(serviceContext);
 	}
@@ -347,11 +320,11 @@ public class MBAttachmentsTest {
 			addCategory();
 		}
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			_group.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 		_message = MBTestUtil.addMessage(
-			_category.getCategoryId(), serviceContext);
+			_category.getGroupId(), _category.getCategoryId(), serviceContext);
 	}
 
 	protected void addMessageAttachment() throws Exception {
@@ -370,8 +343,8 @@ public class MBAttachmentsTest {
 				MBTestUtil.getInputStreamOVPs(
 					"company_logo.png", getClass(), StringPool.BLANK);
 
-			ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-				_group.getGroupId());
+			ServiceContext serviceContext =
+				ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 			_message = MBMessageLocalServiceUtil.addMessage(
 				user.getUserId(), user.getFullName(), _group.getGroupId(),
@@ -380,14 +353,14 @@ public class MBAttachmentsTest {
 				false, 0, false, serviceContext);
 		}
 		else {
-			ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-				_group.getGroupId());
+			ServiceContext serviceContext =
+				ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 			List<ObjectValuePair<String, InputStream>> objectValuePairs =
 				MBTestUtil.getInputStreamOVPs(
 					"OSX_Test.docx", getClass(), StringPool.BLANK);
 
-			List<String> existingFiles = new ArrayList<String>();
+			List<String> existingFiles = new ArrayList<>();
 
 			List<FileEntry> fileEntries = _message.getAttachmentsFileEntries();
 
@@ -409,14 +382,14 @@ public class MBAttachmentsTest {
 
 		List<FileEntry> fileEntries = _message.getAttachmentsFileEntries();
 
-		List<String> existingFiles = new ArrayList<String>();
+		List<String> existingFiles = new ArrayList<>();
 
 		for (FileEntry fileEntry : fileEntries) {
 			existingFiles.add(String.valueOf(fileEntry.getFileEntryId()));
 		}
 
-		ServiceContext serviceContext = ServiceTestUtil.getServiceContext(
-			_group.getGroupId());
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 		String fileName = "OSX_Test.docx";
 
@@ -476,7 +449,10 @@ public class MBAttachmentsTest {
 	}
 
 	private MBCategory _category;
+
+	@DeleteAfterTestRun
 	private Group _group;
+
 	private MBMessage _message;
 
 }

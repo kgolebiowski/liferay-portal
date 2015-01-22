@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -35,8 +35,8 @@ public class PortletDataHandlerChoice extends PortletDataHandlerControl {
 
 		super(namespace, controlName);
 
-		_choices = choices;
 		_defaultChoice = defaultChoice;
+		_choices = choices;
 	}
 
 	public String[] getChoices() {
@@ -66,6 +66,6 @@ public class PortletDataHandlerChoice extends PortletDataHandlerControl {
 	};
 
 	private String[] _choices;
-	private int _defaultChoice;
+	private final int _defaultChoice;
 
 }

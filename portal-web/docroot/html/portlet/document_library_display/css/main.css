@@ -1,4 +1,4 @@
-@import "compass";
+@import "bourbon";
 
 .portlet-document-library-display {
 	.entry-metadata {
@@ -12,7 +12,7 @@
 		}
 
 		.entry-description {
-			@include hyphenation;
+			@include hyphens;
 		}
 	}
 
@@ -56,18 +56,6 @@
 
 	.taglib-workflow-status {
 		margin-bottom: 5px;
-		position: relative;
-
-		.workflow-status {
-			display: block;
-			position: absolute;
-
-			.label {
-				position: absolute;
-				top: 1px;
-				left: 1px;
-			}
-		}
 	}
 }
 

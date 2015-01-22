@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -401,8 +401,8 @@ public class BufferCacheServletResponse extends MetaInfoCacheServletResponse {
 		}
 	}
 
-	private static ByteBuffer _emptyByteBuffer = ByteBuffer.allocate(0);
-	private static CharBuffer _emptyCharBuffer = CharBuffer.allocate(0);
+	private static final ByteBuffer _emptyByteBuffer = ByteBuffer.allocate(0);
+	private static final CharBuffer _emptyCharBuffer = CharBuffer.allocate(0);
 
 	private ByteBuffer _byteBuffer;
 	private CharBuffer _charBuffer;

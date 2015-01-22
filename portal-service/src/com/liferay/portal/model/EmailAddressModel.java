@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -145,10 +144,9 @@ public interface EmailAddressModel extends AttachedModel, BaseModel<EmailAddress
 	 * Returns the user uuid of this email address.
 	 *
 	 * @return the user uuid of this email address
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this email address.
@@ -336,19 +334,19 @@ public interface EmailAddressModel extends AttachedModel, BaseModel<EmailAddress
 	public Object clone();
 
 	@Override
-	public int compareTo(EmailAddress emailAddress);
+	public int compareTo(com.liferay.portal.model.EmailAddress emailAddress);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<EmailAddress> toCacheModel();
+	public CacheModel<com.liferay.portal.model.EmailAddress> toCacheModel();
 
 	@Override
-	public EmailAddress toEscapedModel();
+	public com.liferay.portal.model.EmailAddress toEscapedModel();
 
 	@Override
-	public EmailAddress toUnescapedModel();
+	public com.liferay.portal.model.EmailAddress toUnescapedModel();
 
 	@Override
 	public String toString();

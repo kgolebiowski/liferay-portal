@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,18 +14,22 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserGroupRole;
 import com.liferay.portal.model.UserGroupRoleModel;
 import com.liferay.portal.model.UserGroupRoleSoap;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.service.persistence.UserGroupRolePK;
-import com.liferay.portal.util.PortalUtil;
 
 import java.io.Serializable;
 
@@ -50,6 +54,7 @@ import java.util.Map;
  * @generated
  */
 @JSON(strict = true)
+@ProviderType
 public class UserGroupRoleModelImpl extends BaseModelImpl<UserGroupRole>
 	implements UserGroupRoleModel {
 	/*
@@ -80,9 +85,9 @@ public class UserGroupRoleModelImpl extends BaseModelImpl<UserGroupRole>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portal.model.UserGroupRole"),
 			true);
-	public static long GROUPID_COLUMN_BITMASK = 1L;
-	public static long ROLEID_COLUMN_BITMASK = 2L;
-	public static long USERID_COLUMN_BITMASK = 4L;
+	public static final long GROUPID_COLUMN_BITMASK = 1L;
+	public static final long ROLEID_COLUMN_BITMASK = 2L;
+	public static final long USERID_COLUMN_BITMASK = 4L;
 
 	/**
 	 * Converts the soap model instance into a normal model instance.
@@ -236,13 +241,19 @@ public class UserGroupRoleModelImpl extends BaseModelImpl<UserGroupRole>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	public long getOriginalUserId() {
@@ -390,6 +401,8 @@ public class UserGroupRoleModelImpl extends BaseModelImpl<UserGroupRole>
 	public CacheModel<UserGroupRole> toCacheModel() {
 		UserGroupRoleCacheModel userGroupRoleCacheModel = new UserGroupRoleCacheModel();
 
+		userGroupRoleCacheModel.userGroupRolePK = getPrimaryKey();
+
 		userGroupRoleCacheModel.mvccVersion = getMvccVersion();
 
 		userGroupRoleCacheModel.userId = getUserId();
@@ -448,13 +461,12 @@ public class UserGroupRoleModelImpl extends BaseModelImpl<UserGroupRole>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = UserGroupRole.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = UserGroupRole.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			UserGroupRole.class
 		};
 	private long _mvccVersion;
 	private long _userId;
-	private String _userUuid;
 	private long _originalUserId;
 	private boolean _setOriginalUserId;
 	private long _groupId;

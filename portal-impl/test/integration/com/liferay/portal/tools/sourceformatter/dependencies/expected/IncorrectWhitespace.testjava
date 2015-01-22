@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.tools.sourceformatter.dependencies;
+
+import java.util.List;
 
 /**
  * @author Hugo Huijser
@@ -54,11 +56,11 @@ public class IncorrectWhitespace {
 
 		for (int i = 1; i < 10; i++) {
 			String[] stringArray = new String[] {
-				"test1", "test2", "test3", "test4"};
+				"test1", "test2", "test3", "test4"
 			};
 		}
 
-		List<String> list;
+		List<String> list = null;
 
 		for (String s : list) {
 			String s2 = (String)s1;

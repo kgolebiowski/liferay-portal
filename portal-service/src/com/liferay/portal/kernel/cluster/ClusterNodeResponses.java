@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -61,11 +61,11 @@ public class ClusterNodeResponses implements Serializable {
 		return _clusterResponsesByClusterNode.size();
 	}
 
-	private Map<Address, ClusterNodeResponse> _clusterResponsesByAddress =
-		new HashMap<Address, ClusterNodeResponse>();
-	private Map<String, ClusterNodeResponse> _clusterResponsesByClusterNode =
-		new HashMap<String, ClusterNodeResponse>();
-	private BlockingQueue<ClusterNodeResponse> _clusterResponsesQueue =
-		new LinkedBlockingQueue<ClusterNodeResponse>();
+	private final Map<Address, ClusterNodeResponse> _clusterResponsesByAddress =
+		new HashMap<>();
+	private final Map<String, ClusterNodeResponse>
+		_clusterResponsesByClusterNode = new HashMap<>();
+	private final BlockingQueue<ClusterNodeResponse> _clusterResponsesQueue =
+		new LinkedBlockingQueue<>();
 
 }

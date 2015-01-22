@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,17 +14,19 @@
 
 package com.liferay.portlet.documentlibrary.lar;
 
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.BaseStagedModelDataHandler;
 import com.liferay.portal.kernel.lar.ExportImportPathUtil;
 import com.liferay.portal.kernel.lar.PortletDataContext;
 import com.liferay.portal.kernel.lar.StagedModelDataHandlerUtil;
+import com.liferay.portal.kernel.lar.StagedModelModifiedDateComparator;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.trash.TrashHandler;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.service.ServiceContext;
@@ -33,6 +35,7 @@ import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
 import com.liferay.portlet.documentlibrary.service.DLAppLocalServiceUtil;
 import com.liferay.portlet.documentlibrary.service.DLFileShortcutLocalServiceUtil;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,15 +49,38 @@ public class DLFileShortcutStagedModelDataHandler
 	@Override
 	public void deleteStagedModel(
 			String uuid, long groupId, String className, String extraData)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		DLFileShortcut dlFileShortcut =
-			DLFileShortcutLocalServiceUtil.fetchDLFileShortcutByUuidAndGroupId(
-				uuid, groupId);
+		DLFileShortcut dlFileShortcut = fetchStagedModelByUuidAndGroupId(
+			uuid, groupId);
 
 		if (dlFileShortcut != null) {
 			DLFileShortcutLocalServiceUtil.deleteFileShortcut(dlFileShortcut);
 		}
+	}
+
+	@Override
+	public DLFileShortcut fetchStagedModelByUuidAndCompanyId(
+		String uuid, long companyId) {
+
+		List<DLFileShortcut> fileShortcuts =
+			DLFileShortcutLocalServiceUtil.getDLFileShortcutsByUuidAndCompanyId(
+				uuid, companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				new StagedModelModifiedDateComparator<DLFileShortcut>());
+
+		if (ListUtil.isEmpty(fileShortcuts)) {
+			return null;
+		}
+
+		return fileShortcuts.get(0);
+	}
+
+	@Override
+	public DLFileShortcut fetchStagedModelByUuidAndGroupId(
+		String uuid, long groupId) {
+
+		return DLFileShortcutLocalServiceUtil.
+			fetchDLFileShortcutByUuidAndGroupId(uuid, groupId);
 	}
 
 	@Override
@@ -76,8 +102,7 @@ public class DLFileShortcutStagedModelDataHandler
 				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
-				portletDataContext, fileShortcut, DLFileShortcut.class,
-				fileShortcut.getFolder(), Folder.class,
+				portletDataContext, fileShortcut, fileShortcut.getFolder(),
 				PortletDataContext.REFERENCE_TYPE_PARENT);
 		}
 
@@ -85,8 +110,8 @@ public class DLFileShortcutStagedModelDataHandler
 			fileShortcut.getToFileEntryId());
 
 		StagedModelDataHandlerUtil.exportReferenceStagedModel(
-			portletDataContext, fileShortcut, DLFileShortcut.class, fileEntry,
-			FileEntry.class, PortletDataContext.REFERENCE_TYPE_STRONG);
+			portletDataContext, fileShortcut, fileEntry,
+			PortletDataContext.REFERENCE_TYPE_STRONG);
 
 		Element fileShortcutElement = portletDataContext.getExportDataElement(
 			fileShortcut);
@@ -106,14 +131,6 @@ public class DLFileShortcutStagedModelDataHandler
 
 		long userId = portletDataContext.getUserId(fileShortcut.getUserUuid());
 
-		if (fileShortcut.getFolderId() !=
-				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-
-			StagedModelDataHandlerUtil.importReferenceStagedModel(
-				portletDataContext, fileShortcut, Folder.class,
-				fileShortcut.getFolderId());
-		}
-
 		Map<Long, Long> folderIds =
 			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
 				Folder.class);
@@ -128,10 +145,6 @@ public class DLFileShortcutStagedModelDataHandler
 
 			groupId = folder.getRepositoryId();
 		}
-
-		StagedModelDataHandlerUtil.importReferenceStagedModel(
-			portletDataContext, fileShortcut, FileEntry.class,
-			fileShortcut.getToFileEntryId());
 
 		Element fileShortcutElement =
 			portletDataContext.getImportDataStagedModelElement(fileShortcut);
@@ -159,10 +172,9 @@ public class DLFileShortcutStagedModelDataHandler
 
 		if (portletDataContext.isDataStrategyMirror()) {
 			DLFileShortcut existingFileShortcut =
-				DLFileShortcutLocalServiceUtil.
-					fetchDLFileShortcutByUuidAndGroupId(
-						fileShortcut.getUuid(),
-						portletDataContext.getScopeGroupId());
+				fetchStagedModelByUuidAndGroupId(
+					fileShortcut.getUuid(),
+					portletDataContext.getScopeGroupId());
 
 			if (existingFileShortcut == null) {
 				serviceContext.setUuid(fileShortcut.getUuid());
@@ -194,9 +206,8 @@ public class DLFileShortcutStagedModelDataHandler
 
 		long userId = portletDataContext.getUserId(fileShortcut.getUserUuid());
 
-		DLFileShortcut existingFileShortcut =
-			DLFileShortcutLocalServiceUtil.fetchDLFileShortcutByUuidAndGroupId(
-				fileShortcut.getUuid(), portletDataContext.getScopeGroupId());
+		DLFileShortcut existingFileShortcut = fetchStagedModelByUuidAndGroupId(
+			fileShortcut.getUuid(), portletDataContext.getScopeGroupId());
 
 		if ((existingFileShortcut == null) ||
 			!existingFileShortcut.isInTrash()) {
@@ -214,7 +225,7 @@ public class DLFileShortcutStagedModelDataHandler
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DLFileShortcutStagedModelDataHandler.class);
 
 }

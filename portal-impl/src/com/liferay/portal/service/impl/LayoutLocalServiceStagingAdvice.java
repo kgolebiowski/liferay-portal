@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.staging.LayoutStagingUtil;
@@ -85,7 +84,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 	public void deleteLayout(
 			LayoutLocalService layoutLocalService, Layout layout,
 			boolean updateLayoutSet, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		long layoutSetBranchId = ParamUtil.getLong(
 			serviceContext, "layoutSetBranchId");
@@ -116,7 +115,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 	public void deleteLayout(
 			LayoutLocalService layoutLocalService, long groupId,
 			boolean privateLayout, long layoutId, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Layout layout = layoutLocalService.getLayout(
 			groupId, privateLayout, layoutId);
@@ -183,7 +182,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 			Map<Locale, String> friendlyURLMap = null;
 
 			if (Arrays.equals(parameterTypes, _UPDATE_LAYOUT_PARAMETER_TYPES)) {
-				friendlyURLMap = new HashMap<Locale, String>();
+				friendlyURLMap = new HashMap<>();
 
 				friendlyURLMap.put(
 					LocaleUtil.getSiteDefault(), (String)arguments[11]);
@@ -240,7 +239,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 			Map<Locale, String> robotsMap, String type, boolean hidden,
 			Map<Locale, String> friendlyURLMap, boolean iconImage,
 			byte[] iconBytes, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		// Layout
 
@@ -333,7 +332,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 	public Layout updateLayout(
 			LayoutLocalService layoutLocalService, long groupId,
 			boolean privateLayout, long layoutId, String typeSettings)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Layout layout = LayoutUtil.findByG_P_L(
 			groupId, privateLayout, layoutId);
@@ -381,7 +380,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 			LayoutLocalService layoutLocalService, long groupId,
 			boolean privateLayout, long layoutId, String themeId,
 			String colorSchemeId, String css, boolean wapTheme)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Layout layout = LayoutUtil.findByG_P_L(
 			groupId, privateLayout, layoutId);
@@ -437,7 +436,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 	public Layout updateName(
 			LayoutLocalService layoutLocalService, Layout layout, String name,
 			String languageId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		layout = wrapLayout(layout);
 
@@ -479,7 +478,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 	protected void doDeleteLayout(
 			LayoutLocalService layoutLocalService, Layout layout,
 			boolean updateLayoutSet, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (SystemEventHierarchyEntryThreadLocal.push(
 				Layout.class, layout.getPlid()) == null) {
@@ -592,7 +591,7 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 			}
 		}
 
-		List<Layout> wrappedLayouts = new ArrayList<Layout>(layouts.size());
+		List<Layout> wrappedLayouts = new ArrayList<>(layouts.size());
 
 		for (int i = 0; i < layouts.size(); i++) {
 			Layout wrappedLayout = wrapLayout(layouts.get(i));
@@ -642,11 +641,11 @@ public class LayoutLocalServiceStagingAdvice implements MethodInterceptor {
 		String.class, Boolean.class, byte[].class, ServiceContext.class
 	};
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutLocalServiceStagingAdvice.class);
 
-	private static Set<String> _layoutLocalServiceStagingAdviceMethodNames =
-		new HashSet<String>();
+	private static final Set<String>
+		_layoutLocalServiceStagingAdviceMethodNames = new HashSet<>();
 
 	static {
 		_layoutLocalServiceStagingAdviceMethodNames.add("createLayout");

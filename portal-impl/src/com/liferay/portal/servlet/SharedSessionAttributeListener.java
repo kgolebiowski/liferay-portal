@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -34,17 +34,20 @@ import javax.servlet.http.HttpSessionListener;
  * with shared session attributes being modified out of sequence.
  * </p>
  *
- * @author Michael C. Han
+ * @author     Michael C. Han
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
 public class SharedSessionAttributeListener
 	implements HttpSessionAttributeListener, HttpSessionListener {
 
 	public SharedSessionAttributeListener() {
 		if (ServletVersionDetector.is2_5()) {
-			return;
+			_sessionIds = null;
 		}
-
-		_sessionIds = new ConcurrentHashSet<String>();
+		else {
+			_sessionIds = new ConcurrentHashSet<>();
+		}
 	}
 
 	@Override
@@ -145,6 +148,6 @@ public class SharedSessionAttributeListener
 		_sessionIds.remove(session.getId());
 	}
 
-	private Set<String> _sessionIds;
+	private final Set<String> _sessionIds;
 
 }

@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,12 +19,16 @@
 <%
 String redirect = ParamUtil.getString(request, "redirect");
 
+if (Validator.isNull(redirect)) {
+	redirect = ParamUtil.getString(PortalUtil.getOriginalServletRequest(request), "redirect");
+}
+
 List results = (List)request.getAttribute("view.jsp-results");
 
 if (Validator.isNull(redirect) && results.isEmpty()) {
 	PortletURL portletURL = renderResponse.createRenderURL();
 
-	portletURL.setParameter("struts_action", "/asset_publisher/view");
+	portletURL.setParameter("mvcPath", "/html/portlet/asset_publisher/view.jsp");
 
 	redirect = portletURL.toString();
 }
@@ -56,7 +60,7 @@ request.setAttribute("view.jsp-showIconLabel", true);
 	/>
 </c:if>
 
-<div class="asset-full-content <%= AssetUtil.isDefaultAssetPublisher(layout, portletDisplay.getId(), portletResource) ? "default-asset-publisher" : StringPool.BLANK %> <%= assetPublisherDisplayContext.isShowAssetTitle() ? "show-asset-title" : "no-title" %>">
+<div class="asset-full-content <%= AssetUtil.isDefaultAssetPublisher(layout, portletDisplay.getId(), assetPublisherDisplayContext.getPortletResource()) ? "default-asset-publisher" : StringPool.BLANK %> <%= assetPublisherDisplayContext.isShowAssetTitle() ? "show-asset-title" : "no-title" %>">
 	<c:if test="<%= !print %>">
 		<liferay-util:include page="/html/portlet/asset_publisher/asset_actions.jsp" />
 	</c:if>
@@ -120,7 +124,7 @@ request.setAttribute("view.jsp-showIconLabel", true);
 
 	PortletURL viewFullContentURL = renderResponse.createRenderURL();
 
-	viewFullContentURL.setParameter("struts_action", "/asset_publisher/view_content");
+	viewFullContentURL.setParameter("mvcPath", "/html/portlet/asset_publisher/view_content.jsp");
 	viewFullContentURL.setParameter("type", assetRendererFactory.getType());
 	viewFullContentURL.setParameter("viewMode", print ? Constants.PRINT : Constants.VIEW);
 
@@ -220,9 +224,7 @@ request.setAttribute("view.jsp-showIconLabel", true);
 		<c:if test="<%= Validator.isNotNull(assetRenderer.getDiscussionPath()) && assetPublisherDisplayContext.isEnableComments() %>">
 			<br />
 
-			<portlet:actionURL var="discussionURL">
-				<portlet:param name="struts_action" value='<%= "/asset_publisher/" + assetRenderer.getDiscussionPath() %>' />
-			</portlet:actionURL>
+			<portlet:actionURL name="invokeTaglibDiscussion" var="discussionURL" />
 
 			<liferay-ui:discussion
 				className="<%= assetEntry.getClassName() %>"
@@ -237,14 +239,12 @@ request.setAttribute("view.jsp-showIconLabel", true);
 	</div>
 
 	<c:if test="<%= show %>">
-		<div class="asset-metadata">
-
-			<%
-			String[] metadataFields = assetPublisherDisplayContext.getMetadataFields();
-			%>
-
-			<%@ include file="/html/portlet/asset_publisher/asset_metadata.jspf" %>
-		</div>
+		<liferay-ui:asset-metadata
+			className="<%= assetEntry.getClassName() %>"
+			classPK="<%= assetEntry.getClassPK() %>"
+			filterByMetadata="<%= true %>"
+			metadataFields="<%= assetPublisherDisplayContext.getMetadataFields() %>"
+		/>
 	</c:if>
 </div>
 

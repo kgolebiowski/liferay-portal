@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,11 +15,12 @@
 package com.liferay.portlet.dynamicdatamapping.storage;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
@@ -57,9 +58,9 @@ public class Field implements Serializable {
 		Map<Locale, List<Serializable>> valuesMap, Locale defaultLocale) {
 
 		_ddmStructureId = ddmStructureId;
-		_defaultLocale = defaultLocale;
 		_name = name;
 		_valuesMap = valuesMap;
+		_defaultLocale = defaultLocale;
 	}
 
 	public Field(long ddmStructureId, String name, Serializable value) {
@@ -77,7 +78,7 @@ public class Field implements Serializable {
 		List<Serializable> values = _valuesMap.get(locale);
 
 		if (values == null) {
-			values = new ArrayList<Serializable>();
+			values = new ArrayList<>();
 
 			_valuesMap.put(locale, values);
 		}
@@ -117,13 +118,13 @@ public class Field implements Serializable {
 		return _valuesMap.keySet();
 	}
 
-	public String getDataType() throws PortalException, SystemException {
+	public String getDataType() throws PortalException {
 		DDMStructure ddmStructure = getDDMStructure();
 
 		return ddmStructure.getFieldDataType(_name);
 	}
 
-	public DDMStructure getDDMStructure() throws SystemException {
+	public DDMStructure getDDMStructure() {
 		return DDMStructureLocalServiceUtil.fetchStructure(_ddmStructureId);
 	}
 
@@ -139,23 +140,21 @@ public class Field implements Serializable {
 		return _name;
 	}
 
-	public String getRenderedValue(Locale locale)
-		throws PortalException, SystemException {
-
+	public String getRenderedValue(Locale locale) throws PortalException {
 		FieldRenderer fieldRenderer = getFieldRenderer();
 
 		return fieldRenderer.render(this, locale);
 	}
 
 	public String getRenderedValue(Locale locale, int valueIndex)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		FieldRenderer fieldRenderer = getFieldRenderer();
 
 		return fieldRenderer.render(this, locale, valueIndex);
 	}
 
-	public String getType() throws PortalException, SystemException {
+	public String getType() throws PortalException {
 		DDMStructure ddmStructure = getDDMStructure();
 
 		return ddmStructure.getFieldType(_name);
@@ -181,9 +180,7 @@ public class Field implements Serializable {
 				return values.get(0);
 			}
 
-			boolean repeatable = isRepeatable();
-
-			if (repeatable) {
+			if (isRepeatable() || (values.size() > 1)) {
 				return FieldConstants.getSerializable(getDataType(), values);
 			}
 
@@ -214,18 +211,33 @@ public class Field implements Serializable {
 		return _valuesMap;
 	}
 
+	@Override
+	public int hashCode() {
+		int hash = HashUtil.hash(0, _ddmStructureId);
+
+		hash = HashUtil.hash(hash, _name);
+
+		return HashUtil.hash(hash, _valuesMap);
+	}
+
 	public boolean isPrivate() {
 		try {
-			DDMStructure ddmStructure = getDDMStructure();
+			if (_name.startsWith(StringPool.UNDERLINE)) {
+				return true;
+			}
 
-			return ddmStructure.isFieldPrivate(_name);
+			return false;
 		}
 		catch (Exception e) {
 			return false;
 		}
 	}
 
-	public boolean isRepeatable() throws PortalException, SystemException {
+	public boolean isRepeatable() throws PortalException {
+		if (isPrivate()) {
+			return false;
+		}
+
 		DDMStructure ddmStructure = getDDMStructure();
 
 		return ddmStructure.isFieldRepeatable(_name);
@@ -255,7 +267,7 @@ public class Field implements Serializable {
 		}
 
 		if (values == null) {
-			values = new ArrayList<Serializable>();
+			values = new ArrayList<>();
 
 			values.add(value);
 		}
@@ -275,9 +287,7 @@ public class Field implements Serializable {
 		_valuesMap = valuesMap;
 	}
 
-	protected FieldRenderer getFieldRenderer()
-		throws PortalException, SystemException {
-
+	protected FieldRenderer getFieldRenderer() throws PortalException {
 		DDMStructure ddmStructure = getDDMStructure();
 
 		String dataType = null;
@@ -309,12 +319,11 @@ public class Field implements Serializable {
 		return values;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(Field.class);
+	private static final Log _log = LogFactoryUtil.getLog(Field.class);
 
 	private long _ddmStructureId;
 	private Locale _defaultLocale;
 	private String _name;
-	private Map<Locale, List<Serializable>> _valuesMap =
-		new HashMap<Locale, List<Serializable>>();
+	private Map<Locale, List<Serializable>> _valuesMap = new HashMap<>();
 
 }

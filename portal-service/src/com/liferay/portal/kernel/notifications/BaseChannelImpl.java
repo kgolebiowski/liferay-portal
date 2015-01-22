@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -120,13 +120,14 @@ public abstract class BaseChannelImpl implements Channel {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(BaseChannelImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseChannelImpl.class);
 
-	private List<ChannelListener> _channelListeners =
-		new CopyOnWriteArrayList<ChannelListener>();
+	private final List<ChannelListener> _channelListeners =
+		new CopyOnWriteArrayList<>();
 	private long _cleanUpInterval;
-	private long _companyId;
-	private AtomicLong _nextCleanUpTime = new AtomicLong();
-	private long _userId;
+	private final long _companyId;
+	private final AtomicLong _nextCleanUpTime = new AtomicLong();
+	private final long _userId;
 
 }

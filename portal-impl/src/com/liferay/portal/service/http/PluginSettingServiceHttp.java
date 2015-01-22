@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.service.http;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -49,12 +51,12 @@ import com.liferay.portal.service.PluginSettingServiceUtil;
  * @see com.liferay.portal.service.PluginSettingServiceUtil
  * @generated
  */
+@ProviderType
 public class PluginSettingServiceHttp {
 	public static com.liferay.portal.model.PluginSetting updatePluginSetting(
 		HttpPrincipal httpPrincipal, long companyId, java.lang.String pluginId,
 		java.lang.String pluginType, java.lang.String roles, boolean active)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PluginSettingServiceUtil.class,
 					"updatePluginSetting", _updatePluginSettingParameterTypes0);
@@ -70,10 +72,6 @@ public class PluginSettingServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);

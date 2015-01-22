@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -105,12 +105,12 @@ public class MSNConnector {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(MSNConnector.class);
+	private static final Log _log = LogFactoryUtil.getLog(MSNConnector.class);
 
-	private static MSNConnector _instance = new MSNConnector();
+	private static final MSNConnector _instance = new MSNConnector();
 
-	private String _login;
-	private MSNMessenger _msn;
-	private String _password;
+	private final String _login;
+	private final MSNMessenger _msn;
+	private final String _password;
 
 }

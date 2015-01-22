@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -93,11 +93,11 @@ public class MembershipPolicyException extends PortalException {
 		return _users;
 	}
 
-	private List<Group> _groups = new ArrayList<Group>();
-	private List<Organization> _organizations = new ArrayList<Organization>();
-	private List<Role> _roles = new ArrayList<Role>();
-	private int _type;
-	private List<UserGroup> _userGroups = new ArrayList<UserGroup>();
-	private List<User> _users = new ArrayList<User>();
+	private final List<Group> _groups = new ArrayList<>();
+	private final List<Organization> _organizations = new ArrayList<>();
+	private final List<Role> _roles = new ArrayList<>();
+	private final int _type;
+	private final List<UserGroup> _userGroups = new ArrayList<>();
+	private final List<User> _users = new ArrayList<>();
 
 }

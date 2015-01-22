@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -157,17 +157,6 @@ public class HitsImpl implements Hits {
 	}
 
 	@Override
-	public void setScores(Float[] scores) {
-		float[] primScores = new float[scores.length];
-
-		for (int i = 0; i < scores.length; i++) {
-			primScores[i] = scores[i].floatValue();
-		}
-
-		setScores(primScores);
-	}
-
-	@Override
 	public void setSearchTime(float time) {
 		_searchTime = time;
 	}
@@ -196,7 +185,7 @@ public class HitsImpl implements Hits {
 
 	@Override
 	public List<Document> toList() {
-		List<Document> subset = new ArrayList<Document>(_docs.length);
+		List<Document> subset = new ArrayList<>(_docs.length);
 
 		for (Document _doc : _docs) {
 			subset.add(_doc);

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -37,8 +37,8 @@ public class RegexTransformerUtil {
 	}
 
 	private RegexTransformerUtil() {
-		_patterns = new ArrayList<Pattern>();
-		_replacements = new ArrayList<String>();
+		_patterns = new ArrayList<>();
+		_replacements = new ArrayList<>();
 
 		for (int i = 0; i < 100; i++) {
 			String regex = PropsUtil.get(
@@ -61,11 +61,13 @@ public class RegexTransformerUtil {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(RegexTransformerUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		RegexTransformerUtil.class);
 
-	private static RegexTransformerUtil _instance = new RegexTransformerUtil();
+	private static final RegexTransformerUtil _instance =
+		new RegexTransformerUtil();
 
-	private List<Pattern> _patterns;
-	private List<String> _replacements;
+	private final List<Pattern> _patterns;
+	private final List<String> _replacements;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -130,7 +130,7 @@ public class DestinationStatisticsManager
 		"Liferay:product=Portal,type=MessagingDestinationStatistics,name=";
 
 	private boolean _autoRefresh;
-	private Destination _destination;
+	private final Destination _destination;
 	private DestinationStatistics _destinationStatistics;
 	private long _lastRefresh;
 

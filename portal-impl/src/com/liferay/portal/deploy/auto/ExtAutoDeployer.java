@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -51,7 +51,7 @@ public class ExtAutoDeployer extends ExtDeployer implements AutoDeployer {
 				PropsKeys.AUTO_DEPLOY_TOMCAT_LIB_DIR,
 				PropsValues.AUTO_DEPLOY_TOMCAT_LIB_DIR);
 
-			List<String> jars = new ArrayList<String>();
+			List<String> jars = new ArrayList<>();
 
 			addRequiredJar(jars, "util-bridges.jar");
 			addRequiredJar(jars, "util-java.jar");
@@ -66,6 +66,7 @@ public class ExtAutoDeployer extends ExtDeployer implements AutoDeployer {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ExtAutoDeployer.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ExtAutoDeployer.class);
 
 }

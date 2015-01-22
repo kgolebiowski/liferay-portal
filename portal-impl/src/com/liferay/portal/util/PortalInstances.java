@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.shard.ShardUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.SearchEngineUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -30,13 +31,15 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.LayoutSet;
 import com.liferay.portal.model.PortletCategory;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.VirtualHost;
-import com.liferay.portal.search.lucene.LuceneHelperUtil;
 import com.liferay.portal.security.auth.CompanyThreadLocal;
+import com.liferay.portal.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.service.CompanyLocalServiceUtil;
 import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.service.PortletLocalServiceUtil;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.service.VirtualHostLocalServiceUtil;
 import com.liferay.portlet.journal.service.JournalContentSearchLocalServiceUtil;
 
@@ -177,7 +180,7 @@ public class PortalInstances {
 						if (_log.isWarnEnabled()) {
 							_log.warn(
 								"Company id from cookie " + cookieCompanyId +
-										" does not exist");
+									" does not exist");
 						}
 					}
 					else {
@@ -290,7 +293,7 @@ public class PortalInstances {
 	}
 
 	private long[] _getCompanyIdsBySQL() throws SQLException {
-		List<Long> companyIds = new ArrayList<Long>();
+		List<Long> companyIds = new ArrayList<>();
 
 		String currentShardName = ShardUtil.setTargetSource(
 			PropsValues.SHARD_DEFAULT_NAME);
@@ -354,7 +357,7 @@ public class PortalInstances {
 			List<Company> companies = CompanyLocalServiceUtil.getCompanies(
 				false);
 
-			List<String> webIdsList = new ArrayList<String>(companies.size());
+			List<String> webIdsList = new ArrayList<>(companies.size());
 
 			for (Company company : companies) {
 				String webId = company.getWebId();
@@ -401,12 +404,25 @@ public class PortalInstances {
 
 		Long currentThreadCompanyId = CompanyThreadLocal.getCompanyId();
 
+		String currentThreadPrincipalName = PrincipalThreadLocal.getName();
+
 		try {
 			CompanyThreadLocal.setCompanyId(companyId);
 
-			// Lucene
+			String principalName = null;
 
-			LuceneHelperUtil.startup(companyId);
+			try {
+				User user = UserLocalServiceUtil.getUser(
+					PrincipalThreadLocal.getUserId());
+
+				if (user.getCompanyId() == companyId) {
+					principalName = currentThreadPrincipalName;
+				}
+			}
+			catch (Exception e) {
+			}
+
+			PrincipalThreadLocal.setName(principalName);
 
 			// Initialize display
 
@@ -496,6 +512,8 @@ public class PortalInstances {
 		}
 		finally {
 			CompanyThreadLocal.setCompanyId(currentThreadCompanyId);
+
+			PrincipalThreadLocal.setName(currentThreadPrincipalName);
 		}
 
 		return companyId;
@@ -550,9 +568,7 @@ public class PortalInstances {
 
 		_getWebIds();
 
-		LuceneHelperUtil.delete(companyId);
-
-		LuceneHelperUtil.shutdown(companyId);
+		SearchEngineUtil.removeCompany(companyId);
 
 		WebAppPool.remove(companyId, WebKeys.PORTLET_CATEGORY);
 	}
@@ -561,15 +577,16 @@ public class PortalInstances {
 		"select companyId from Company, Shard where Company.companyId = " +
 			"Shard.classPK and Shard.name = ?";
 
-	private static Log _log = LogFactoryUtil.getLog(PortalInstances.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortalInstances.class);
 
-	private static PortalInstances _instance = new PortalInstances();
+	private static final PortalInstances _instance = new PortalInstances();
 
-	private Set<String> _autoLoginIgnoreHosts;
-	private Set<String> _autoLoginIgnorePaths;
+	private final Set<String> _autoLoginIgnoreHosts;
+	private final Set<String> _autoLoginIgnorePaths;
 	private long[] _companyIds;
-	private Set<String> _virtualHostsIgnoreHosts;
-	private Set<String> _virtualHostsIgnorePaths;
+	private final Set<String> _virtualHostsIgnoreHosts;
+	private final Set<String> _virtualHostsIgnorePaths;
 	private String[] _webIds;
 
 }

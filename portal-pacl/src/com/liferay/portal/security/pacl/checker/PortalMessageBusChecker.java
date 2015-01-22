@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -107,7 +107,7 @@ public class PortalMessageBusChecker extends BaseChecker {
 			"security-manager-message-bus-listen");
 
 		if (_log.isDebugEnabled()) {
-			Set<String> destinationNames = new TreeSet<String>(
+			Set<String> destinationNames = new TreeSet<>(
 				_listenDestinationNames);
 
 			for (String destinationName : destinationNames) {
@@ -123,8 +123,7 @@ public class PortalMessageBusChecker extends BaseChecker {
 			"security-manager-message-bus-send");
 
 		if (_log.isDebugEnabled()) {
-			Set<String> destinationNames = new TreeSet<String>(
-				_sendDestinationNames);
+			Set<String> destinationNames = new TreeSet<>(_sendDestinationNames);
 
 			for (String destinationName : destinationNames) {
 				_log.debug(
@@ -134,7 +133,7 @@ public class PortalMessageBusChecker extends BaseChecker {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortalMessageBusChecker.class);
 
 	private Set<String> _listenDestinationNames;

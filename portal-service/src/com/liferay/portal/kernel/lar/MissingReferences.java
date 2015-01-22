@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -72,9 +72,9 @@ public class MissingReferences implements Serializable {
 		}
 	}
 
-	private Map<String, MissingReference> _dependencyMissingReferences =
-		new HashMap<String, MissingReference>();
-	private Map<String, MissingReference> _weakMissingReferences =
-		new HashMap<String, MissingReference>();
+	private final Map<String, MissingReference> _dependencyMissingReferences =
+		new HashMap<>();
+	private final Map<String, MissingReference> _weakMissingReferences =
+		new HashMap<>();
 
 }

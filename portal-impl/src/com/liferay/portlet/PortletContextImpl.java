@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -226,10 +226,11 @@ public class PortletContextImpl implements LiferayPortletContext {
 
 	private static final int _MINOR_VERSION = 0;
 
-	private static Log _log = LogFactoryUtil.getLog(PortletContextImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortletContextImpl.class);
 
-	private Portlet _portlet;
-	private ServletContext _servletContext;
-	private String _servletContextName;
+	private final Portlet _portlet;
+	private final ServletContext _servletContext;
+	private final String _servletContextName;
 
 }

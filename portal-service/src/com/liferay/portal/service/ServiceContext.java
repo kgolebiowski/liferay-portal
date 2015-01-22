@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,7 @@
 package com.liferay.portal.service;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -65,6 +65,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author Brian Wing Shun Chan
  * @author Jorge Ferrer
  */
+@JSON
 public class ServiceContext implements Cloneable, Serializable {
 
 	/**
@@ -74,8 +75,8 @@ public class ServiceContext implements Cloneable, Serializable {
 	 * optional service context parameters.
 	 */
 	public ServiceContext() {
-		_attributes = new LinkedHashMap<String, Serializable>();
-		_expandoBridgeAttributes = new LinkedHashMap<String, Serializable>();
+		_attributes = new LinkedHashMap<>();
+		_expandoBridgeAttributes = new LinkedHashMap<>();
 	}
 
 	/**
@@ -137,7 +138,7 @@ public class ServiceContext implements Cloneable, Serializable {
 	 * update this logic updating the logic in the JSP.
 	 */
 	public void deriveDefaultPermissions(long repositoryId, String modelName)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		long siteGroupId = PortalUtil.getSiteGroupId(repositoryId);
 
@@ -146,8 +147,8 @@ public class ServiceContext implements Cloneable, Serializable {
 		Role defaultGroupRole = RoleLocalServiceUtil.getDefaultGroupRole(
 			siteGroupId);
 
-		List<String> groupPermissions = new ArrayList<String>();
-		List<String> guestPermissions = new ArrayList<String>();
+		List<String> groupPermissions = new ArrayList<>();
+		List<String> guestPermissions = new ArrayList<>();
 
 		String[] roleNames = {RoleConstants.GUEST, defaultGroupRole.getName()};
 
@@ -386,9 +387,8 @@ public class ServiceContext implements Cloneable, Serializable {
 	 *         context
 	 * @throws PortalException if a default user for the company could not be
 	 *         found
-	 * @throws SystemException if a system exception occurred
 	 */
-	public long getGuestOrUserId() throws PortalException, SystemException {
+	public long getGuestOrUserId() throws PortalException {
 		long userId = getUserId();
 
 		if (userId > 0) {
@@ -422,6 +422,7 @@ public class ServiceContext implements Cloneable, Serializable {
 	 * @return the the map of request header name/value pairs
 	 * @see    com.liferay.portal.kernel.servlet.HttpHeaders
 	 */
+	@JSON(include = false)
 	public Map<String, String> getHeaders() {
 		return _headers;
 	}
@@ -460,6 +461,7 @@ public class ServiceContext implements Cloneable, Serializable {
 		return _layoutURL;
 	}
 
+	@JSON(include = false)
 	public LiferayPortletRequest getLiferayPortletRequest() {
 		if (_request == null) {
 			return null;
@@ -472,6 +474,7 @@ public class ServiceContext implements Cloneable, Serializable {
 		return liferayPortletRequest;
 	}
 
+	@JSON(include = false)
 	public LiferayPortletResponse getLiferayPortletResponse() {
 		if (_request == null) {
 			return null;
@@ -618,10 +621,12 @@ public class ServiceContext implements Cloneable, Serializable {
 		return _remoteHost;
 	}
 
+	@JSON(include = false)
 	public HttpServletRequest getRequest() {
 		return _request;
 	}
 
+	@JSON(include = false)
 	public HttpServletResponse getResponse() {
 		LiferayPortletResponse liferayPortletResponse =
 			getLiferayPortletResponse();
@@ -643,7 +648,7 @@ public class ServiceContext implements Cloneable, Serializable {
 		return PortletConstants.getRootPortletId(portletId);
 	}
 
-	public Group getScopeGroup() throws PortalException, SystemException {
+	public Group getScopeGroup() throws PortalException {
 		return GroupLocalServiceUtil.getGroup(_scopeGroupId);
 	}
 
@@ -767,7 +772,9 @@ public class ServiceContext implements Cloneable, Serializable {
 	 */
 	public boolean isCommandAdd() {
 		if (Validator.equals(_command, Constants.ADD) ||
-			Validator.equals(_command, Constants.ADD_MULTIPLE)) {
+			Validator.equals(_command, Constants.ADD_DYNAMIC) ||
+			Validator.equals(_command, Constants.ADD_MULTIPLE) ||
+			Validator.equals(_command, Constants.ADD_WEBDAV)) {
 
 			return true;
 		}
@@ -785,7 +792,9 @@ public class ServiceContext implements Cloneable, Serializable {
 	 *         command; <code>false</code> otherwise
 	 */
 	public boolean isCommandUpdate() {
-		if (Validator.equals(_command, Constants.UPDATE)) {
+		if (Validator.equals(_command, Constants.UPDATE) ||
+			Validator.equals(_command, Constants.UPDATE_WEBDAV)) {
+
 			return true;
 		}
 		else {
@@ -1493,7 +1502,7 @@ public class ServiceContext implements Cloneable, Serializable {
 	private Date _formDate;
 	private String[] _groupPermissions;
 	private String[] _guestPermissions;
-	private Map<String, String> _headers;
+	private transient Map<String, String> _headers;
 	private boolean _indexingEnabled = true;
 	private String _languageId;
 	private String _layoutFullURL;

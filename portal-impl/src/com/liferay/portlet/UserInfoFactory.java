@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -42,8 +42,7 @@ public class UserInfoFactory {
 			return null;
 		}
 
-		LinkedHashMap<String, String> userInfo =
-			new LinkedHashMap<String, String>();
+		LinkedHashMap<String, String> userInfo = new LinkedHashMap<>();
 
 		try {
 			User user = PortalUtil.getUser(request);
@@ -64,8 +63,7 @@ public class UserInfoFactory {
 			return null;
 		}
 
-		LinkedHashMap<String, String> userInfo =
-			new LinkedHashMap<String, String>();
+		LinkedHashMap<String, String> userInfo = new LinkedHashMap<>();
 
 		try {
 			User user = UserLocalServiceUtil.getUserById(userId);
@@ -118,8 +116,7 @@ public class UserInfoFactory {
 
 		// Custom user attributes
 
-		Map<String, CustomUserAttributes> cuaInstances =
-			new HashMap<String, CustomUserAttributes>();
+		Map<String, CustomUserAttributes> cuaInstances = new HashMap<>();
 
 		for (Map.Entry<String, String> entry :
 				portletApp.getCustomUserAttributes().entrySet()) {
@@ -167,6 +164,7 @@ public class UserInfoFactory {
 		return userInfo;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(UserInfoFactory.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		UserInfoFactory.class);
 
 }

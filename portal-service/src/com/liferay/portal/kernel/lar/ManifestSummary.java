@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -55,24 +55,29 @@ public class ManifestSummary implements Serializable {
 		return modelName.concat(StringPool.POUND).concat(referrerModelName);
 	}
 
-	public void addConfigurationPortlet(
+	public void addDataPortlet(
 		Portlet portlet, String[] configurationPortletOptions) {
 
 		String rootPortletId = portlet.getRootPortletId();
 
 		if (!_configurationPortletOptions.containsKey(rootPortletId)) {
-			_configurationPortlets.add(portlet);
+			_dataPortlets.add(portlet);
+
 			_configurationPortletOptions.put(
 				rootPortletId, configurationPortletOptions);
 		}
 	}
 
-	public void addDataPortlet(Portlet portlet) {
+	public void addLayoutPortlet(
+		Portlet portlet, String[] configurationPortletOptions) {
+
 		String rootPortletId = portlet.getRootPortletId();
 
-		if (!_dataRootPortletIds.contains(rootPortletId)) {
-			_dataPortlets.add(portlet);
-			_dataRootPortletIds.add(rootPortletId);
+		if (!_configurationPortletOptions.containsKey(rootPortletId)) {
+			_layoutPortlets.add(portlet);
+
+			_configurationPortletOptions.put(
+				rootPortletId, configurationPortletOptions);
 		}
 	}
 
@@ -121,22 +126,19 @@ public class ManifestSummary implements Serializable {
 		manifestSummary._configurationPortletOptions =
 			new HashMap<String, String[]> (
 				manifestSummary._configurationPortletOptions);
-		manifestSummary._configurationPortlets = new ArrayList<Portlet>(
-			_configurationPortlets);
-		manifestSummary._dataPortlets = new ArrayList<Portlet>(_dataPortlets);
-		manifestSummary._dataRootPortletIds = new HashSet<String>(
-			_dataRootPortletIds);
+		manifestSummary._dataPortlets = new ArrayList<>(_dataPortlets);
+		manifestSummary._layoutPortlets = new ArrayList<>(_layoutPortlets);
 
 		if (_exportDate != null) {
 			manifestSummary.setExportDate(new Date(_exportDate.getTime()));
 		}
 
-		manifestSummary._manifestSummaryKeys = new HashSet<String>(
+		manifestSummary._manifestSummaryKeys = new HashSet<>(
 			_manifestSummaryKeys);
-		manifestSummary._modelAdditionCounters =
-			new HashMap<String, LongWrapper>(_modelAdditionCounters);
-		manifestSummary._modelDeletionCounters =
-			new HashMap<String, LongWrapper>(_modelDeletionCounters);
+		manifestSummary._modelAdditionCounters = new HashMap<>(
+			_modelAdditionCounters);
+		manifestSummary._modelDeletionCounters = new HashMap<>(
+			_modelDeletionCounters);
 
 		return manifestSummary;
 	}
@@ -145,16 +147,16 @@ public class ManifestSummary implements Serializable {
 		return _configurationPortletOptions.get(rootPortletId);
 	}
 
-	public List<Portlet> getConfigurationPortlets() {
-		return _configurationPortlets;
-	}
-
 	public List<Portlet> getDataPortlets() {
 		return _dataPortlets;
 	}
 
 	public Date getExportDate() {
 		return _exportDate;
+	}
+
+	public List<Portlet> getLayoutPortlets() {
+		return _layoutPortlets;
 	}
 
 	public Collection<String> getManifestSummaryKeys() {
@@ -186,10 +188,31 @@ public class ManifestSummary implements Serializable {
 	public long getModelAdditionCount(
 		String className, String referrerClassName) {
 
-		String manifestSummaryKey = getManifestSummaryKey(
-			className, referrerClassName);
+		if (Validator.isNull(referrerClassName) ||
+			!referrerClassName.equals(
+				StagedModelType.REFERRER_CLASS_NAME_ALL)) {
 
-		return getModelAdditionCount(manifestSummaryKey);
+			String manifestSummaryKey = getManifestSummaryKey(
+				className, referrerClassName);
+
+			return getModelAdditionCount(manifestSummaryKey);
+		}
+
+		long modelAdditionCount = 0;
+
+		for (String key : _modelAdditionCounters.keySet()) {
+			if (!key.startsWith(className)) {
+				continue;
+			}
+
+			long count = getModelAdditionCount(key);
+
+			if (count > 0) {
+				modelAdditionCount += count;
+			}
+		}
+
+		return modelAdditionCount;
 	}
 
 	public Map<String, LongWrapper> getModelAdditionCounters() {
@@ -297,6 +320,13 @@ public class ManifestSummary implements Serializable {
 		modelDeletionCounter.increment();
 	}
 
+	public void resetCounters() {
+		_modelAdditionCounters.clear();
+		_modelDeletionCounters.clear();
+
+		_manifestSummaryKeys.clear();
+	}
+
 	public void setExportDate(Date exportDate) {
 		_exportDate = exportDate;
 	}
@@ -315,15 +345,12 @@ public class ManifestSummary implements Serializable {
 	}
 
 	private Map<String, String[]> _configurationPortletOptions =
-		new HashMap<String, String[]>();
-	private List<Portlet> _configurationPortlets = new ArrayList<Portlet>();
-	private List<Portlet> _dataPortlets = new ArrayList<Portlet>();
-	private Set<String> _dataRootPortletIds = new HashSet<String>();
+		new HashMap<>();
+	private List<Portlet> _dataPortlets = new ArrayList<>();
 	private Date _exportDate;
-	private Set<String> _manifestSummaryKeys = new HashSet<String>();
-	private Map<String, LongWrapper> _modelAdditionCounters =
-		new HashMap<String, LongWrapper>();
-	private Map<String, LongWrapper> _modelDeletionCounters =
-		new HashMap<String, LongWrapper>();
+	private List<Portlet> _layoutPortlets = new ArrayList<>();
+	private Set<String> _manifestSummaryKeys = new HashSet<>();
+	private Map<String, LongWrapper> _modelAdditionCounters = new HashMap<>();
+	private Map<String, LongWrapper> _modelDeletionCounters = new HashMap<>();
 
 }

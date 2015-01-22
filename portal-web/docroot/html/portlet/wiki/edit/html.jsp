@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -27,6 +27,7 @@ String format = "html";
 
 <liferay-ui:input-editor
 	configParams="<%= configParams %>"
+	contents="<%= content %>"
 	editorImpl="<%= EDITOR_WYSIWYG_IMPL_KEY %>"
 	fileBrowserParams="<%= fileBrowserParams %>"
 	name="content"
@@ -34,12 +35,6 @@ String format = "html";
 />
 
 <aui:input name="content" type="hidden" />
-
-<aui:script>
-	function <portlet:namespace />initEditor() {
-		return "<%= UnicodeFormatter.toString(content) %>";
-	}
-</aui:script>
 
 <%!
 public static final String EDITOR_WYSIWYG_IMPL_KEY = "editor.wysiwyg.portal-web.docroot.html.portlet.wiki.edit.html.jsp";

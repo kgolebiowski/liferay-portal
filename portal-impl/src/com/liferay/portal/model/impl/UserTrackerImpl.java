@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,9 +30,6 @@ import java.util.List;
  * @author Brian Wing Shun Chan
  */
 public class UserTrackerImpl extends UserTrackerBaseImpl {
-
-	public UserTrackerImpl() {
-	}
 
 	@Override
 	public void addPath(UserTrackerPath path) {
@@ -114,11 +111,12 @@ public class UserTrackerImpl extends UserTrackerBaseImpl {
 		return _paths;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(UserTrackerImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		UserTrackerImpl.class);
 
 	private String _emailAddress;
 	private String _fullName;
-	private List<UserTrackerPath> _paths = new ArrayList<UserTrackerPath>();
+	private final List<UserTrackerPath> _paths = new ArrayList<>();
 	private User _user;
 
 }

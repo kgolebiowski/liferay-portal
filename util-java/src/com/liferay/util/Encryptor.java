@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -244,11 +244,11 @@ public class Encryptor {
 		return (Provider)providerClass.newInstance();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(Encryptor.class);
+	private static final Log _log = LogFactoryUtil.getLog(Encryptor.class);
 
-	private static Map<String, Cipher> _decryptCipherMap =
-		new ConcurrentHashMap<String, Cipher>(1, 1f, 1);
-	private static Map<String, Cipher> _encryptCipherMap =
-		new ConcurrentHashMap<String, Cipher>(1, 1f, 1);
+	private static final Map<String, Cipher> _decryptCipherMap =
+		new ConcurrentHashMap<>(1, 1f, 1);
+	private static final Map<String, Cipher> _encryptCipherMap =
+		new ConcurrentHashMap<>(1, 1f, 1);
 
 }

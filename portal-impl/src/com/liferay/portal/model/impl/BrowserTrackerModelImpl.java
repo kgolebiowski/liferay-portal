@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,16 +14,20 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.BrowserTracker;
 import com.liferay.portal.model.BrowserTrackerModel;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.service.UserLocalServiceUtil;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
 import com.liferay.portlet.expando.util.ExpandoBridgeFactoryUtil;
@@ -48,6 +52,7 @@ import java.util.Map;
  * @see com.liferay.portal.model.BrowserTrackerModel
  * @generated
  */
+@ProviderType
 public class BrowserTrackerModelImpl extends BaseModelImpl<BrowserTracker>
 	implements BrowserTrackerModel {
 	/*
@@ -78,8 +83,8 @@ public class BrowserTrackerModelImpl extends BaseModelImpl<BrowserTracker>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portal.model.BrowserTracker"),
 			true);
-	public static long USERID_COLUMN_BITMASK = 1L;
-	public static long BROWSERTRACKERID_COLUMN_BITMASK = 2L;
+	public static final long USERID_COLUMN_BITMASK = 1L;
+	public static final long BROWSERTRACKERID_COLUMN_BITMASK = 2L;
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(com.liferay.portal.util.PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.BrowserTracker"));
 
@@ -197,13 +202,19 @@ public class BrowserTrackerModelImpl extends BaseModelImpl<BrowserTracker>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	public long getOriginalUserId() {
@@ -386,14 +397,13 @@ public class BrowserTrackerModelImpl extends BaseModelImpl<BrowserTracker>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = BrowserTracker.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = BrowserTracker.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			BrowserTracker.class
 		};
 	private long _mvccVersion;
 	private long _browserTrackerId;
 	private long _userId;
-	private String _userUuid;
 	private long _originalUserId;
 	private boolean _setOriginalUserId;
 	private long _browserKey;

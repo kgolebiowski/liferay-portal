@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,13 +23,14 @@ String url = (String)request.getAttribute("liferay-ui:rss:url");
 
 <liferay-ui:icon
 	cssClass="taglib-rss"
-	image="rss"
+	iconCssClass="icon-rss"
 	label="<%= true %>"
 	message="<%= message %>"
+	method="get"
 	target="_blank"
 	url="<%= url %>"
 />
 
 <liferay-util:html-top>
-	<link href="<%= HtmlUtil.escape(url) %>" rel="alternate" title="RSS" type="application/rss+xml" />
+	<link href="<%= HtmlUtil.escapeAttribute(url) %>" rel="alternate" title="RSS" type="application/rss+xml" />
 </liferay-util:html-top>

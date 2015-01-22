@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,7 @@ package com.liferay.portal.security.auth;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PasswordExpiredException;
 import com.liferay.portal.UserLockoutException;
+import com.liferay.portal.kernel.ldap.LDAPFilterException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.AutoResetThreadLocal;
@@ -29,7 +30,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.security.ldap.LDAPSettingsUtil;
-import com.liferay.portal.security.ldap.PortalLDAPImporterUtil;
+import com.liferay.portal.security.ldap.LDAPUserImporterUtil;
 import com.liferay.portal.security.ldap.PortalLDAPUtil;
 import com.liferay.portal.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
@@ -293,7 +294,8 @@ public class LDAPAuth implements Authenticator {
 							companyId, PropsKeys.LDAP_ERROR_USER_LOCKOUT));
 
 					if (pos != -1) {
-						throw new UserLockoutException();
+						throw new UserLockoutException.LDAPLockout(
+							fullUserDN, errorMessage);
 					}
 
 					pos = errorMessage.indexOf(
@@ -311,7 +313,7 @@ public class LDAPAuth implements Authenticator {
 
 				// Get user or create from LDAP
 
-				User user = PortalLDAPImporterUtil.importLDAPUser(
+				User user = LDAPUserImporterUtil.importUser(
 					ldapServerId, companyId, ldapContext, attributes, password);
 
 				// Process LDAP success codes
@@ -332,7 +334,8 @@ public class LDAPAuth implements Authenticator {
 			}
 		}
 		catch (Exception e) {
-			if (e instanceof PasswordExpiredException ||
+			if (e instanceof LDAPFilterException ||
+				e instanceof PasswordExpiredException ||
 				e instanceof UserLockoutException) {
 
 				throw e;
@@ -360,7 +363,10 @@ public class LDAPAuth implements Authenticator {
 			String password)
 		throws Exception {
 
-		if (!AuthSettingsUtil.isLDAPAuthEnabled(companyId)) {
+		if (!PrefsPropsUtil.getBoolean(
+				companyId, PropsKeys.LDAP_AUTH_ENABLED,
+				PropsValues.LDAP_AUTH_ENABLED)) {
+
 			if (_log.isDebugEnabled()) {
 				_log.debug("Authenticator is not enabled");
 			}
@@ -600,9 +606,9 @@ public class LDAPAuth implements Authenticator {
 		failedLDAPAuthResults.put(cacheKey, ldapAuthResult);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LDAPAuth.class);
+	private static final Log _log = LogFactoryUtil.getLog(LDAPAuth.class);
 
-	private ThreadLocal<Map<String, LDAPAuthResult>>
+	private final ThreadLocal<Map<String, LDAPAuthResult>>
 		_failedLDAPAuthResults =
 			new AutoResetThreadLocal<Map<String, LDAPAuthResult>>(
 				LDAPAuth.class + "._failedLDAPAuthResultCache",

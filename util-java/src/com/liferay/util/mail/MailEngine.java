@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.mail.SMTPAccount;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -56,8 +57,6 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-
-import org.apache.commons.lang.time.StopWatch;
 
 /**
  * @author Brian Wing Shun Chan
@@ -177,13 +176,9 @@ public class MailEngine {
 			List<FileAttachment> fileAttachments, SMTPAccount smtpAccount)
 		throws MailEngineException {
 
-		StopWatch stopWatch = null;
+		long startTime = System.currentTimeMillis();
 
 		if (_log.isDebugEnabled()) {
-			stopWatch = new StopWatch();
-
-			stopWatch.start();
-
 			_log.debug("From: " + from);
 			_log.debug("To: " + Arrays.toString(to));
 			_log.debug("CC: " + Arrays.toString(cc));
@@ -216,23 +211,23 @@ public class MailEngine {
 		try {
 			InternetAddressUtil.validateAddress(from);
 
-			if (to != null) {
+			if (ArrayUtil.isNotEmpty(to)) {
 				InternetAddressUtil.validateAddresses(to);
 			}
 
-			if (cc != null) {
+			if (ArrayUtil.isNotEmpty(cc)) {
 				InternetAddressUtil.validateAddresses(cc);
 			}
 
-			if (bcc != null) {
+			if (ArrayUtil.isNotEmpty(bcc)) {
 				InternetAddressUtil.validateAddresses(bcc);
 			}
 
-			if (replyTo != null) {
+			if (ArrayUtil.isNotEmpty(replyTo)) {
 				InternetAddressUtil.validateAddresses(replyTo);
 			}
 
-			if (bulkAddresses != null) {
+			if (ArrayUtil.isNotEmpty(bulkAddresses)) {
 				InternetAddressUtil.validateAddresses(bulkAddresses);
 			}
 
@@ -252,15 +247,15 @@ public class MailEngine {
 
 			message.setFrom(from);
 
-			if (to != null) {
+			if (ArrayUtil.isNotEmpty(to)) {
 				message.setRecipients(Message.RecipientType.TO, to);
 			}
 
-			if (cc != null) {
+			if (ArrayUtil.isNotEmpty(cc)) {
 				message.setRecipients(Message.RecipientType.CC, cc);
 			}
 
-			if (bcc != null) {
+			if (ArrayUtil.isNotEmpty(bcc)) {
 				message.setRecipients(Message.RecipientType.BCC, bcc);
 			}
 
@@ -268,7 +263,7 @@ public class MailEngine {
 
 			message.setSubject(subject);
 
-			if ((fileAttachments != null) && (fileAttachments.size() > 0)) {
+			if (ListUtil.isNotEmpty(fileAttachments)) {
 				MimeMultipart rootMultipart = new MimeMultipart(
 					_MULTIPART_TYPE_MIXED);
 
@@ -337,7 +332,7 @@ public class MailEngine {
 
 			message.setSentDate(new Date());
 
-			if (replyTo != null) {
+			if (ArrayUtil.isNotEmpty(replyTo)) {
 				message.setReplyTo(replyTo);
 			}
 
@@ -367,7 +362,9 @@ public class MailEngine {
 		}
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Sending mail takes " + stopWatch.getTime() + " ms");
+			_log.debug(
+				"Sending mail takes " +
+					(System.currentTimeMillis() - startTime) + " ms");
 		}
 	}
 
@@ -619,6 +616,6 @@ public class MailEngine {
 
 	private static final String _TEXT_PLAIN = "text/plain;charset=\"UTF-8\"";
 
-	private static Log _log = LogFactoryUtil.getLog(MailEngine.class);
+	private static final Log _log = LogFactoryUtil.getLog(MailEngine.class);
 
 }

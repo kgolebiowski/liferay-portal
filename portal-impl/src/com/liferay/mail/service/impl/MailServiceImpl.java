@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,7 +18,6 @@ import com.liferay.mail.model.Filter;
 import com.liferay.mail.service.MailService;
 import com.liferay.mail.util.Hook;
 import com.liferay.portal.kernel.bean.IdentifiableBean;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.mail.Account;
@@ -132,7 +131,7 @@ public class MailServiceImpl implements MailService, IdentifiableBean {
 	}
 
 	@Override
-	public Session getSession() throws SystemException {
+	public Session getSession() {
 		if (_session != null) {
 			return _session;
 		}
@@ -304,26 +303,27 @@ public class MailServiceImpl implements MailService, IdentifiableBean {
 		MessageBusUtil.sendMessage(DestinationNames.MAIL, methodHandler);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(MailServiceImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		MailServiceImpl.class);
 
-	private static MethodKey _addForwardMethodKey = new MethodKey(
+	private static final MethodKey _addForwardMethodKey = new MethodKey(
 		Hook.class, "addForward", long.class, long.class, List.class,
 		List.class, boolean.class);
-	private static MethodKey _addUserMethodKey = new MethodKey(
+	private static final MethodKey _addUserMethodKey = new MethodKey(
 		Hook.class, "addUser", long.class, long.class, String.class,
 		String.class, String.class, String.class, String.class);
-	private static MethodKey _addVacationMessageMethodKey = new MethodKey(
+	private static final MethodKey _addVacationMessageMethodKey = new MethodKey(
 		Hook.class, "addVacationMessage", long.class, long.class, String.class,
 		String.class);
-	private static MethodKey _deleteEmailAddressMethodKey = new MethodKey(
+	private static final MethodKey _deleteEmailAddressMethodKey = new MethodKey(
 		Hook.class, "deleteEmailAddress", long.class, long.class);
-	private static MethodKey _deleteUserMethodKey = new MethodKey(
+	private static final MethodKey _deleteUserMethodKey = new MethodKey(
 		Hook.class, "deleteUser", long.class, long.class);
-	private static MethodKey _updateBlockedMethodKey = new MethodKey(
+	private static final MethodKey _updateBlockedMethodKey = new MethodKey(
 		Hook.class, "updateBlocked", long.class, long.class, List.class);
-	private static MethodKey _updateEmailAddressMethodKey = new MethodKey(
+	private static final MethodKey _updateEmailAddressMethodKey = new MethodKey(
 		Hook.class, "updateEmailAddress", long.class, long.class, String.class);
-	private static MethodKey _updatePasswordMethodKey = new MethodKey(
+	private static final MethodKey _updatePasswordMethodKey = new MethodKey(
 		Hook.class, "updatePassword", long.class, long.class, String.class);
 
 	private String _beanIdentifier;

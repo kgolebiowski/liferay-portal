@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -122,9 +121,8 @@ public interface UserNotificationDeliveryModel extends BaseModel<UserNotificatio
 	 * Returns the user uuid of this user notification delivery.
 	 *
 	 * @return the user uuid of this user notification delivery
-	 * @throws SystemException if a system exception occurred
 	 */
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this user notification delivery.
@@ -260,19 +258,20 @@ public interface UserNotificationDeliveryModel extends BaseModel<UserNotificatio
 	public Object clone();
 
 	@Override
-	public int compareTo(UserNotificationDelivery userNotificationDelivery);
+	public int compareTo(
+		com.liferay.portal.model.UserNotificationDelivery userNotificationDelivery);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<UserNotificationDelivery> toCacheModel();
+	public CacheModel<com.liferay.portal.model.UserNotificationDelivery> toCacheModel();
 
 	@Override
-	public UserNotificationDelivery toEscapedModel();
+	public com.liferay.portal.model.UserNotificationDelivery toEscapedModel();
 
 	@Override
-	public UserNotificationDelivery toUnescapedModel();
+	public com.liferay.portal.model.UserNotificationDelivery toUnescapedModel();
 
 	@Override
 	public String toString();

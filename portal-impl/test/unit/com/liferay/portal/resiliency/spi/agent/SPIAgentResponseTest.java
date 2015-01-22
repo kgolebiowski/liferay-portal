@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -63,8 +63,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 public class SPIAgentResponseTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -205,8 +205,9 @@ public class SPIAgentResponseTest {
 
 		// Portal resiliency action, byte model output, native buffer
 
-		byte[] byteArray = new byte[] {(
-			byte)0, (byte)1, (byte)2, (byte)3, (byte)4, (byte)5};
+		byte[] byteArray = new byte[] {
+			(byte)0, (byte)1, (byte)2, (byte)3, (byte)4, (byte)5
+		};
 
 		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(byteArray.length);
 
@@ -300,9 +301,10 @@ public class SPIAgentResponseTest {
 
 		bufferCacheServletResponse.setString(content);
 
-		mockHttpServletRequest.setServerPort(1234);
+		mockHttpServletRequest.setLocalAddr("127.0.0.1");
+		mockHttpServletRequest.setLocalPort(1234);
 
-		PortalUtil.setPortalPort(mockHttpServletRequest);
+		PortalUtil.setPortalInetSocketAddresses(mockHttpServletRequest);
 
 		mockHttpServletRequest.setParameter(
 			"portalResiliencyPortletShowFooter", StringPool.TRUE);
@@ -354,7 +356,7 @@ public class SPIAgentResponseTest {
 		spiAgentResponse.portalResiliencyResponse = true;
 
 		Map<String, Serializable> distributedRequestAttributes =
-			new HashMap<String, Serializable>();
+			new HashMap<>();
 
 		distributedRequestAttributes.put(
 			RequestAttributes.ATTRIBUTE_1, RequestAttributes.ATTRIBUTE_1);
@@ -364,8 +366,7 @@ public class SPIAgentResponseTest {
 		spiAgentResponse.distributedRequestAttributes =
 			distributedRequestAttributes;
 
-		Map<String, Serializable> deltaSessionAttributes =
-			new HashMap<String, Serializable>();
+		Map<String, Serializable> deltaSessionAttributes = new HashMap<>();
 
 		deltaSessionAttributes.put(_SESSION_ATTRIBUTE_1, _SESSION_ATTRIBUTE_1);
 		deltaSessionAttributes.put(_SESSION_ATTRIBUTE_2, _SESSION_ATTRIBUTE_2);
@@ -509,7 +510,7 @@ public class SPIAgentResponseTest {
 
 	private static final String _SESSION_ATTRIBUTE_3 = "SESSION_ATTRIBUTE_3";
 
-	private static ThreadLocal<String> _threadLocal = new ThreadLocal<String>();
+	private static final ThreadLocal<String> _threadLocal = new ThreadLocal<>();
 
 	private MockHttpServletRequest _mockHttpServletRequest;
 

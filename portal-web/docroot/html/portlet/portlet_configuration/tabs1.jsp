@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -78,39 +78,40 @@ scopeURL.setParameter("portletResource", portletResource);
 int pos = 0;
 
 String tabs1Names = StringPool.BLANK;
+String[] tabs1URLs = new String[0];
 
-if (Validator.isNotNull(selPortlet.getConfigurationActionClass())) {
+if (selPortlet.getConfigurationActionInstance() != null) {
 	tabs1Names += ",setup";
 
-	request.setAttribute("liferay-ui:tabs:url" + pos++, configurationURL.toString());
+	tabs1URLs = ArrayUtil.append(tabs1URLs, configurationURL.toString());
 }
 
 if (selPortlet.hasMultipleMimeTypes()) {
 	tabs1Names += ",supported-clients";
 
-	request.setAttribute("liferay-ui:tabs:url" + pos++, supportedClientsURL.toString());
+	tabs1URLs = ArrayUtil.append(tabs1URLs, supportedClientsURL.toString());
 }
 
 if (PortletPermissionUtil.contains(permissionChecker, layout, portletResource, ActionKeys.PERMISSIONS)) {
 	tabs1Names += ",permissions";
 
-	request.setAttribute("liferay-ui:tabs:url" + pos++, permissionsURL.toString());
+	tabs1URLs = ArrayUtil.append(tabs1URLs, permissionsURL.toString());
 }
 
 if (!selPortlet.getPublicRenderParameters().isEmpty()) {
 	tabs1Names += ",communication";
 
-	request.setAttribute("liferay-ui:tabs:url" + pos++, publicRenderParametersURL.toString());
+	tabs1URLs = ArrayUtil.append(tabs1URLs, publicRenderParametersURL.toString());
 }
 
 tabs1Names += ",sharing";
 
-request.setAttribute("liferay-ui:tabs:url" + pos++, sharingURL.toString());
+tabs1URLs = ArrayUtil.append(tabs1URLs, sharingURL.toString());
 
 if (selPortlet.isScopeable()) {
 	tabs1Names += ",scope";
 
-	request.setAttribute("liferay-ui:tabs:url" + pos++, scopeURL.toString());
+	tabs1URLs = ArrayUtil.append(tabs1URLs, scopeURL.toString());
 }
 
 if (tabs1Names.startsWith(",")) {
@@ -120,8 +121,8 @@ if (tabs1Names.startsWith(",")) {
 String tabs1 = ParamUtil.getString(request, "tabs1");
 
 PortalUtil.addPortletBreadcrumbEntry(request, PortalUtil.getPortletTitle(renderResponse), null);
-PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "configuration"), null);
-PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, tabs1), currentURL);
+PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "configuration"), null);
+PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, tabs1), currentURL);
 %>
 
-<liferay-ui:tabs names="<%= tabs1Names %>" />
+<liferay-ui:tabs names="<%= tabs1Names %>" type="pills" urls="<%= tabs1URLs %>" />

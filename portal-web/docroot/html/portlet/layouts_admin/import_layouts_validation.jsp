@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,6 +49,13 @@ boolean privateLayout = ParamUtil.getBoolean(request, "privateLayout");
 				var liferayUpload = new Liferay.Upload(
 					{
 						boundingBox: '#<portlet:namespace />fileUpload',
+
+						<%
+						DecimalFormatSymbols decimalFormatSymbols = DecimalFormatSymbols.getInstance(locale);
+						%>
+
+						decimalSeparator: '<%= decimalFormatSymbols.getDecimalSeparator() %>',
+
 						deleteFile: '<liferay-portlet:actionURL doAsUserId="<%= user.getUserId() %>"><portlet:param name="struts_action" value="/layouts_admin/import_layouts" /><portlet:param name="<%= Constants.CMD %>" value="<%= Constants.DELETE_TEMP %>" /></liferay-portlet:actionURL>&ticketKey=<%= ticket.getKey() %><liferay-ui:input-permissions-params modelName="<%= Group.class.getName() %>" />',
 						fileDescription: '<%= StringUtil.merge(PrefsPropsUtil.getStringArray(PropsKeys.DL_FILE_EXTENSIONS, StringPool.COMMA)) %>',
 						maxFileSize: '<%= PrefsPropsUtil.getLong(PropsKeys.UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE) %> B',
@@ -61,10 +68,10 @@ boolean privateLayout = ParamUtil.getBoolean(request, "privateLayout");
 						'strings.pendingFileText': '<liferay-ui:message key="this-file-was-previously-uploaded-but-not-actually-imported" />',
 						'strings.uploadsCompleteText': '<liferay-ui:message key="the-file-is-ready-to-be-imported" />',
 						tempFileURL: {
-							method: Liferay.Service.bind('/layout/get-temp-file-entry-names'),
+							method: Liferay.Service.bind('/layout/get-temp-file-names'),
 							params: {
 								groupId: <%= groupId %>,
-								tempFolderName: '<%= ExportImportHelper.TEMP_FOLDER_NAME %>'
+								folderName: '<%= ExportImportHelper.TEMP_FOLDER_NAME %>'
 							}
 						},
 						uploadFile: '<liferay-portlet:actionURL doAsUserId="<%= user.getUserId() %>"><portlet:param name="struts_action" value="/layouts_admin/import_layouts" /><portlet:param name="<%= Constants.CMD %>" value="<%= Constants.ADD_TEMP %>" /><portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" /><portlet:param name="privateLayout" value="<%= String.valueOf(privateLayout) %>" /></liferay-portlet:actionURL>&ticketKey=<%= ticket.getKey() %><liferay-ui:input-permissions-params modelName="<%= Group.class.getName() %>" />'
@@ -110,13 +117,6 @@ boolean privateLayout = ParamUtil.getBoolean(request, "privateLayout");
 		function(event) {
 			event.halt();
 
-			<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" var="importPagesURL">
-				<portlet:param name="struts_action" value="/layouts_admin/import_layouts" />
-				<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
-				<portlet:param name="privateLayout" value="<%= String.valueOf(privateLayout) %>" />
-				<portlet:param name="validate" value="<%= String.valueOf(Boolean.FALSE) %>" />
-			</liferay-portlet:resourceURL>
-
 			var exportImportOptions = A.one('#<portlet:namespace />exportImportOptions');
 
 			exportImportOptions.plug(
@@ -125,6 +125,15 @@ boolean privateLayout = ParamUtil.getBoolean(request, "privateLayout");
 					form: {
 						id: '<portlet:namespace />fm1'
 					},
+
+					<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" var="importPagesURL">
+						<portlet:param name="p_p_isolated" value="true" />
+						<portlet:param name="struts_action" value="/layouts_admin/import_layouts" />
+						<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
+						<portlet:param name="privateLayout" value="<%= String.valueOf(privateLayout) %>" />
+						<portlet:param name="validate" value="<%= String.valueOf(Boolean.FALSE) %>" />
+					</liferay-portlet:resourceURL>
+
 					uri: '<%= importPagesURL %>'
 				}
 			);

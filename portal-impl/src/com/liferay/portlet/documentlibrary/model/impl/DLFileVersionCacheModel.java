@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,9 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
@@ -34,11 +37,36 @@ import java.util.Date;
  * @see DLFileVersion
  * @generated
  */
+@ProviderType
 public class DLFileVersionCacheModel implements CacheModel<DLFileVersion>,
 	Externalizable {
 	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DLFileVersionCacheModel)) {
+			return false;
+		}
+
+		DLFileVersionCacheModel dlFileVersionCacheModel = (DLFileVersionCacheModel)obj;
+
+		if (fileVersionId == dlFileVersionCacheModel.fileVersionId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, fileVersionId);
+	}
+
+	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(53);
+		StringBundler sb = new StringBundler(55);
 
 		sb.append("{uuid=");
 		sb.append(uuid);
@@ -64,6 +92,8 @@ public class DLFileVersionCacheModel implements CacheModel<DLFileVersion>,
 		sb.append(fileEntryId);
 		sb.append(", treePath=");
 		sb.append(treePath);
+		sb.append(", fileName=");
+		sb.append(fileName);
 		sb.append(", extension=");
 		sb.append(extension);
 		sb.append(", mimeType=");
@@ -143,6 +173,13 @@ public class DLFileVersionCacheModel implements CacheModel<DLFileVersion>,
 		}
 		else {
 			dlFileVersionImpl.setTreePath(treePath);
+		}
+
+		if (fileName == null) {
+			dlFileVersionImpl.setFileName(StringPool.BLANK);
+		}
+		else {
+			dlFileVersionImpl.setFileName(fileName);
 		}
 
 		if (extension == null) {
@@ -241,6 +278,7 @@ public class DLFileVersionCacheModel implements CacheModel<DLFileVersion>,
 		folderId = objectInput.readLong();
 		fileEntryId = objectInput.readLong();
 		treePath = objectInput.readUTF();
+		fileName = objectInput.readUTF();
 		extension = objectInput.readUTF();
 		mimeType = objectInput.readUTF();
 		title = objectInput.readUTF();
@@ -290,6 +328,13 @@ public class DLFileVersionCacheModel implements CacheModel<DLFileVersion>,
 		}
 		else {
 			objectOutput.writeUTF(treePath);
+		}
+
+		if (fileName == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(fileName);
 		}
 
 		if (extension == null) {
@@ -377,6 +422,7 @@ public class DLFileVersionCacheModel implements CacheModel<DLFileVersion>,
 	public long folderId;
 	public long fileEntryId;
 	public String treePath;
+	public String fileName;
 	public String extension;
 	public String mimeType;
 	public String title;

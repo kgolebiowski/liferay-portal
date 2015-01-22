@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -29,22 +29,24 @@ import com.liferay.taglib.ui.IconTag;
 import com.liferay.taglib.ui.JournalArticleTag;
 import com.liferay.taglib.ui.MySitesTag;
 import com.liferay.taglib.ui.PngImageTag;
+import com.liferay.taglib.ui.QuickAccessTag;
 import com.liferay.taglib.ui.RatingsTag;
 
 import javax.portlet.PortletURL;
 import javax.portlet.WindowState;
 
 import javax.servlet.ServletContext;
+import javax.servlet.jsp.PageContext;
 
 /**
  * @author Daniel Reuther
  */
 public interface VelocityTaglib {
 
-	public void actionURL(long plid, String portletName, String queryString)
+	public String actionURL(long plid, String portletName, String queryString)
 		throws Exception;
 
-	public void actionURL(String portletName, String queryString)
+	public String actionURL(String portletName, String queryString)
 		throws Exception;
 
 	/**
@@ -53,7 +55,7 @@ public interface VelocityTaglib {
 	 *             Boolean, Boolean, long, long, Boolean, String)}
 	 */
 	@Deprecated
-	public void actionURL(
+	public String actionURL(
 			String windowState, String portletMode, Boolean secure,
 			Boolean copyCurrentRenderParameters, Boolean escapeXml, String name,
 			long plid, long refererPlid, String portletName, Boolean anchor,
@@ -61,7 +63,7 @@ public interface VelocityTaglib {
 			String queryString)
 		throws Exception;
 
-	public void actionURL(
+	public String actionURL(
 			String windowState, String portletMode, Boolean secure,
 			Boolean copyCurrentRenderParameters, Boolean escapeXml, String name,
 			long plid, long refererPlid, String portletName, Boolean anchor,
@@ -69,12 +71,12 @@ public interface VelocityTaglib {
 			Boolean portletConfiguration, String queryString)
 		throws Exception;
 
-	public void actionURL(
+	public String actionURL(
 			String windowState, String portletMode, long plid,
 			String portletName, String queryString)
 		throws Exception;
 
-	public void actionURL(
+	public String actionURL(
 			String windowState, String portletMode, String portletName,
 			String queryString)
 		throws Exception;
@@ -147,7 +149,11 @@ public interface VelocityTaglib {
 
 	public MySitesTag getMySitesTag() throws Exception;
 
+	public PageContext getPageContext();
+
 	public PngImageTag getPngImageTag() throws Exception;
+
+	public QuickAccessTag getQuickAccessTag() throws Exception;
 
 	public RatingsTag getRatingsTag() throws Exception;
 
@@ -256,7 +262,7 @@ public interface VelocityTaglib {
 	public void include(String page) throws Exception;
 
 	public void journalArticle(
-			String articleId, long groupId, String templateId)
+			String articleId, long groupId, String ddmTemplateKey)
 		throws Exception;
 
 	public void journalContentSearch() throws Exception;
@@ -268,12 +274,13 @@ public interface VelocityTaglib {
 	public void language() throws Exception;
 
 	public void language(
-			String formName, String formAction, String name, int displayStyle)
+			String formName, String formAction, String name,
+			String displayStyle)
 		throws Exception;
 
 	public void language(
 			String formName, String formAction, String name,
-			String[] languageIds, int displayStyle)
+			String[] languageIds, String displayStyle)
 		throws Exception;
 
 	public void layoutIcon(Layout layout) throws Exception;
@@ -296,7 +303,7 @@ public interface VelocityTaglib {
 
 	public void mySites(int max) throws Exception;
 
-	public void permissionsURL(
+	public String permissionsURL(
 			String redirect, String modelResource,
 			String modelResourceDescription, Object resourceGroupId,
 			String resourcePrimKey, String windowState, int[] roleTypes)
@@ -307,7 +314,7 @@ public interface VelocityTaglib {
 	 *             String, String, Object, String, String, int[])}
 	 */
 	@Deprecated
-	public void permissionsURL(
+	public String permissionsURL(
 			String redirect, String modelResource,
 			String modelResourceDescription, String resourcePrimKey,
 			String windowState, int[] roleTypes)
@@ -343,18 +350,22 @@ public interface VelocityTaglib {
 
 	public void portletIconRefresh() throws Exception;
 
+	public void quickAccess() throws Exception;
+
+	public void quickAccess(String contentId) throws Exception;
+
 	public void ratings(
 			String className, long classPK, int numberOfStars, String type,
 			String url)
 		throws Exception;
 
-	public void renderURL(long plid, String portletName, String queryString)
+	public String renderURL(long plid, String portletName, String queryString)
 		throws Exception;
 
-	public void renderURL(String portletName, String queryString)
+	public String renderURL(String portletName, String queryString)
 		throws Exception;
 
-	public void renderURL(
+	public String renderURL(
 			String windowState, String portletMode, Boolean secure,
 			Boolean copyCurrentRenderParameters, Boolean escapeXml, long plid,
 			long refererPlid, String portletName, Boolean anchor,
@@ -368,19 +379,19 @@ public interface VelocityTaglib {
 	 *             Boolean, long, long, Boolean, String)}
 	 */
 	@Deprecated
-	public void renderURL(
+	public String renderURL(
 			String windowState, String portletMode, Boolean secure,
 			Boolean copyCurrentRenderParameters, Boolean escapeXml, long plid,
 			String portletName, Boolean anchor, Boolean encrypt,
 			long doAsUserId, Boolean portletConfiguration, String queryString)
 		throws Exception;
 
-	public void renderURL(
+	public String renderURL(
 			String windowState, String portletMode, long plid,
 			String portletName, String queryString)
 		throws Exception;
 
-	public void renderURL(
+	public String renderURL(
 			String windowState, String portletMode, String portletName,
 			String queryString)
 		throws Exception;
@@ -408,6 +419,10 @@ public interface VelocityTaglib {
 			String url)
 		throws Exception;
 
+	/**
+	 * @deprecated As of 7.0.0, with no direct replacement
+	 */
+	@Deprecated
 	public void staging() throws Exception;
 
 	public void toggle(

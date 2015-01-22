@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -84,7 +84,7 @@ public class WorkflowPermissionImpl implements WorkflowPermission {
 				return null;
 			}
 
-			boolean hasPermission = isWorkflowTaskAssignedToUser(
+			boolean hasPermission = hasImplicitPermission(
 				permissionChecker, workflowInstance);
 
 			if (!hasPermission && actionId.equals(ActionKeys.VIEW)) {
@@ -98,25 +98,29 @@ public class WorkflowPermissionImpl implements WorkflowPermission {
 		return null;
 	}
 
-	protected boolean isWorkflowTaskAssignedToUser(
+	protected boolean hasImplicitPermission(
 			PermissionChecker permissionChecker,
 			WorkflowInstance workflowInstance)
 		throws WorkflowException {
 
-		int count =
-			WorkflowTaskManagerUtil.getWorkflowTaskCountByWorkflowInstance(
+		if (WorkflowTaskManagerUtil.getWorkflowTaskCountByWorkflowInstance(
 				permissionChecker.getCompanyId(), permissionChecker.getUserId(),
-				workflowInstance.getWorkflowInstanceId(), Boolean.FALSE);
+				workflowInstance.getWorkflowInstanceId(), Boolean.FALSE) > 0) {
 
-		if (count > 0) {
 			return true;
 		}
-		else {
-			return false;
+
+		if (WorkflowTaskManagerUtil.getWorkflowTaskCountByUserRoles(
+				permissionChecker.getCompanyId(), permissionChecker.getUserId(),
+				Boolean.FALSE) > 0) {
+
+			return true;
 		}
+
+		return false;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		WorkflowPermissionImpl.class);
 
 }

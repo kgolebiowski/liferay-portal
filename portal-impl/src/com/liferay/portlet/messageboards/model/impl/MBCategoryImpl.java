@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.messageboards.model.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portlet.messageboards.model.MBCategory;
 import com.liferay.portlet.messageboards.model.MBCategoryConstants;
 import com.liferay.portlet.messageboards.service.MBCategoryLocalServiceUtil;
@@ -28,14 +27,9 @@ import java.util.List;
  */
 public class MBCategoryImpl extends MBCategoryBaseImpl {
 
-	public MBCategoryImpl() {
-	}
-
 	@Override
-	public List<Long> getAncestorCategoryIds()
-		throws PortalException, SystemException {
-
-		List<Long> ancestorCategoryIds = new ArrayList<Long>();
+	public List<Long> getAncestorCategoryIds() throws PortalException {
+		List<Long> ancestorCategoryIds = new ArrayList<>();
 
 		MBCategory category = this;
 
@@ -50,10 +44,8 @@ public class MBCategoryImpl extends MBCategoryBaseImpl {
 	}
 
 	@Override
-	public List<MBCategory> getAncestors()
-		throws PortalException, SystemException {
-
-		List<MBCategory> ancestors = new ArrayList<MBCategory>();
+	public List<MBCategory> getAncestors() throws PortalException {
+		List<MBCategory> ancestors = new ArrayList<>();
 
 		MBCategory category = this;
 
@@ -67,9 +59,7 @@ public class MBCategoryImpl extends MBCategoryBaseImpl {
 	}
 
 	@Override
-	public MBCategory getParentCategory()
-		throws PortalException, SystemException {
-
+	public MBCategory getParentCategory() throws PortalException {
 		long parentCategoryId = getParentCategoryId();
 
 		if ((parentCategoryId ==

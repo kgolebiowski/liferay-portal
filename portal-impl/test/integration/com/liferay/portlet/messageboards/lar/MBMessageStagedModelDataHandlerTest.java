@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,7 @@ package com.liferay.portlet.messageboards.lar;
 
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.lar.BaseWorkflowedStagedModelDataHandlerTestCase;
@@ -24,14 +24,16 @@ import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Repository;
 import com.liferay.portal.model.StagedModel;
 import com.liferay.portal.service.persistence.RepositoryUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
+import com.liferay.portlet.documentlibrary.model.DLFileEntry;
+import com.liferay.portlet.documentlibrary.model.DLFolder;
 import com.liferay.portlet.messageboards.model.MBCategory;
 import com.liferay.portlet.messageboards.model.MBMessage;
 import com.liferay.portlet.messageboards.service.MBCategoryLocalServiceUtil;
 import com.liferay.portlet.messageboards.service.MBMessageLocalServiceUtil;
-import com.liferay.portlet.messageboards.util.MBTestUtil;
+import com.liferay.portlet.messageboards.util.test.MBTestUtil;
 
 import java.io.InputStream;
 
@@ -41,19 +43,21 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
-import org.junit.runner.RunWith;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
 /**
  * @author Daniel Kocsis
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class MBMessageStagedModelDataHandlerTest
 	extends BaseWorkflowedStagedModelDataHandlerTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
 
 	@Override
 	protected Map<String, List<StagedModel>> addDependentStagedModelsMap(
@@ -61,7 +65,7 @@ public class MBMessageStagedModelDataHandlerTest
 		throws Exception {
 
 		Map<String, List<StagedModel>> dependentStagedModelsMap =
-			new HashMap<String, List<StagedModel>>();
+			new HashMap<>();
 
 		MBCategory category = MBTestUtil.addCategory(group.getGroupId());
 
@@ -90,6 +94,8 @@ public class MBMessageStagedModelDataHandlerTest
 			group.getGroupId(), category.getCategoryId(), true,
 			objectValuePairs);
 
+		MBMessageLocalServiceUtil.updateAnswer(message, true, false);
+
 		List<FileEntry> attachmentsFileEntries =
 			message.getAttachmentsFileEntries();
 
@@ -99,13 +105,13 @@ public class MBMessageStagedModelDataHandlerTest
 
 		while (folder != null) {
 			addDependentStagedModel(
-				dependentStagedModelsMap, Folder.class, folder);
+				dependentStagedModelsMap, DLFolder.class, folder);
 
 			folder = folder.getParentFolder();
 		}
 
 		addDependentStagedModel(
-			dependentStagedModelsMap, FileEntry.class,
+			dependentStagedModelsMap, DLFileEntry.class,
 			attachmentsFileEntries.get(0));
 
 		Repository repository = RepositoryUtil.fetchByPrimaryKey(
@@ -121,7 +127,7 @@ public class MBMessageStagedModelDataHandlerTest
 	protected List<StagedModel> addWorkflowedStagedModels(Group group)
 		throws Exception {
 
-		List<StagedModel> stagedModels = new ArrayList<StagedModel>();
+		List<StagedModel> stagedModels = new ArrayList<>();
 
 		stagedModels.add(
 			MBTestUtil.addMessageWithWorkflow(group.getGroupId(), true));
@@ -180,6 +186,7 @@ public class MBMessageStagedModelDataHandlerTest
 
 		Assert.assertEquals(
 			1, importedMessage.getAttachmentsFileEntriesCount());
+		Assert.assertTrue(importedMessage.isAnswer());
 	}
 
 }

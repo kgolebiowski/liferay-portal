@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -79,7 +79,7 @@ public class EditLayoutBranchAction extends EditLayoutsAction {
 						SessionMessages.KEY_SUFFIX_REFRESH_PORTLET,
 					PortletKeys.STAGING_BAR);
 
-				Map<String, String> data = new HashMap<String, String>();
+				Map<String, String> data = new HashMap<>();
 
 				data.put("preventNotification", Boolean.TRUE.toString());
 

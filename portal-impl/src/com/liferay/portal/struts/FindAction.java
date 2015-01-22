@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.Group;
@@ -28,6 +29,7 @@ import com.liferay.portal.model.LayoutConstants;
 import com.liferay.portal.model.LayoutTypePortlet;
 import com.liferay.portal.model.PortletConstants;
 import com.liferay.portal.model.impl.VirtualLayout;
+import com.liferay.portal.security.auth.PrincipalException;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.service.GroupLocalServiceUtil;
@@ -74,7 +76,6 @@ public abstract class FindAction extends Action {
 			WebKeys.THEME_DISPLAY);
 
 		try {
-			long plid = ParamUtil.getLong(request, "p_l_id");
 			long primaryKey = ParamUtil.getLong(
 				request, getPrimaryKeyParameterName());
 
@@ -97,11 +98,15 @@ public abstract class FindAction extends Action {
 			}
 
 			Object[] plidAndPortletId = getPlidAndPortletId(
-				themeDisplay, groupId, plid, _portletIds);
+				themeDisplay, groupId, themeDisplay.getPlid(), _portletIds);
 
-			plid = (Long)plidAndPortletId[0];
+			long plid = (Long)plidAndPortletId[0];
 
-			setTargetGroup(request, groupId, plid);
+			Layout layout = setTargetLayout(request, groupId, plid);
+
+			LayoutPermissionUtil.check(
+				themeDisplay.getPermissionChecker(), layout, true,
+				ActionKeys.VIEW);
 
 			String portletId = (String)plidAndPortletId[1];
 
@@ -152,7 +157,8 @@ public abstract class FindAction extends Action {
 				noSuchEntryRedirect);
 
 			if (Validator.isNotNull(noSuchEntryRedirect) &&
-				(e instanceof NoSuchLayoutException)) {
+				(e instanceof NoSuchLayoutException ||
+				 e instanceof PrincipalException)) {
 
 				response.sendRedirect(noSuchEntryRedirect);
 			}
@@ -244,7 +250,21 @@ public abstract class FindAction extends Action {
 			return plidAndPortletId;
 		}
 
-		throw new NoSuchLayoutException();
+		StringBundler sb = new StringBundler(portletIds.length * 2 + 5);
+
+		sb.append("{groupId=");
+		sb.append(groupId);
+		sb.append(", plid=");
+		sb.append(plid);
+
+		for (String portletId : portletIds) {
+			sb.append(", portletId=");
+			sb.append(portletId);
+		}
+
+		sb.append("}");
+
+		throw new NoSuchLayoutException(sb.toString());
 	}
 
 	protected static String getPortletId(
@@ -262,7 +282,7 @@ public abstract class FindAction extends Action {
 		return portletId;
 	}
 
-	protected static void setTargetGroup(
+	protected static Layout setTargetLayout(
 			HttpServletRequest request, long groupId, long plid)
 		throws Exception {
 
@@ -272,21 +292,23 @@ public abstract class FindAction extends Action {
 		PermissionChecker permissionChecker =
 			themeDisplay.getPermissionChecker();
 
+		Group group = GroupLocalServiceUtil.getGroup(groupId);
 		Layout layout = LayoutLocalServiceUtil.getLayout(plid);
 
 		if ((groupId == layout.getGroupId()) ||
+			(group.getParentGroupId() == layout.getGroupId()) ||
 			(layout.isPrivateLayout() &&
 			 !SitesUtil.isUserGroupLayoutSetViewable(
 				permissionChecker, layout.getGroup()))) {
 
-			return;
+			return layout;
 		}
 
-		Group targetGroup = GroupLocalServiceUtil.getGroup(groupId);
-
-		layout = new VirtualLayout(layout, targetGroup);
+		layout = new VirtualLayout(layout, group);
 
 		request.setAttribute(WebKeys.LAYOUT, layout);
+
+		return layout;
 	}
 
 	protected abstract long getGroupId(long primaryKey) throws Exception;
@@ -313,8 +335,8 @@ public abstract class FindAction extends Action {
 			getPrimaryKeyParameterName(), String.valueOf(primaryKey));
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(FindAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(FindAction.class);
 
-	private String[] _portletIds;
+	private final String[] _portletIds;
 
 }

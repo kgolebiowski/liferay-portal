@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,6 @@
 
 package com.liferay.portal.servlet;
 
-import com.liferay.portal.kernel.servlet.PluginContextListener;
 import com.liferay.portal.util.ClassLoaderUtil;
 
 import java.io.IOException;
@@ -61,12 +60,10 @@ public class ClassLoaderRequestDispatcherWrapper implements RequestDispatcher {
 		ClassLoader contextClassLoader =
 			ClassLoaderUtil.getContextClassLoader();
 
-		ClassLoader pluginClassLoader =
-			(ClassLoader)_servletContext.getAttribute(
-				PluginContextListener.PLUGIN_CLASS_LOADER);
+		ClassLoader pluginClassLoader = _servletContext.getClassLoader();
 
 		try {
-			if (pluginClassLoader == null) {
+			if (pluginClassLoader == ClassLoaderUtil.getPortalClassLoader()) {
 				ClassLoaderUtil.setContextClassLoader(
 					ClassLoaderUtil.getPortalClassLoader());
 			}
@@ -86,7 +83,7 @@ public class ClassLoaderRequestDispatcherWrapper implements RequestDispatcher {
 		}
 	}
 
-	private RequestDispatcher _requestDispatcher;
-	private ServletContext _servletContext;
+	private final RequestDispatcher _requestDispatcher;
+	private final ServletContext _servletContext;
 
 }

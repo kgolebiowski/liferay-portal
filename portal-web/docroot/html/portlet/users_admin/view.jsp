@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -47,7 +47,7 @@ request.setAttribute("view.jsp-portletURL", portletURL);
 <liferay-ui:error exception="<%= RequiredOrganizationException.class %>" message="you-cannot-delete-organizations-that-have-suborganizations-or-users" />
 <liferay-ui:error exception="<%= RequiredUserException.class %>" message="you-cannot-delete-or-deactivate-yourself" />
 
-<aui:form action="<%= portletURLString %>" method="post" name="fm">
+<aui:form action="<%= portletURLString %>" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "search();" %>'>
 	<liferay-portlet:renderURLParams varImpl="portletURL" />
 	<aui:input name="<%= Constants.CMD %>" type="hidden" />
 	<aui:input name="toolbarItem" type="hidden" value="<%= toolbarItem %>" />
@@ -122,39 +122,55 @@ request.setAttribute("view.jsp-portletURL", portletURL);
 		<portlet:namespace />doDeleteOrganization('<%= Organization.class.getName() %>', organizationId);
 	}
 
-	function <portlet:namespace />doDeleteOrganization(className, id) {
-		var ids = id;
+	function <portlet:namespace />deleteOrganizations() {
+		<portlet:namespace />doDeleteOrganization(
+			'<%= Organization.class.getName() %>',
+			Liferay.Util.listCheckedExcept(document.<portlet:namespace />fm, '<portlet:namespace />allRowIds', '<portlet:namespace />rowIdsOrganization')
+		);
+	}
 
+	function <portlet:namespace />deleteUsers(cmd) {
+		if (((cmd == '<%= Constants.DEACTIVATE %>') && confirm('<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-deactivate-the-selected-users") %>')) || ((cmd == '<%= Constants.DELETE %>') && confirm('<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-permanently-delete-the-selected-users") %>')) || (cmd == '<%= Constants.RESTORE %>')) {
+			var form = AUI.$(document.<portlet:namespace />fm);
+
+			form.attr('method', 'post');
+			form.fm('<%= Constants.CMD %>').val(cmd);
+			form.fm('redirect').val(form.fm('usersRedirect').val());
+			form.fm('deleteUserIds').val(Liferay.Util.listCheckedExcept(form, '<portlet:namespace />allRowIds', '<portlet:namespace />rowIdsUser'));
+
+			submitForm(form, '<portlet:actionURL><portlet:param name="struts_action" value="/users_admin/edit_user" /></portlet:actionURL>');
+		}
+	}
+
+	function <portlet:namespace />doDeleteOrganization(className, ids) {
 		var status = <%= WorkflowConstants.STATUS_INACTIVE %>;
 
 		<portlet:namespace />getUsersCount(
 			className, ids, status,
-			function(event, id, obj) {
-				var responseData = this.get('responseData');
+			function(responseData) {
 				var count = parseInt(responseData);
 
 				if (count > 0) {
-					status = <%= WorkflowConstants.STATUS_APPROVED %>
+					status = <%= WorkflowConstants.STATUS_APPROVED %>;
 
 					<portlet:namespace />getUsersCount(
 						className, ids, status,
-						function(event, id, obj) {
-							responseData = this.get('responseData')
+						function(responseData) {
 							count = parseInt(responseData);
 
 							if (count > 0) {
-								if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "are-you-sure-you-want-to-delete-this") %>')) {
+								if (confirm('<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-delete-this") %>')) {
 									<portlet:namespace />doDeleteOrganizations(ids);
 								}
 							}
 							else {
-								var message = null;
+								var message;
 
-								if (id && (id.toString().split(",").length > 1)) {
-									message = '<%= UnicodeLanguageUtil.get(pageContext, "one-or-more-organizations-are-associated-with-deactivated-users.-do-you-want-to-proceed-with-deleting-the-selected-organizations-by-automatically-unassociating-the-deactivated-users") %>';
+								if (ids && (ids.toString().split(',').length > 1)) {
+									message = '<%= UnicodeLanguageUtil.get(request, "one-or-more-organizations-are-associated-with-deactivated-users.-do-you-want-to-proceed-with-deleting-the-selected-organizations-by-automatically-unassociating-the-deactivated-users") %>';
 								}
 								else {
-									message = '<%= UnicodeLanguageUtil.get(pageContext, "the-selected-organization-is-associated-with-deactivated-users.-do-you-want-to-proceed-with-deleting-the-selected-organization-by-automatically-unassociating-the-deactivated-users") %>';
+									message = '<%= UnicodeLanguageUtil.get(request, "the-selected-organization-is-associated-with-deactivated-users.-do-you-want-to-proceed-with-deleting-the-selected-organization-by-automatically-unassociating-the-deactivated-users") %>';
 								}
 
 								if (confirm(message)) {
@@ -165,7 +181,7 @@ request.setAttribute("view.jsp-portletURL", portletURL);
 					);
 				}
 				else {
-					if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "are-you-sure-you-want-to-delete-this") %>')) {
+					if (confirm('<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-delete-this") %>')) {
 						<portlet:namespace />doDeleteOrganizations(ids);
 					}
 				}
@@ -174,19 +190,37 @@ request.setAttribute("view.jsp-portletURL", portletURL);
 	}
 
 	function <portlet:namespace />doDeleteOrganizations(organizationIds) {
-		document.<portlet:namespace />fm.method = "post";
-		document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = "<%= Constants.DELETE %>";
-		document.<portlet:namespace />fm.<portlet:namespace />redirect.value = document.<portlet:namespace />fm.<portlet:namespace />organizationsRedirect.value;
-		document.<portlet:namespace />fm.<portlet:namespace />deleteOrganizationIds.value = organizationIds;
+		var form = AUI.$(document.<portlet:namespace />fm);
 
-		submitForm(document.<portlet:namespace />fm, "<portlet:actionURL><portlet:param name="struts_action" value="/users_admin/edit_organization" /></portlet:actionURL>");
+		form.attr('method', 'post');
+		form.fm('<%= Constants.CMD %>').val('<%= Constants.DELETE %>');
+		form.fm('redirect').val(form.fm('organizationsRedirect').val());
+		form.fm('deleteOrganizationIds').val(organizationIds);
+
+		submitForm(form, '<portlet:actionURL><portlet:param name="struts_action" value="/users_admin/edit_organization" /></portlet:actionURL>');
+	}
+
+	function <portlet:namespace />getUsersCount(className, ids, status, callback) {
+		AUI.$.ajax(
+			'<%= themeDisplay.getPathMain() %>/users_admin/get_users_count',
+			{
+				data: {
+					className: className,
+					ids: ids,
+					status: status
+				},
+				success: callback
+			}
+		);
 	}
 
 	function <portlet:namespace />search() {
-		document.<portlet:namespace />fm.method = "post";
-		document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = "";
+		var form = AUI.$(document.<portlet:namespace />fm);
 
-		submitForm(document.<portlet:namespace />fm, '<%= portletURLString %>');
+		form.attr('method', 'post');
+		form.fm('<%= Constants.CMD %>').val('');
+
+		submitForm(form, '<%= portletURLString %>');
 	}
 
 	function <portlet:namespace />showUsers(status) {
@@ -210,55 +244,4 @@ request.setAttribute("view.jsp-portletURL", portletURL);
 
 		location.href = Liferay.Util.addParams('<portlet:namespace />status=' + status.value, '<%= showUsersURL.toString() %>');
 	}
-
-	Liferay.provide(
-		window,
-		'<portlet:namespace />deleteOrganizations',
-		function() {
-			<portlet:namespace />doDeleteOrganization(
-				'<%= Organization.class.getName() %>',
-				Liferay.Util.listCheckedExcept(document.<portlet:namespace />fm, '<portlet:namespace />allRowIds', '<portlet:namespace />rowIdsOrganizationCheckbox')
-			);
-		},
-		['liferay-util-list-fields']
-	);
-
-	Liferay.provide(
-		window,
-		'<portlet:namespace />deleteUsers',
-		function(cmd) {
-			if (((cmd == "<%= Constants.DEACTIVATE %>") && confirm('<%= UnicodeLanguageUtil.get(pageContext, "are-you-sure-you-want-to-deactivate-the-selected-users") %>')) || ((cmd == "<%= Constants.DELETE %>") && confirm('<%= UnicodeLanguageUtil.get(pageContext, "are-you-sure-you-want-to-permanently-delete-the-selected-users") %>')) || (cmd == "<%= Constants.RESTORE %>")) {
-				document.<portlet:namespace />fm.method = "post";
-				document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = cmd;
-				document.<portlet:namespace />fm.<portlet:namespace />redirect.value = document.<portlet:namespace />fm.<portlet:namespace />usersRedirect.value;
-				document.<portlet:namespace />fm.<portlet:namespace />deleteUserIds.value = Liferay.Util.listCheckedExcept(document.<portlet:namespace />fm, '<portlet:namespace />allRowIds', '<portlet:namespace />rowIdsUserCheckbox');
-
-				submitForm(document.<portlet:namespace />fm, "<portlet:actionURL><portlet:param name="struts_action" value="/users_admin/edit_user" /></portlet:actionURL>");
-			}
-		},
-		['liferay-util-list-fields']
-	);
-
-	Liferay.provide(
-		window,
-		'<portlet:namespace />getUsersCount',
-		function(className, ids, status, callback) {
-			var A = AUI();
-
-			A.io.request(
-				'<%= themeDisplay.getPathMain() %>/users_admin/get_users_count',
-				{
-					data: {
-						className: className,
-						ids: ids,
-						status: status
-					},
-					on: {
-						success: callback
-					}
-				}
-			);
-		},
-		['aui-io']
-	);
 </aui:script>

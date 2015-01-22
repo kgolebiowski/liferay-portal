@@ -1,37 +1,55 @@
-@import "compass";
+@import "bourbon";
 @import "mixins";
 
 @include respond-to(phone, tablet) {
-	.aui {
-		.dockbar .navbar-inner .container {
+	.dockbar {
+		.container, .container-fluid {
+			padding: 0 5px;
 
-			#_145_navAddControlsNavbarBtn, #_145_navSiteNavigationNavbarBtn {
+			.nav-add-controls-btn {
 				display: none;
 			}
 
 			.nav-account-controls {
+				float: right;
 				text-align: top;
 			}
 
-			.brand {
-				padding: 12px 0 0 0;
+			.navbar-brand {
+				@include display(flex);
+				@include flex-grow(1);
+				@include flex-shrink(500);
+
 				line-height: 16px;
+				margin-left: 0;
+				min-width: 128px;
+				padding: 12px 0 0 0;
+				white-space: nowrap;
+				width: auto;
 
 				.control-panel-back-link {
 					float: left;
 					margin-top: 6px;
+					position: relative;
+					z-index: 2;
 
 					@include respond-to(phone) {
+						@include flex-shrink(0);
+
 						margin: 0;
 						padding: 6px 8px;
+						position: absolute;
 					}
 				}
 
 				h1 {
 					@include respond-to(phone) {
+						display: block;
 						height: 51px;
-						margin-top: -5px;
-						max-width: 165px;
+						line-height: 16px;
+						max-width: 100%;
+						min-width: 55px;
+						padding: 0 16px 0 33px;
 						position: relative;
 
 						a {
@@ -39,7 +57,7 @@
 							overflow: hidden;
 							text-overflow: ellipsis;
 							white-space: nowrap;
-							width: 75px;
+							width: 100%;
 
 							.lfr-icon-menu-text {
 								font-size: 18px;
@@ -47,7 +65,10 @@
 						}
 
 						.control-panel-site-selector, .site-administration-title {
+							display: block;
+
 							@include ellipsis;
+
 							font-size: 16px;
 						}
 
@@ -57,7 +78,7 @@
 							i {
 								bottom: 4px;
 								position: absolute;
-								right: -15px;
+								right: 0;
 							}
 						}
 
@@ -66,13 +87,13 @@
 						}
 					}
 
-					@include respond-to(tablet) {
+					@include respond-to(phone, tablet) {
 						line-height: 32px;
 					}
 				}
 			}
 
-			.btn-navbar {
+			.navbar-btn {
 				float: right;
 			}
 
@@ -84,9 +105,7 @@
 }
 
 @include respond-to(phone) {
-	.aui{
-		.control-panel-home-actions {
-			display: none;
-		}
+	.control-panel-home-actions, .portlet-title .taglib-icon-help {
+		display: none;
 	}
 }

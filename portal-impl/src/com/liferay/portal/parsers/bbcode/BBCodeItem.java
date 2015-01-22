@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,8 +20,8 @@ package com.liferay.portal.parsers.bbcode;
 public class BBCodeItem {
 
 	public BBCodeItem(int type, String attribute, String value) {
-		_attribute = attribute;
 		_type = type;
+		_attribute = attribute;
 		_value = value;
 	}
 
@@ -37,8 +37,8 @@ public class BBCodeItem {
 		return _value;
 	}
 
-	private String _attribute;
-	private int _type;
-	private String _value;
+	private final String _attribute;
+	private final int _type;
+	private final String _value;
 
 }

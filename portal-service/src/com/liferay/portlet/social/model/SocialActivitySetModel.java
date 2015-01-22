@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portlet.social.model;
 
 import aQute.bnd.annotation.ProviderType;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.model.AttachedModel;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.CacheModel;
@@ -122,9 +121,8 @@ public interface SocialActivitySetModel extends AttachedModel,
 	 * Returns the user uuid of this social activity set.
 	 *
 	 * @return the user uuid of this social activity set
-	 * @throws SystemException if a system exception occurred
 	 */
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this social activity set.
@@ -282,19 +280,20 @@ public interface SocialActivitySetModel extends AttachedModel,
 	public Object clone();
 
 	@Override
-	public int compareTo(SocialActivitySet socialActivitySet);
+	public int compareTo(
+		com.liferay.portlet.social.model.SocialActivitySet socialActivitySet);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<SocialActivitySet> toCacheModel();
+	public CacheModel<com.liferay.portlet.social.model.SocialActivitySet> toCacheModel();
 
 	@Override
-	public SocialActivitySet toEscapedModel();
+	public com.liferay.portlet.social.model.SocialActivitySet toEscapedModel();
 
 	@Override
-	public SocialActivitySet toUnescapedModel();
+	public com.liferay.portlet.social.model.SocialActivitySet toUnescapedModel();
 
 	@Override
 	public String toString();

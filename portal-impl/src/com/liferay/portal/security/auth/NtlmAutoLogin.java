@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,12 @@
 
 package com.liferay.portal.security.auth;
 
-import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.model.User;
-import com.liferay.portal.security.ldap.PortalLDAPImporterUtil;
+import com.liferay.portal.security.exportimport.UserImporterUtil;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.PrefsPropsUtil;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,10 @@ public class NtlmAutoLogin extends BaseAutoLogin {
 
 		long companyId = PortalUtil.getCompanyId(request);
 
-		if (!AuthSettingsUtil.isNtlmEnabled(companyId)) {
+		if (!PrefsPropsUtil.getBoolean(
+				companyId, PropsKeys.NTLM_AUTH_ENABLED,
+				PropsValues.NTLM_AUTH_ENABLED)) {
+
 			return null;
 		}
 
@@ -49,19 +53,14 @@ public class NtlmAutoLogin extends BaseAutoLogin {
 
 		request.removeAttribute(WebKeys.NTLM_REMOTE_USER);
 
-		User user = PortalLDAPImporterUtil.importLDAPUserByScreenName(
+		User user = UserImporterUtil.importUserByScreenName(
 			companyId, screenName);
 
 		if (user == null) {
 			return null;
 		}
 
-		String redirect = ParamUtil.getString(request, "redirect");
-
-		if (Validator.isNotNull(redirect)) {
-			request.setAttribute(
-				AutoLogin.AUTO_LOGIN_REDIRECT_AND_CONTINUE, redirect);
-		}
+		addRedirect(request);
 
 		String[] credentials = new String[3];
 

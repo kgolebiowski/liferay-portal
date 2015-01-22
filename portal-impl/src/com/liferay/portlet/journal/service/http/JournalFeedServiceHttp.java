@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portlet.journal.service.http;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -51,27 +53,27 @@ import com.liferay.portlet.journal.service.JournalFeedServiceUtil;
  * @see com.liferay.portlet.journal.service.JournalFeedServiceUtil
  * @generated
  */
+@ProviderType
 public class JournalFeedServiceHttp {
 	public static com.liferay.portlet.journal.model.JournalFeed addFeed(
 		HttpPrincipal httpPrincipal, long groupId, java.lang.String feedId,
 		boolean autoFeedId, java.lang.String name,
-		java.lang.String description, java.lang.String type,
-		java.lang.String structureId, java.lang.String templateId,
-		java.lang.String rendererTemplateId, int delta,
+		java.lang.String description, java.lang.String ddmStructureKey,
+		java.lang.String ddmTemplateKey,
+		java.lang.String ddmRendererTemplateKey, int delta,
 		java.lang.String orderByCol, java.lang.String orderByType,
 		java.lang.String targetLayoutFriendlyUrl,
 		java.lang.String targetPortletId, java.lang.String contentField,
 		java.lang.String feedType, double feedVersion,
 		com.liferay.portal.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"addFeed", _addFeedParameterTypes0);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, groupId,
-					feedId, autoFeedId, name, description, type, structureId,
-					templateId, rendererTemplateId, delta, orderByCol,
+					feedId, autoFeedId, name, description, ddmStructureKey,
+					ddmTemplateKey, ddmRendererTemplateKey, delta, orderByCol,
 					orderByType, targetLayoutFriendlyUrl, targetPortletId,
 					contentField, feedType, feedVersion, serviceContext);
 
@@ -83,10 +85,6 @@ public class JournalFeedServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
@@ -102,8 +100,7 @@ public class JournalFeedServiceHttp {
 	}
 
 	public static void deleteFeed(HttpPrincipal httpPrincipal, long feedId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"deleteFeed", _deleteFeedParameterTypes1);
@@ -118,10 +115,6 @@ public class JournalFeedServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 		}
@@ -133,9 +126,7 @@ public class JournalFeedServiceHttp {
 	}
 
 	public static void deleteFeed(HttpPrincipal httpPrincipal, long groupId,
-		long feedId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		long feedId) throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"deleteFeed", _deleteFeedParameterTypes2);
@@ -151,10 +142,6 @@ public class JournalFeedServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 		}
@@ -167,8 +154,7 @@ public class JournalFeedServiceHttp {
 
 	public static void deleteFeed(HttpPrincipal httpPrincipal, long groupId,
 		java.lang.String feedId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"deleteFeed", _deleteFeedParameterTypes3);
@@ -184,10 +170,6 @@ public class JournalFeedServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 		}
@@ -200,8 +182,7 @@ public class JournalFeedServiceHttp {
 
 	public static com.liferay.portlet.journal.model.JournalFeed getFeed(
 		HttpPrincipal httpPrincipal, long feedId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"getFeed", _getFeedParameterTypes4);
@@ -218,10 +199,6 @@ public class JournalFeedServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
@@ -236,8 +213,7 @@ public class JournalFeedServiceHttp {
 
 	public static com.liferay.portlet.journal.model.JournalFeed getFeed(
 		HttpPrincipal httpPrincipal, long groupId, long feedId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"getFeed", _getFeedParameterTypes5);
@@ -255,10 +231,6 @@ public class JournalFeedServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
@@ -273,8 +245,7 @@ public class JournalFeedServiceHttp {
 
 	public static com.liferay.portlet.journal.model.JournalFeed getFeed(
 		HttpPrincipal httpPrincipal, long groupId, java.lang.String feedId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"getFeed", _getFeedParameterTypes6);
@@ -292,10 +263,6 @@ public class JournalFeedServiceHttp {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
 				}
 
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
@@ -311,22 +278,21 @@ public class JournalFeedServiceHttp {
 	public static com.liferay.portlet.journal.model.JournalFeed updateFeed(
 		HttpPrincipal httpPrincipal, long groupId, java.lang.String feedId,
 		java.lang.String name, java.lang.String description,
-		java.lang.String type, java.lang.String structureId,
-		java.lang.String templateId, java.lang.String rendererTemplateId,
-		int delta, java.lang.String orderByCol, java.lang.String orderByType,
+		java.lang.String ddmStructureKey, java.lang.String ddmTemplateKey,
+		java.lang.String ddmRendererTemplateKey, int delta,
+		java.lang.String orderByCol, java.lang.String orderByType,
 		java.lang.String targetLayoutFriendlyUrl,
 		java.lang.String targetPortletId, java.lang.String contentField,
 		java.lang.String feedType, double feedVersion,
 		com.liferay.portal.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(JournalFeedServiceUtil.class,
 					"updateFeed", _updateFeedParameterTypes7);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, groupId,
-					feedId, name, description, type, structureId, templateId,
-					rendererTemplateId, delta, orderByCol, orderByType,
+					feedId, name, description, ddmStructureKey, ddmTemplateKey,
+					ddmRendererTemplateKey, delta, orderByCol, orderByType,
 					targetLayoutFriendlyUrl, targetPortletId, contentField,
 					feedType, feedVersion, serviceContext);
 
@@ -338,10 +304,6 @@ public class JournalFeedServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
@@ -361,10 +323,10 @@ public class JournalFeedServiceHttp {
 			long.class, java.lang.String.class, boolean.class,
 			java.lang.String.class, java.lang.String.class,
 			java.lang.String.class, java.lang.String.class,
-			java.lang.String.class, java.lang.String.class, int.class,
+			java.lang.String.class, int.class, java.lang.String.class,
 			java.lang.String.class, java.lang.String.class,
 			java.lang.String.class, java.lang.String.class,
-			java.lang.String.class, java.lang.String.class, double.class,
+			java.lang.String.class, double.class,
 			com.liferay.portal.service.ServiceContext.class
 		};
 	private static final Class<?>[] _deleteFeedParameterTypes1 = new Class[] {
@@ -388,11 +350,10 @@ public class JournalFeedServiceHttp {
 	private static final Class<?>[] _updateFeedParameterTypes7 = new Class[] {
 			long.class, java.lang.String.class, java.lang.String.class,
 			java.lang.String.class, java.lang.String.class,
+			java.lang.String.class, java.lang.String.class, int.class,
 			java.lang.String.class, java.lang.String.class,
-			java.lang.String.class, int.class, java.lang.String.class,
 			java.lang.String.class, java.lang.String.class,
-			java.lang.String.class, java.lang.String.class,
-			java.lang.String.class, double.class,
+			java.lang.String.class, java.lang.String.class, double.class,
 			com.liferay.portal.service.ServiceContext.class
 		};
 }

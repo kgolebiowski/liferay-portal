@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,8 +14,7 @@
 
 package com.liferay.portal.util;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -28,43 +27,64 @@ import com.liferay.portal.model.LayoutConstants;
 import com.liferay.portal.service.CompanyLocalServiceUtil;
 import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.TransactionalExecutionTestListener;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.theme.ThemeDisplay;
+import com.liferay.portal.util.test.GroupTestUtil;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Sergio González
  */
-@ExecutionTestListeners(
-	listeners = {
-		EnvironmentExecutionTestListener.class,
-		TransactionalExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-@Transactional
 public class PortalImplCanonicalURLTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
+
+	@BeforeClass
+	public static void setUpClass() throws Exception {
+		_defaultLocale = LocaleUtil.getDefault();
+
+		LocaleUtil.setDefault(
+			LocaleUtil.US.getLanguage(), LocaleUtil.US.getCountry(),
+			LocaleUtil.US.getVariant());
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		LocaleUtil.setDefault(
+			_defaultLocale.getLanguage(), _defaultLocale.getCountry(),
+			_defaultLocale.getVariant());
+	}
 
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
 
-		Map<Locale, String> nameMap = new HashMap<Locale, String>();
+		Map<Locale, String> nameMap = new HashMap<>();
 
 		nameMap.put(LocaleUtil.GERMANY, "Zuhause1");
 		nameMap.put(LocaleUtil.SPAIN, "Casa1");
 		nameMap.put(LocaleUtil.US, "Home1");
 
-		Map<Locale, String> friendlyURLMap = new HashMap<Locale, String>();
+		Map<Locale, String> friendlyURLMap = new HashMap<>();
 
 		friendlyURLMap.put(LocaleUtil.GERMANY, "/zuhause1");
 		friendlyURLMap.put(LocaleUtil.SPAIN, "/casa1");
@@ -73,13 +93,13 @@ public class PortalImplCanonicalURLTest {
 		_layout1 = LayoutTestUtil.addLayout(
 			_group.getGroupId(), false, nameMap, friendlyURLMap);
 
-		nameMap = new HashMap<Locale, String>();
+		nameMap = new HashMap<>();
 
 		nameMap.put(LocaleUtil.GERMANY, "Zuhause2");
 		nameMap.put(LocaleUtil.SPAIN, "Casa2");
 		nameMap.put(LocaleUtil.US, "Home2");
 
-		friendlyURLMap = new HashMap<Locale, String>();
+		friendlyURLMap = new HashMap<>();
 
 		friendlyURLMap.put(LocaleUtil.GERMANY, "/zuhause2");
 		friendlyURLMap.put(LocaleUtil.SPAIN, "/casa2");
@@ -98,12 +118,11 @@ public class PortalImplCanonicalURLTest {
 				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 
 			if (_defaultGrouplayout1 == null) {
-				_defaultGrouplayout1 = LayoutTestUtil.addLayout(
-					_defaultGroup.getGroupId(), "home");
+				_defaultGrouplayout1 = LayoutTestUtil.addLayout(_defaultGroup);
 			}
 
 			_defaultGrouplayout2 = LayoutTestUtil.addLayout(
-				_defaultGroup.getGroupId(), "two");
+				_defaultGroup.getGroupId());
 		}
 	}
 
@@ -401,10 +420,15 @@ public class PortalImplCanonicalURLTest {
 		Assert.assertEquals(expectedCanonicalURL, actualCanonicalURL);
 	}
 
+	private static Locale _defaultLocale;
+
 	private Group _defaultGroup;
 	private Layout _defaultGrouplayout1;
 	private Layout _defaultGrouplayout2;
+
+	@DeleteAfterTestRun
 	private Group _group;
+
 	private Layout _layout1;
 	private Layout _layout2;
 

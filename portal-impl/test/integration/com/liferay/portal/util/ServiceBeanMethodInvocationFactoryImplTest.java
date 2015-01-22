@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,42 +14,42 @@
 
 package com.liferay.portal.util;
 
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.ServiceBeanMethodInvocationFactoryUtil;
 import com.liferay.portal.model.EmailAddress;
 import com.liferay.portal.service.EmailAddressLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
 import com.liferay.portal.service.persistence.EmailAddressUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
+import com.liferay.portal.test.DeleteAfterTestRun;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 
 import java.lang.reflect.Method;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.After;
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Brian Wing Shun Chan
  * @author Wesley Gong
  * @see    OrderByComparatorFactoryImplTest
  */
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class ServiceBeanMethodInvocationFactoryImplTest {
 
-	@After
-	public void tearDown() throws Exception {
-		for (EmailAddress emailAddress : _emailAddresses) {
-			EmailAddressLocalServiceUtil.deleteEmailAddress(emailAddress);
-		}
-
-		_emailAddresses.clear();
-	}
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Test
 	public void testRollback() throws Exception {
@@ -98,7 +98,7 @@ public class ServiceBeanMethodInvocationFactoryImplTest {
 	}
 
 	protected EmailAddress newEmailAddress(String address) throws Exception {
-		long emailAddressId = ServiceTestUtil.nextLong();
+		long emailAddressId = RandomTestUtil.nextLong();
 
 		EmailAddress emailAddress = EmailAddressUtil.create(emailAddressId);
 
@@ -122,6 +122,7 @@ public class ServiceBeanMethodInvocationFactoryImplTest {
 		}
 	}
 
-	private Set<EmailAddress> _emailAddresses = new HashSet<EmailAddress>();
+	@DeleteAfterTestRun
+	private final Set<EmailAddress> _emailAddresses = new HashSet<>();
 
 }

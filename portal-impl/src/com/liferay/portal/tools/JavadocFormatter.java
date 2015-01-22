@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,11 +49,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -106,7 +107,7 @@ public class JavadocFormatter {
 
 		System.out.println("Input directory is " + _inputDir);
 
-		String limit = arguments.get("javadoc.limit");
+		String[] limits = StringUtil.split(arguments.get("javadoc.limit"), ",");
 
 		_outputFilePrefix = GetterUtil.getString(
 			arguments.get("javadoc.output.file.prefix"));
@@ -127,64 +128,72 @@ public class JavadocFormatter {
 		directoryScanner.setExcludes(
 			new String[] {"**\\classes\\**", "**\\portal-client\\**"});
 
-		List<String> includes = new ArrayList<String>();
+		for (String limit : limits) {
+			List<String> includes = new ArrayList<String>();
 
-		if (Validator.isNotNull(limit) && !limit.startsWith("$")) {
-			System.out.println("Limit on " + limit);
+			if (Validator.isNotNull(limit) && !limit.startsWith("$")) {
+				System.out.println("Limit on " + limit);
 
-			String[] limitArray = StringUtil.split(limit, '/');
+				String[] limitArray = StringUtil.split(limit, '/');
 
-			for (String curLimit : limitArray) {
-				includes.add(
-					"**\\" + StringUtil.replace(curLimit, ".", "\\") +
-						"\\**\\*.java");
-				includes.add("**\\" + curLimit + ".java");
-			}
-		}
-		else {
-			includes.add("**\\*.java");
-		}
-
-		directoryScanner.setIncludes(
-			includes.toArray(new String[includes.size()]));
-
-		directoryScanner.scan();
-
-		String[] fileNames = directoryScanner.getIncludedFiles();
-
-		if ((fileNames.length == 0) && Validator.isNotNull(limit) &&
-			!limit.startsWith("$")) {
-
-			StringBundler sb = new StringBundler("Limit file not found: ");
-
-			sb.append(limit);
-
-			if (limit.contains(".")) {
-				sb.append(" Specify limit filename without package path or ");
-				sb.append("file type suffix.");
+				for (String curLimit : limitArray) {
+					includes.add(
+						"**\\" + StringUtil.replace(curLimit, ".", "\\") +
+							"\\**\\*.java");
+					includes.add("**\\" + curLimit + ".java");
+				}
 			}
 
-			System.out.println(sb.toString());
-		}
-
-		_languagePropertiesFile = new File("src/content/Language.properties");
-
-		if (_languagePropertiesFile.exists()) {
-			_languageProperties = new Properties();
-
-			_languageProperties.load(
-				new FileInputStream(_languagePropertiesFile.getAbsolutePath()));
-		}
-
-		for (String fileName : fileNames) {
-			fileName = StringUtil.replace(fileName, "\\", "/");
-
-			try {
-				_format(fileName);
+			else {
+				includes.add("**\\*.java");
 			}
-			catch (Exception e) {
-				throw new RuntimeException(
-					"Unable to format file " + fileName, e);
+
+			directoryScanner.setIncludes(
+				includes.toArray(new String[includes.size()]));
+
+			directoryScanner.scan();
+
+			String[] fileNames = StringPool.EMPTY_ARRAY;
+
+			fileNames = directoryScanner.getIncludedFiles();
+
+			if ((fileNames.length == 0) && Validator.isNotNull(limit) &&
+				!limit.startsWith("$")) {
+
+				StringBundler sb = new StringBundler("Limit file not found: ");
+
+				sb.append(limit);
+
+				if (limit.contains(".")) {
+					sb.append(
+						" Specify limit filename without package path or ");
+					sb.append("file type suffix.");
+				}
+
+				System.out.println(sb.toString());
+			}
+
+			_languagePropertiesFile = new File(
+				"src/content/Language.properties");
+
+			if (_languagePropertiesFile.exists()) {
+				_languageProperties = new Properties();
+
+				_languageProperties.load(
+					new FileInputStream(
+						_languagePropertiesFile.getAbsolutePath()));
+			}
+
+			for (String fileName : fileNames) {
+				fileName = StringUtil.replace(fileName, "\\", "/");
+
+				try {
+					_format(fileName);
+				}
+				catch (Exception e) {
+					throw new RuntimeException(
+						"Unable to format file " + fileName, e);
+				}
 			}
 		}
 
@@ -764,18 +773,15 @@ public class JavadocFormatter {
 	}
 
 	private void _format(String fileName) throws Exception {
-		InputStream inputStream = new FileInputStream(_inputDir + fileName);
+		String originalContent = new String(
+			Files.readAllBytes(Paths.get(_inputDir + fileName)),
+			StringPool.UTF8);
 
-		byte[] bytes = new byte[inputStream.available()];
-
-		inputStream.read(bytes);
-
-		inputStream.close();
-
-		String originalContent = new String(bytes, StringPool.UTF8);
-
-		if (fileName.endsWith("JavadocFormatter.java") ||
+		if (fileName.contains("modules/third-party") ||
+			fileName.endsWith("Application.java") ||
+			fileName.endsWith("JavadocFormatter.java") ||
 			fileName.endsWith("SourceFormatter.java") ||
+			fileName.endsWith("WebProxyPortlet.java") ||
 			_hasGeneratedTag(originalContent)) {
 
 			return;
@@ -816,7 +822,7 @@ public class JavadocFormatter {
 
 			// Escape dollar signs
 
-			trimmed = trimmed.replaceAll("\\$", "\\\\\\$");
+			trimmed = StringUtil.replace(trimmed, "$", "\\$");
 
 			matcher.appendReplacement(sb, trimmed);
 		}
@@ -1511,7 +1517,6 @@ public class JavadocFormatter {
 			else {
 				return false;
 			}
-
 		}
 
 		return false;
@@ -1532,10 +1537,11 @@ public class JavadocFormatter {
 			String javaClassName = javaClass.getFullyQualifiedName();
 
 			if (javaClassName.equals(SinceJava.class.getName())) {
-				AnnotationValue value = annotation.getProperty("value");
+				AnnotationValue annotationValue = annotation.getProperty(
+					"value");
 
 				double sinceJava = GetterUtil.getDouble(
-					value.getParameterValue());
+					annotationValue.getParameterValue());
 
 				if (sinceJava > _LOWEST_SUPPORTED_JAVA_VERSION) {
 					return true;
@@ -1578,6 +1584,14 @@ public class JavadocFormatter {
 				continue;
 			}
 
+			int blankLines = 0;
+
+			while (line.equals(StringPool.BLANK)) {
+				line = lines[--pos];
+
+				blankLines++;
+			}
+
 			line = line.trim();
 
 			if (line.endsWith("*/")) {
@@ -1589,6 +1603,10 @@ public class JavadocFormatter {
 					}
 
 					line = lines[--pos].trim();
+				}
+
+				for (int i = 0; i < blankLines; i++) {
+					lines[lineNumber - i - 2] = null;
 				}
 			}
 		}
@@ -1871,47 +1889,46 @@ public class JavadocFormatter {
 	private void _updateLanguageProperties(String key, String value)
 		throws IOException {
 
-		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
-			new FileReader(_languagePropertiesFile));
-
 		StringBundler sb = new StringBundler();
 
-		boolean begin = false;
-		boolean firstLine = true;
-		String linePrefix = key + "=";
+		try (UnsyncBufferedReader unsyncBufferedReader = 
+				new UnsyncBufferedReader(
+					new FileReader(_languagePropertiesFile))) {
 
-		String line = null;
+			boolean begin = false;
+			boolean firstLine = true;
+			String linePrefix = key + "=";
 
-		while ((line = unsyncBufferedReader.readLine()) != null) {
-			if (line.equals(StringPool.BLANK)) {
-				begin = !begin;
-			}
+			String line = null;
 
-			if (firstLine) {
-				firstLine = false;
-			}
-			else {
-				sb.append(StringPool.NEW_LINE);
-			}
+			while ((line = unsyncBufferedReader.readLine()) != null) {
+				if (line.equals(StringPool.BLANK)) {
+					begin = !begin;
+				}
 
-			if (line.startsWith(linePrefix)) {
-				sb.append(linePrefix);
-				sb.append(value);
-			}
-			else {
-				sb.append(line);
+				if (firstLine) {
+					firstLine = false;
+				}
+				else {
+					sb.append(StringPool.NEW_LINE);
+				}
+
+				if (line.startsWith(linePrefix)) {
+					sb.append(linePrefix);
+					sb.append(value);
+				}
+				else {
+					sb.append(line);
+				}
 			}
 		}
 
-		unsyncBufferedReader.close();
+		try (Writer writer = new OutputStreamWriter(
+				new FileOutputStream(_languagePropertiesFile, false),
+				StringPool.UTF8)) {
 
-		Writer writer = new OutputStreamWriter(
-			new FileOutputStream(_languagePropertiesFile, false),
-			StringPool.UTF8);
-
-		writer.write(sb.toString());
-
-		writer.close();
+			sb.writeTo(writer);
+		}
 
 		System.out.println(
 			"Updating " + _languagePropertiesFile + " key " + key);
@@ -1964,7 +1981,7 @@ public class JavadocFormatter {
 		return text;
 	}
 
-	private static final double _LOWEST_SUPPORTED_JAVA_VERSION = 1.6;
+	private static final double _LOWEST_SUPPORTED_JAVA_VERSION = 1.7;
 
 	private static FileImpl _fileUtil = FileImpl.getInstance();
 	private static SAXReaderImpl _saxReaderUtil = SAXReaderImpl.getInstance();

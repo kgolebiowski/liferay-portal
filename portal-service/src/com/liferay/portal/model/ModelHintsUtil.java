@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,8 @@ package com.liferay.portal.model;
 import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.Tuple;
 import com.liferay.portal.kernel.xml.Element;
+
+import java.io.InputStream;
 
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,12 @@ public class ModelHintsUtil {
 
 	public static boolean isLocalized(String model, String field) {
 		return getModelHints().isLocalized(model, field);
+	}
+
+	public static void read(ClassLoader classLoader, InputStream inputStream)
+		throws Exception {
+
+		getModelHints().read(classLoader, inputStream);
 	}
 
 	public static void read(ClassLoader classLoader, String source)

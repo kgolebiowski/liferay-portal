@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -385,9 +385,9 @@ public class BooleanQueryImpl extends BaseBooleanQueryImpl {
 		return !_booleanClauses.isEmpty();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(BooleanQueryImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		BooleanQueryImpl.class);
 
-	private List<BooleanClause> _booleanClauses =
-		new ArrayList<BooleanClause>();
+	private final List<BooleanClause> _booleanClauses = new ArrayList<>();
 
 }

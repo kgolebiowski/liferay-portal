@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portlet.PortalPreferences;
 import com.liferay.portlet.PortletPreferencesFactoryUtil;
@@ -42,8 +43,8 @@ import javax.portlet.PortletURL;
  */
 public class ArticleSearch extends SearchContainer<JournalArticle> {
 
-	static List<String> headerNames = new ArrayList<String>();
-	static Map<String, String> orderableHeaders = new HashMap<String, String>();
+	public static List<String> headerNames = new ArrayList<>();
+	public static Map<String, String> orderableHeaders = new HashMap<>();
 
 	static {
 		headerNames.add("id");
@@ -53,6 +54,7 @@ public class ArticleSearch extends SearchContainer<JournalArticle> {
 		headerNames.add("modified-date");
 		headerNames.add("display-date");
 		headerNames.add("author");
+		headerNames.add("structure");
 		headerNames.add(StringPool.BLANK);
 
 		//orderableHeaders.put("id", "id");
@@ -82,8 +84,8 @@ public class ArticleSearch extends SearchContainer<JournalArticle> {
 		String portletName = portletConfig.getPortletName();
 
 		if (!portletName.equals(PortletKeys.JOURNAL)) {
-			displayTerms.setStatus("approved");
-			searchTerms.setStatus("approved");
+			displayTerms.setStatus(WorkflowConstants.STATUS_APPROVED);
+			searchTerms.setStatus(WorkflowConstants.STATUS_APPROVED);
 		}
 
 		iteratorURL.setParameter(
@@ -93,6 +95,12 @@ public class ArticleSearch extends SearchContainer<JournalArticle> {
 		iteratorURL.setParameter(
 			ArticleDisplayTerms.DESCRIPTION, displayTerms.getDescription());
 		iteratorURL.setParameter(
+			ArticleDisplayTerms.DDM_STRUCTURE_KEY,
+			displayTerms.getDDMStructureKey());
+		iteratorURL.setParameter(
+			ArticleDisplayTerms.DDM_TEMPLATE_KEY,
+			displayTerms.getDDMTemplateKey());
+		iteratorURL.setParameter(
 			ArticleDisplayTerms.FOLDER_ID,
 			String.valueOf(displayTerms.getFolderId()));
 		iteratorURL.setParameter(
@@ -101,15 +109,10 @@ public class ArticleSearch extends SearchContainer<JournalArticle> {
 		iteratorURL.setParameter(
 			ArticleDisplayTerms.NAVIGATION, displayTerms.getNavigation());
 		iteratorURL.setParameter(
-			ArticleDisplayTerms.STATUS, displayTerms.getStatus());
-		iteratorURL.setParameter(
-			ArticleDisplayTerms.STRUCTURE_ID, displayTerms.getStructureId());
-		iteratorURL.setParameter(
-			ArticleDisplayTerms.TEMPLATE_ID, displayTerms.getTemplateId());
+			ArticleDisplayTerms.STATUS,
+			String.valueOf(displayTerms.getStatus()));
 		iteratorURL.setParameter(
 			ArticleDisplayTerms.TITLE, displayTerms.getTitle());
-		iteratorURL.setParameter(
-			ArticleDisplayTerms.TYPE, displayTerms.getType());
 		iteratorURL.setParameter(
 			ArticleDisplayTerms.VERSION,
 			String.valueOf(displayTerms.getVersion()));
@@ -139,7 +142,7 @@ public class ArticleSearch extends SearchContainer<JournalArticle> {
 					PortletKeys.JOURNAL, "articles-order-by-type", "asc");
 			}
 
-			OrderByComparator orderByComparator =
+			OrderByComparator<JournalArticle> orderByComparator =
 				JournalUtil.getArticleOrderByComparator(
 					orderByCol, orderByType);
 
@@ -159,6 +162,6 @@ public class ArticleSearch extends SearchContainer<JournalArticle> {
 		this(portletRequest, 0, DEFAULT_DELTA, iteratorURL);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ArticleSearch.class);
+	private static final Log _log = LogFactoryUtil.getLog(ArticleSearch.class);
 
 }

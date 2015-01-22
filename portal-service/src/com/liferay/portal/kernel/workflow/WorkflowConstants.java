@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.workflow;
 
-import com.liferay.portal.kernel.util.StringPool;
-
 /**
  * @author Jorge Ferrer
  * @author Zsolt Berentey
@@ -25,6 +23,8 @@ public class WorkflowConstants {
 	public static final int ACTION_PUBLISH = 1;
 
 	public static final int ACTION_SAVE_DRAFT = 2;
+
+	public static final String CONTEXT_COMMAND = "command";
 
 	public static final String CONTEXT_COMPANY_ID = "companyId";
 
@@ -51,7 +51,13 @@ public class WorkflowConstants {
 
 	public static final String CONTEXT_TRANSITION_NAME = "transitionName";
 
+	public static final String CONTEXT_URL = "url";
+
 	public static final String CONTEXT_USER_ID = "userId";
+
+	public static final String CONTEXT_USER_PORTRAIT_URL = "userPortraitURL";
+
+	public static final String CONTEXT_USER_URL = "userURL";
 
 	public static final long DEFAULT_GROUP_ID = 0;
 
@@ -142,20 +148,39 @@ public class WorkflowConstants {
 	}
 
 	public static String getStatusCssClass(int status) {
-		if (status == STATUS_APPROVED) {
-			return "label-success";
+		if (status == STATUS_ANY) {
+			return LABEL_ANY;
+		}
+		else if (status == STATUS_APPROVED) {
+			return LABEL_APPROVED;
+		}
+		else if (status == STATUS_DENIED) {
+			return LABEL_DENIED;
 		}
 		else if (status == STATUS_DRAFT) {
-			return "label-info";
+			return LABEL_DRAFT;
 		}
 		else if (status == STATUS_EXPIRED) {
-			return "label-important";
+			return LABEL_EXPIRED;
+		}
+		else if (status == STATUS_IN_TRASH) {
+			return LABEL_IN_TRASH;
+		}
+		else if (status == STATUS_INACTIVE) {
+			return LABEL_INACTIVE;
+		}
+		else if (status == STATUS_INCOMPLETE) {
+			return LABEL_INCOMPLETE;
 		}
 		else if (status == STATUS_PENDING) {
-			return "label-warning";
+			return LABEL_PENDING;
 		}
-
-		return StringPool.BLANK;
+		else if (status == STATUS_SCHEDULED) {
+			return LABEL_SCHEDULED;
+		}
+		else {
+			return LABEL_ANY;
+		}
 	}
 
 	public static String getStatusLabel(int status) {

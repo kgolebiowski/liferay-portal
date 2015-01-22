@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -245,6 +245,12 @@ public class BeanPropertiesUtil {
 
 	public static void setProperty(Object bean, String param, Object value) {
 		getBeanProperties().setProperty(bean, param, value);
+	}
+
+	public static void setPropertySilent(
+		Object bean, String param, Object value) {
+
+		getBeanProperties().setPropertySilent(bean, param, value);
 	}
 
 	public void setBeanProperties(BeanProperties beanProperties) {

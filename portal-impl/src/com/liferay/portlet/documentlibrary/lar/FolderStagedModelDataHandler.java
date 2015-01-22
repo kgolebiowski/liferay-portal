@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,26 +14,33 @@
 
 package com.liferay.portlet.documentlibrary.lar;
 
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.BaseStagedModelDataHandler;
 import com.liferay.portal.kernel.lar.ExportImportPathUtil;
 import com.liferay.portal.kernel.lar.PortletDataContext;
 import com.liferay.portal.kernel.lar.PortletDataException;
 import com.liferay.portal.kernel.lar.StagedModelDataHandlerUtil;
+import com.liferay.portal.kernel.lar.StagedModelModifiedDateComparator;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Element;
+import com.liferay.portal.model.Repository;
+import com.liferay.portal.model.RepositoryEntry;
 import com.liferay.portal.repository.liferayrepository.model.LiferayFolder;
+import com.liferay.portal.repository.portletrepository.PortletRepository;
+import com.liferay.portal.service.RepositoryLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryType;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryTypeConstants;
 import com.liferay.portlet.documentlibrary.model.DLFolder;
@@ -60,13 +67,34 @@ public class FolderStagedModelDataHandler
 	@Override
 	public void deleteStagedModel(
 			String uuid, long groupId, String className, String extraData)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		Folder folder = FolderUtil.fetchByUUID_R(uuid, groupId);
+		Folder folder = fetchStagedModelByUuidAndGroupId(uuid, groupId);
 
 		if (folder != null) {
 			DLAppLocalServiceUtil.deleteFolder(folder.getFolderId());
 		}
+	}
+
+	@Override
+	public Folder fetchStagedModelByUuidAndCompanyId(
+		String uuid, long companyId) {
+
+		List<DLFolder> folders =
+			DLFolderLocalServiceUtil.getDLFoldersByUuidAndCompanyId(
+				uuid, companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				new StagedModelModifiedDateComparator<DLFolder>());
+
+		if (ListUtil.isEmpty(folders)) {
+			return null;
+		}
+
+		return new LiferayFolder(folders.get(0));
+	}
+
+	@Override
+	public Folder fetchStagedModelByUuidAndGroupId(String uuid, long groupId) {
+		return FolderUtil.fetchByUUID_R(uuid, groupId);
 	}
 
 	@Override
@@ -84,17 +112,34 @@ public class FolderStagedModelDataHandler
 			PortletDataContext portletDataContext, Folder folder)
 		throws Exception {
 
-		Element folderElement = portletDataContext.getExportDataElement(
-			folder, Folder.class);
+		Element folderElement = portletDataContext.getExportDataElement(folder);
 
 		String folderPath = ExportImportPathUtil.getModelPath(folder);
+
+		if (!folder.isDefaultRepository()) {
+			Repository repository = RepositoryLocalServiceUtil.getRepository(
+				folder.getRepositoryId());
+
+			StagedModelDataHandlerUtil.exportReferenceStagedModel(
+				portletDataContext, folder, repository,
+				PortletDataContext.REFERENCE_TYPE_STRONG);
+
+			portletDataContext.addClassedModel(
+				folderElement, folderPath, folder);
+
+			long portletRepositoryClassNameId = PortalUtil.getClassNameId(
+				PortletRepository.class.getName());
+
+			if (repository.getClassNameId() != portletRepositoryClassNameId) {
+				return;
+			}
+		}
 
 		if (folder.getParentFolderId() !=
 				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
-				portletDataContext, folder, Folder.class,
-				folder.getParentFolder(), Folder.class,
+				portletDataContext, folder, folder.getParentFolder(),
 				PortletDataContext.REFERENCE_TYPE_PARENT);
 		}
 
@@ -105,12 +150,12 @@ public class FolderStagedModelDataHandler
 	}
 
 	@Override
-	protected void doImportCompanyStagedModel(
-			PortletDataContext portletDataContext, String uuid, long folderId)
+	protected void doImportMissingReference(
+			PortletDataContext portletDataContext, String uuid, long groupId,
+			long folderId)
 		throws Exception {
 
-		Folder existingFolder = FolderUtil.fetchByUUID_R(
-			uuid, portletDataContext.getCompanyGroupId());
+		Folder existingFolder = fetchMissingReference(uuid, groupId);
 
 		Map<Long, Long> folderIds =
 			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
@@ -124,15 +169,23 @@ public class FolderStagedModelDataHandler
 			PortletDataContext portletDataContext, Folder folder)
 		throws Exception {
 
-		long userId = portletDataContext.getUserId(folder.getUserUuid());
+		Map<Long, Long> folderIdsAndRepositoryEntryIds =
+			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
+				Folder.class + ".folderIdsAndRepositoryEntryIds");
 
-		if (folder.getParentFolderId() !=
-				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
+		if (!folder.isDefaultRepository()) {
+			Map<Long, Long> repositoryEntryIds =
+				(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
+					RepositoryEntry.class);
 
-			StagedModelDataHandlerUtil.importReferenceStagedModel(
-				portletDataContext, folder, Folder.class,
-				folder.getParentFolderId());
+			folderIdsAndRepositoryEntryIds.put(
+				folder.getFolderId(),
+				repositoryEntryIds.get(folder.getFolderId()));
+
+			return;
 		}
+
+		long userId = portletDataContext.getUserId(folder.getUserUuid());
 
 		Map<Long, Long> folderIds =
 			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
@@ -149,7 +202,7 @@ public class FolderStagedModelDataHandler
 		Folder importedFolder = null;
 
 		if (portletDataContext.isDataStrategyMirror()) {
-			Folder existingFolder = FolderUtil.fetchByUUID_R(
+			Folder existingFolder = fetchStagedModelByUuidAndGroupId(
 				folder.getUuid(), portletDataContext.getScopeGroupId());
 
 			if (existingFolder == null) {
@@ -194,6 +247,8 @@ public class FolderStagedModelDataHandler
 			folder, importedFolder, DLFolder.class);
 
 		folderIds.put(folder.getFolderId(), importedFolder.getFolderId());
+		folderIdsAndRepositoryEntryIds.put(
+			folder.getFolderId(), importedFolder.getFolderId());
 	}
 
 	@Override
@@ -203,7 +258,7 @@ public class FolderStagedModelDataHandler
 
 		long userId = portletDataContext.getUserId(folder.getUserUuid());
 
-		Folder existingFolder = FolderUtil.fetchByUUID_R(
+		Folder existingFolder = fetchStagedModelByUuidAndGroupId(
 			folder.getUuid(), portletDataContext.getScopeGroupId());
 
 		if ((existingFolder == null) ||
@@ -231,6 +286,10 @@ public class FolderStagedModelDataHandler
 			PortletDataContext portletDataContext, Element folderElement,
 			Folder folder)
 		throws Exception {
+
+		if (!folder.isDefaultRepository()) {
+			return;
+		}
 
 		List<DLFileEntryType> dlFileEntryTypes =
 			DLFileEntryTypeLocalServiceUtil.getFolderFileEntryTypes(
@@ -264,8 +323,7 @@ public class FolderStagedModelDataHandler
 
 			if (dlFileEntryType.isExportable()) {
 				StagedModelDataHandlerUtil.exportReferenceStagedModel(
-					portletDataContext, folder, Folder.class, dlFileEntryType,
-					DLFileEntryType.class,
+					portletDataContext, folder, dlFileEntryType,
 					PortletDataContext.REFERENCE_TYPE_STRONG);
 			}
 		}
@@ -305,7 +363,11 @@ public class FolderStagedModelDataHandler
 			Folder folder, Folder importedFolder, ServiceContext serviceContext)
 		throws Exception {
 
-		List<Long> currentFolderFileEntryTypeIds = new ArrayList<Long>();
+		if (!folder.isDefaultRepository()) {
+			return;
+		}
+
+		List<Long> currentFolderFileEntryTypeIds = new ArrayList<>();
 
 		String defaultFileEntryTypeUuid = GetterUtil.getString(
 			folderElement.attributeValue("defaultFileEntryTypeUuid"));
@@ -321,10 +383,6 @@ public class FolderStagedModelDataHandler
 				referenceElement.attributeValue("class-pk"));
 			String referenceDlFileEntryTypeUuid =
 				referenceElement.attributeValue("uuid");
-
-			StagedModelDataHandlerUtil.importReferenceStagedModel(
-				portletDataContext, folder, DLFileEntryType.class,
-				referenceDlFileEntryTypeId);
 
 			Map<Long, Long> dlFileEntryTypeIds =
 				(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
@@ -362,7 +420,9 @@ public class FolderStagedModelDataHandler
 			DLFolder dlFolder = (DLFolder)importedFolder.getModel();
 
 			dlFolder.setDefaultFileEntryTypeId(defaultFileEntryTypeId);
-			dlFolder.setOverrideFileEntryTypes(true);
+			dlFolder.setRestrictionType(
+				DLFolderConstants.
+					RESTRICTION_TYPE_FILE_ENTRY_TYPES_AND_WORKFLOW);
 
 			DLFolderLocalServiceUtil.updateDLFolder(dlFolder);
 
@@ -404,32 +464,19 @@ public class FolderStagedModelDataHandler
 				throw pde;
 			}
 			catch (Exception e) {
-				if (_log.isWarnEnabled()) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(e, e);
+				}
+				else if (_log.isWarnEnabled()) {
 					_log.warn(
-						"Unable to check trash status for " +
-							DLFolder.class.getName());
+						"Unable to check trash status for folder " +
+							folder.getFolderId());
 				}
 			}
 		}
 	}
 
-	@Override
-	protected boolean validateMissingReference(
-			String uuid, long companyId, long groupId)
-		throws Exception {
-
-		DLFolder dlFolder =
-			DLFolderLocalServiceUtil.fetchDLFolderByUuidAndGroupId(
-				uuid, groupId);
-
-		if (dlFolder == null) {
-			return false;
-		}
-
-		return true;
-	}
-
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		FolderStagedModelDataHandler.class);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -204,19 +204,20 @@ public interface SCLicenseModel extends BaseModel<SCLicense> {
 	public Object clone();
 
 	@Override
-	public int compareTo(SCLicense scLicense);
+	public int compareTo(
+		com.liferay.portlet.softwarecatalog.model.SCLicense scLicense);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<SCLicense> toCacheModel();
+	public CacheModel<com.liferay.portlet.softwarecatalog.model.SCLicense> toCacheModel();
 
 	@Override
-	public SCLicense toEscapedModel();
+	public com.liferay.portlet.softwarecatalog.model.SCLicense toEscapedModel();
 
 	@Override
-	public SCLicense toUnescapedModel();
+	public com.liferay.portlet.softwarecatalog.model.SCLicense toUnescapedModel();
 
 	@Override
 	public String toString();

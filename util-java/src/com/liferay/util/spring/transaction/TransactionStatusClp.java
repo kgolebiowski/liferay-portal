@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -179,7 +179,7 @@ public class TransactionStatusClp implements TransactionStatus {
 	}
 
 	protected void initRemoteMethods(Object remoteTransactionStatus) {
-		_remoteMethods = new HashMap<String, Method>();
+		_remoteMethods = new HashMap<>();
 
 		Method[] methods = TransactionStatus.class.getMethods();
 
@@ -188,10 +188,11 @@ public class TransactionStatusClp implements TransactionStatus {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(TransactionStatusClp.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		TransactionStatusClp.class);
 
 	private static Map<String, Method> _remoteMethods;
 
-	private Object _remoteTransactionStatus;
+	private final Object _remoteTransactionStatus;
 
 }

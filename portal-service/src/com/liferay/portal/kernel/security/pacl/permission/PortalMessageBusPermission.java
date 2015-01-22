@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -44,7 +44,7 @@ public class PortalMessageBusPermission extends BasicPermission {
 		return _destinationName;
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public void checkListen(String destinationName);
 
@@ -52,9 +52,9 @@ public class PortalMessageBusPermission extends BasicPermission {
 
 	}
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
-	private String _destinationName;
+	private final String _destinationName;
 
 	private static class NoPACL implements PACL {
 

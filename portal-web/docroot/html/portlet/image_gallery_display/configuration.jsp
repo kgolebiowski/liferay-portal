@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,28 +17,20 @@
 <%@ include file="/html/portlet/image_gallery_display/init.jsp" %>
 
 <%
-String redirect = ParamUtil.getString(request, "redirect");
+dlPortletInstanceSettings = DLPortletInstanceSettings.getInstance(layout, portletId, request.getParameterMap());
 
-try {
-	Folder rootFolder = DLAppLocalServiceUtil.getFolder(rootFolderId);
-
-	rootFolderName = rootFolder.getName();
-
-	if (rootFolder.getGroupId() != scopeGroupId) {
-		rootFolderId = DLFolderConstants.DEFAULT_PARENT_FOLDER_ID;
-		rootFolderName = StringPool.BLANK;
-	}
-}
-catch (NoSuchFolderException nsfe) {
-	rootFolderId = DLFolderConstants.DEFAULT_PARENT_FOLDER_ID;
-}
+IGConfigurationDisplayContext igConfigurationDisplayContext = new IGConfigurationDisplayContext(request, dlPortletInstanceSettings);
 %>
 
-<liferay-portlet:actionURL portletConfiguration="true" var="configurationURL" />
+<liferay-portlet:actionURL portletConfiguration="<%= true %>" var="configurationActionURL">
+	<liferay-portlet:param name="settingsScope" value="portletInstance" />
+</liferay-portlet:actionURL>
 
-<aui:form action="<%= configurationURL %>" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "saveConfiguration();" %>'>
+<liferay-portlet:renderURL portletConfiguration="<%= true %>" var="configurationRenderURL" />
+
+<aui:form action="<%= configurationActionURL %>" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "saveConfiguration();" %>'>
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.UPDATE %>" />
-	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
+	<aui:input name="redirect" type="hidden" value="<%= configurationRenderURL %>" />
 	<aui:input name="preferences--mimeTypes--" type="hidden" />
 	<aui:input name="preferences--rootFolderId--" type="hidden" value="<%= rootFolderId %>" />
 
@@ -47,48 +39,22 @@ catch (NoSuchFolderException nsfe) {
 	<liferay-ui:panel-container extended="<%= true %>" id="imageGalleryDisplaySettingsPanelContainer" persistState="<%= true %>">
 		<liferay-ui:panel collapsible="<%= true %>" extended="<%= true %>" id="imageGalleryDisplayDisplay" persistState="<%= true %>" title="display-settings">
 			<aui:fieldset>
-				<aui:input label="show-actions" name="preferences--showActions--" type="checkbox" value="<%= showActions %>" />
+				<aui:input label="show-actions" name="preferences--showActions--" type="checkbox" value="<%= dlPortletInstanceSettings.isShowActions() %>" />
 
-				<aui:input label="show-folder-menu" name="preferences--showFolderMenu--" type="checkbox" value="<%= showFolderMenu %>" />
+				<aui:input label="show-folder-menu" name="preferences--showFolderMenu--" type="checkbox" value="<%= dlPortletInstanceSettings.isShowFolderMenu() %>" />
 
-				<aui:input label="show-navigation-links" name="preferences--showTabs--" type="checkbox" value="<%= showTabs %>" />
+				<aui:input label="show-navigation-links" name="preferences--showTabs--" type="checkbox" value="<%= dlPortletInstanceSettings.isShowTabs() %>" />
 
-				<aui:input label="show-search" name="preferences--showFoldersSearch--" type="checkbox" value="<%= showFoldersSearch %>" />
+				<aui:input label="show-search" name="preferences--showFoldersSearch--" type="checkbox" value="<%= dlPortletInstanceSettings.isShowFoldersSearch() %>" />
 
 				<aui:field-wrapper label="show-media-type">
-
-					<%
-
-					// Left list
-
-					List leftList = new ArrayList();
-
-					String[] mediaGalleryMimeTypes = DLUtil.getMediaGalleryMimeTypes(portletPreferences, renderRequest);
-
-					for (String mimeType : mediaGalleryMimeTypes) {
-						leftList.add(new KeyValuePair(mimeType, LanguageUtil.get(pageContext, mimeType)));
-					}
-
-					// Right list
-
-					List rightList = new ArrayList();
-
-					Set<String> allMediaGalleryMimeTypes = DLUtil.getAllMediaGalleryMimeTypes();
-
-					for (String mimeType : allMediaGalleryMimeTypes) {
-						if (Arrays.binarySearch(mediaGalleryMimeTypes, mimeType) < 0) {
-							rightList.add(new KeyValuePair(mimeType, LanguageUtil.get(pageContext, mimeType)));
-						}
-					}
-					%>
-
 					<liferay-ui:input-move-boxes
 						leftBoxName="currentMimeTypes"
-						leftList="<%= leftList %>"
+						leftList="<%= igConfigurationDisplayContext.getCurrentMimeTypes() %>"
 						leftReorder="true"
 						leftTitle="current"
 						rightBoxName="availableMimeTypes"
-						rightList="<%= rightList %>"
+						rightList="<%= igConfigurationDisplayContext.getAvailableMimeTypes() %>"
 						rightTitle="available"
 					/>
 				</aui:field-wrapper>
@@ -103,7 +69,7 @@ catch (NoSuchFolderException nsfe) {
 						classNameId="<%= PortalUtil.getClassNameId(templateHandler.getClassName()) %>"
 						displayStyle="<%= displayStyle %>"
 						displayStyleGroupId="<%= displayStyleGroupId %>"
-						refreshURL="<%= currentURL %>"
+						refreshURL="<%= configurationRenderURL %>"
 						showEmptyOption="<%= true %>"
 					/>
 				</div>
@@ -113,13 +79,13 @@ catch (NoSuchFolderException nsfe) {
 		<liferay-ui:panel collapsible="<%= true %>" extended="<%= true %>" id="imageGalleryDisplayFoldersListingPanel" persistState="<%= true %>" title="folders-listing">
 			<aui:fieldset>
 				<aui:field-wrapper label="root-folder">
-					<div class="input-append">
-						<liferay-ui:input-resource id="rootFolderName" url="<%= rootFolderName %>" />
+					<div class="form-group">
+						<aui:input label="root-folder" name="rootFolderName" type="resource" value="<%= rootFolderName %>" />
 
 						<aui:button name="openFolderSelectorButton" value="select" />
 
 						<%
-						String taglibRemoveFolder = "Liferay.Util.removeFolderSelection('rootFolderId', 'rootFolderName', '" + renderResponse.getNamespace() + "');";
+						String taglibRemoveFolder = "Liferay.Util.removeEntitySelection('rootFolderId', 'rootFolderName', this, '" + renderResponse.getNamespace() + "');";
 						%>
 
 						<aui:button disabled="<%= rootFolderId <= 0 %>" name="removeFolderButton" onClick="<%= taglibRemoveFolder %>" value="remove" />
@@ -129,8 +95,8 @@ catch (NoSuchFolderException nsfe) {
 		</liferay-ui:panel>
 
 		<liferay-ui:panel collapsible="<%= true %>" extended="<%= true %>" id="imageGalleryImagesRatingsPanel" persistState="<%= true %>" title="ratings">
-			<aui:input name="preferences--enableRatings--" type="checkbox" value="<%= enableRatings %>" />
-			<aui:input name="preferences--enableCommentRatings--" type="checkbox" value="<%= enableCommentRatings %>" />
+			<aui:input name="preferences--enableRatings--" type="checkbox" value="<%= dlPortletInstanceSettings.isEnableRatings() %>" />
+			<aui:input name="preferences--enableCommentRatings--" type="checkbox" value="<%= dlPortletInstanceSettings.isEnableCommentRatings() %>" />
 		</liferay-ui:panel>
 	</liferay-ui:panel-container>
 
@@ -139,12 +105,8 @@ catch (NoSuchFolderException nsfe) {
 	</aui:button-row>
 </aui:form>
 
-<liferay-portlet:renderURL portletName="<%= portletResource %>" var="selectFolderURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
-	<portlet:param name="struts_action" value='<%= "/image_gallery_display/select_folder" %>' />
-</liferay-portlet:renderURL>
-
-<aui:script use="aui-base">
-	A.one('#<portlet:namespace />openFolderSelectorButton').on(
+<aui:script>
+	AUI.$('#<portlet:namespace />openFolderSelectorButton').on(
 		'click',
 		function(event) {
 			Liferay.Util.selectEntity(
@@ -156,6 +118,11 @@ catch (NoSuchFolderException nsfe) {
 					},
 					id: '_<%= HtmlUtil.escapeJS(portletResource) %>_selectFolder',
 					title: '<liferay-ui:message arguments="folder" key="select-x" />',
+
+					<liferay-portlet:renderURL portletName="<%= portletResource %>" var="selectFolderURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
+						<portlet:param name="struts_action" value='<%= "/image_gallery_display/select_folder" %>' />
+					</liferay-portlet:renderURL>
+
 					uri: '<%= selectFolderURL.toString() %>'
 				},
 				function(event) {
@@ -171,17 +138,12 @@ catch (NoSuchFolderException nsfe) {
 			);
 		}
 	);
-</aui:script>
 
-<aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />saveConfiguration',
-		function() {
-			document.<portlet:namespace />fm.<portlet:namespace />mimeTypes.value = Liferay.Util.listSelect(document.<portlet:namespace />fm.<portlet:namespace />currentMimeTypes);
+	function <portlet:namespace />saveConfiguration() {
+		var form = AUI.$(document.<portlet:namespace />fm);
 
-			submitForm(document.<portlet:namespace />fm);
-		},
-		['liferay-util-list-fields']
-	);
+		form.fm('mimeTypes').val(Liferay.Util.listSelect(form.fm('currentMimeTypes')));
+
+		submitForm(form);
+	}
 </aui:script>

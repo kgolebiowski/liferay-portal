@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -52,9 +52,8 @@ public class ServiceBeanAutoProxyCreator
 			(ListableBeanFactory)getBeanFactory();
 
 		Map<String, ChainableMethodAdviceInjector>
-			chainableMethodAdviceInjectors =
-				listableBeanFactory.getBeansOfType(
-					ChainableMethodAdviceInjector.class);
+			chainableMethodAdviceInjectors = listableBeanFactory.getBeansOfType(
+				ChainableMethodAdviceInjector.class);
 
 		for (ChainableMethodAdviceInjector chainableMethodAdviceInjector :
 				chainableMethodAdviceInjectors.values()) {
@@ -141,6 +140,6 @@ public class ServiceBeanAutoProxyCreator
 
 	private BeanMatcher _beanMatcher;
 	private MethodInterceptor _methodInterceptor;
-	private ServiceBeanAopCacheManager _serviceBeanAopCacheManager;
+	private final ServiceBeanAopCacheManager _serviceBeanAopCacheManager;
 
 }

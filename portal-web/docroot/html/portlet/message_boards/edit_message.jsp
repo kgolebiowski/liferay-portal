@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
+String uploadExceptionRedirect = ParamUtil.getString(request, "uploadExceptionRedirect", currentURL);
 
 String referringPortletResource = ParamUtil.getString(request, "referringPortletResource");
 
@@ -49,7 +50,7 @@ if (threadId > 0) {
 			}
 		}
 
-		parentAuthor = curParentMessage.isAnonymous() ? LanguageUtil.get(pageContext, "anonymous") : HtmlUtil.escape(PortalUtil.getUserName(curParentMessage));
+		parentAuthor = curParentMessage.isAnonymous() ? LanguageUtil.get(request, "anonymous") : HtmlUtil.escape(PortalUtil.getUserName(curParentMessage));
 	}
 	catch (Exception e) {
 	}
@@ -82,21 +83,21 @@ if (curParentMessage != null) {
 	MBUtil.addPortletBreadcrumbEntries(curParentMessage, request, renderResponse);
 
 	if (!layout.isTypeControlPanel()) {
-		PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "reply"), currentURL);
+		PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "reply"), currentURL);
 	}
 }
 else if (message != null) {
 	MBUtil.addPortletBreadcrumbEntries(message, request, renderResponse);
 
 	if (!layout.isTypeControlPanel()) {
-		PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "edit"), currentURL);
+		PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "edit"), currentURL);
 	}
 }
 else {
 	MBUtil.addPortletBreadcrumbEntries(categoryId, request, renderResponse);
 
 	if (!layout.isTypeControlPanel()) {
-		PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "add-message"), currentURL);
+		PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "add-message"), currentURL);
 	}
 }
 %>
@@ -108,7 +109,7 @@ else {
 <liferay-ui:header
 	backURL="<%= redirect %>"
 	localizeTitle="<%= (message == null) %>"
-	title='<%= (curParentMessage != null) ? LanguageUtil.format(pageContext, "reply-to-x", curParentMessage.getSubject(), false) : (message == null) ? "add-message" : LanguageUtil.format(pageContext, "edit-x", message.getSubject(), false) %>'
+	title='<%= (curParentMessage != null) ? LanguageUtil.format(request, "reply-to-x", curParentMessage.getSubject(), false) : (message == null) ? "add-message" : LanguageUtil.format(request, "edit-x", message.getSubject(), false) %>'
 />
 
 <c:if test="<%= preview %>">
@@ -160,6 +161,7 @@ else {
 
 <portlet:actionURL var="editMessageURL">
 	<portlet:param name="struts_action" value="/message_boards/edit_message" />
+	<liferay-portlet:param name="uploadExceptionRedirect" value="<%= uploadExceptionRedirect %>" />
 </portlet:actionURL>
 
 <aui:form action="<%= editMessageURL %>" enctype="multipart/form-data" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "saveMessage(false);" %>'>
@@ -172,9 +174,22 @@ else {
 	<aui:input name="preview" type="hidden" />
 	<aui:input name="workflowAction" type="hidden" value="<%= String.valueOf(WorkflowConstants.ACTION_SAVE_DRAFT) %>" />
 
+	<liferay-ui:error exception="<%= AntivirusScannerException.class %>">
+
+		<%
+		AntivirusScannerException ase = (AntivirusScannerException)errorException;
+		%>
+
+		<liferay-ui:message key="<%= ase.getMessageKey() %>" />
+	</liferay-ui:error>
+
 	<liferay-ui:error exception="<%= CaptchaMaxChallengesException.class %>" message="maximum-number-of-captcha-attempts-exceeded" />
 	<liferay-ui:error exception="<%= CaptchaTextException.class %>" message="text-verification-failed" />
 	<liferay-ui:error exception="<%= DuplicateFileException.class %>" message="please-enter-a-unique-document-name" />
+
+	<liferay-ui:error exception="<%= LiferayFileItemException.class %>">
+		<liferay-ui:message arguments="<%= TextFormatter.formatStorageSize(LiferayFileItem.THRESHOLD_SIZE, locale) %>" key="please-enter-valid-content-with-valid-content-size-no-larger-than-x" translateArguments="<%= false %>" />
+	</liferay-ui:error>
 
 	<liferay-ui:error exception="<%= FileExtensionException.class %>">
 		<liferay-ui:message key="document-names-must-end-with-one-of-the-following-extensions" /><%= StringUtil.merge(PrefsPropsUtil.getStringArray(PropsKeys.DL_FILE_EXTENSIONS, StringPool.COMMA), StringPool.COMMA_AND_SPACE) %>.
@@ -190,11 +205,9 @@ else {
 		if (fileMaxSize == 0) {
 			fileMaxSize = PrefsPropsUtil.getLong(PropsKeys.UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE);
 		}
-
-		fileMaxSize /= 1024;
 		%>
 
-		<liferay-ui:message arguments="<%= fileMaxSize %>" key="please-enter-a-file-with-a-valid-file-size-no-larger-than-x" translateArguments="<%= false %>" />
+		<liferay-ui:message arguments="<%= TextFormatter.formatStorageSize(fileMaxSize, locale) %>" key="please-enter-a-file-with-a-valid-file-size-no-larger-than-x" translateArguments="<%= false %>" />
 	</liferay-ui:error>
 
 	<liferay-ui:error exception="<%= LockedThreadException.class %>" message="thread-is-locked" />
@@ -209,7 +222,7 @@ else {
 
 	<aui:fieldset>
 		<c:if test="<%= message != null %>">
-			<aui:workflow-status status="<%= message.getStatus() %>" />
+			<aui:workflow-status showIcon="<%= false %>" showLabel="<%= false %>" status="<%= message.getStatus() %>" />
 		</c:if>
 
 		<aui:input autoFocus="<%= (windowState.equals(WindowState.MAXIMIZED) && !themeDisplay.isFacebook()) %>" name="subject" value="<%= subject %>" />
@@ -266,7 +279,7 @@ else {
 		</c:if>
 
 		<c:if test="<%= (message == null) && themeDisplay.isSignedIn() && !SubscriptionLocalServiceUtil.isSubscribed(themeDisplay.getCompanyId(), user.getUserId(), MBThread.class.getName(), threadId) && !SubscriptionLocalServiceUtil.isSubscribed(themeDisplay.getCompanyId(), user.getUserId(), MBCategory.class.getName(), categoryId) %>">
-			<aui:input helpMessage="message-boards-message-subscribe-me-help" label="subscribe-me" name="subscribe" type='<%= (MBUtil.getEmailMessageAddedEnabled(portletPreferences) || MBUtil.getEmailMessageUpdatedEnabled(portletPreferences)) ? "checkbox" : "hidden" %>' value="<%= subscribeByDefault %>" />
+			<aui:input helpMessage="message-boards-message-subscribe-me-help" label="subscribe-me" name="subscribe" type='<%= (mbSettings.isEmailMessageAddedEnabled() || mbSettings.isEmailMessageUpdatedEnabled()) ? "checkbox" : "hidden" %>' value="<%= subscribeByDefault %>" />
 		</c:if>
 
 		<c:if test="<%= (priorities.length > 0) && MBCategoryPermission.contains(permissionChecker, scopeGroupId, categoryId, ActionKeys.UPDATE_THREAD_PRIORITY) %>">
@@ -280,7 +293,7 @@ else {
 
 				<%
 				for (int i = 0; i < priorities.length; i++) {
-					String[] priority = StringUtil.split(priorities[i]);
+					String[] priority = StringUtil.split(priorities[i], StringPool.PIPE);
 
 					try {
 						String priorityName = priority[0];
@@ -324,7 +337,7 @@ else {
 						for (int i = 0; i < existingAttachmentsFileEntries.size(); i++) {
 							FileEntry fileEntry = existingAttachmentsFileEntries.get(i);
 
-							String taglibDeleteAttachment = "javascript:;";
+							String taglibDeleteAttachment = "javascript:" + renderResponse.getNamespace() + "trashAttachment(" + (i + 1) + ", '" + Constants.MOVE_TO_TRASH + "');";
 
 							if (!TrashUtil.isTrashEnabled(scopeGroupId)) {
 								taglibDeleteAttachment = "javascript:" + renderResponse.getNamespace() + "deleteAttachment(" + (i + 1) + ");";
@@ -335,14 +348,20 @@ else {
 								<span id="<portlet:namespace />existingFile<%= i + 1 %>">
 									<aui:input id='<%= "existingPath" + (i + 1) %>' name='<%= "existingPath" + (i + 1) %>' type="hidden" value="<%= fileEntry.getFileEntryId() %>" />
 
+									<%
+									AssetRendererFactory assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(DLFileEntry.class.getName());
+
+									AssetRenderer assetRenderer = assetRendererFactory.getAssetRenderer(fileEntry.getFileEntryId());
+									%>
+
 									<liferay-ui:icon
-										image='<%= "../file_system/small/" + DLUtil.getFileIcon(fileEntry.getExtension()) %>'
+										iconCssClass="<%= assetRenderer.getIconCssClass() %>"
 										label="<%= true %>"
 										message="<%= fileEntry.getTitle() %>"
 									/>
 								</span>
 
-								<aui:input cssClass="hide" label="" name='<%= "msgFile" + (i + 1) %>' size="70" type="file" />
+								<aui:input cssClass="hide" label="" name='<%= "msgFile" + (i + 1) %>' size="70" title="message-attachment" type="file" />
 
 								<liferay-ui:icon-delete
 									id='<%= "removeExisting" + (i + 1) %>'
@@ -387,7 +406,7 @@ else {
 				%>
 
 					<div>
-						<aui:input label="" name='<%= "msgFile" + i %>' size="70" type="file" />
+						<aui:input label="" name='<%= "msgFile" + i %>' size="70" title="message-attachment" type="file" />
 					</div>
 
 				<%
@@ -453,7 +472,7 @@ else {
 
 		<c:if test="<%= (message != null) && message.isApproved() && WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(message.getCompanyId(), message.getGroupId(), MBMessage.class.getName()) %>">
 			<div class="alert alert-info">
-				<%= LanguageUtil.format(pageContext, "this-x-is-approved.-publishing-these-changes-will-cause-it-to-be-unpublished-and-go-through-the-approval-process-again", ResourceActionsUtil.getModelResource(locale, MBMessage.class.getName()), false) %>
+				<%= LanguageUtil.format(request, "this-x-is-approved.-publishing-these-changes-will-cause-it-to-be-unpublished-and-go-through-the-approval-process-again", ResourceActionsUtil.getModelResource(locale, MBMessage.class.getName()), false) %>
 			</div>
 		</c:if>
 
@@ -495,7 +514,7 @@ else {
 
 <aui:script>
 	function <portlet:namespace />getSuggestionsContent() {
-		return document.<portlet:namespace />fm.<portlet:namespace />subject.value + ' ' + <portlet:namespace />getHTML();
+		return AUI.$(document.<portlet:namespace />fm).fm('subject').val() + ' ' + <portlet:namespace />getHTML();
 	}
 
 	function <portlet:namespace />previewMessage() {
@@ -505,114 +524,65 @@ else {
 			}
 		</c:if>
 
-		document.<portlet:namespace />fm.<portlet:namespace />body.value = <portlet:namespace />getHTML();
-		document.<portlet:namespace />fm.<portlet:namespace />preview.value = 'true';
+		var form = AUI.$(document.<portlet:namespace />fm);
+
+		form.fm('body').val(<portlet:namespace />getHTML());
+		form.fm('preview').val('true');
 
 		<portlet:namespace />saveMessage(true);
 	}
 
 	function <portlet:namespace />saveMessage(draft) {
-		document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = "<%= (message == null) ? Constants.ADD : Constants.UPDATE %>";
-		document.<portlet:namespace />fm.<portlet:namespace />body.value = <portlet:namespace />getHTML();
+		var form = AUI.$(document.<portlet:namespace />fm);
+
+		form.fm('<%= Constants.CMD %>').val('<%= (message == null) ? Constants.ADD : Constants.UPDATE %>');
+		form.fm('body').val(<portlet:namespace />getHTML());
 
 		if (!draft) {
-			document.<portlet:namespace />fm.<portlet:namespace />preview.value = <%= preview %>;
-			document.<portlet:namespace />fm.<portlet:namespace />workflowAction.value = <%= WorkflowConstants.ACTION_PUBLISH %>;
+			form.fm('preview').val(<%= preview %>);
+			form.fm('workflowAction').val(<%= WorkflowConstants.ACTION_PUBLISH %>);
 		}
 
-		submitForm(document.<portlet:namespace />fm);
-	}
-
-	function <portlet:namespace />selectCategory(categoryId, categoryName) {
-		document.<portlet:namespace />fm.<portlet:namespace />mbCategoryId.value = categoryId;
-
-		var nameEl = document.getElementById("<portlet:namespace />categoryName");
-
-		nameEl.href = "<portlet:renderURL><portlet:param name="struts_action" value="/message_boards/view" /></portlet:renderURL>&<portlet:namespace />mbCategoryId=" + categoryId;
-		nameEl.innerHTML = categoryName + "&nbsp;";
+		submitForm(form);
 	}
 
 	<c:choose>
 		<c:when test="<%= TrashUtil.isTrashEnabled(scopeGroupId) %>">
-			Liferay.provide(
-				window,
-				'<portlet:namespace />trashAttachment',
-				function(index, action) {
-					var A = AUI();
+			function <portlet:namespace />trashAttachment(index, action) {
+				var $ = AUI.$;
 
-					var existingPath = A.one('#<portlet:namespace />existingPath' + index);
-					var removeExisting = A.one('#<portlet:namespace />removeExisting' + index);
-					var undoFile = A.one('#<portlet:namespace />undoFile' + index);
-					var undoPath = A.one('#<portlet:namespace />undoPath' + index);
+				var existingPath = $('#<portlet:namespace />existingPath' + index);
+				var removeExisting = $('#<portlet:namespace />removeExisting' + index);
+				var undoFile = $('#<portlet:namespace />undoFile' + index);
 
-					if (action == '<%= Constants.MOVE_TO_TRASH %>') {
-						removeExisting.hide();
-						undoFile.show();
+				if (action == '<%= Constants.MOVE_TO_TRASH %>') {
+					removeExisting.addClass('hide');
+					undoFile.removeClass('hide');
 
-						existingPath.set('value', '');
-					}
-					else {
-						removeExisting.show();
-						undoFile.hide();
+					existingPath.val('');
+				}
+				else {
+					removeExisting.removeClass('hide');
+					undoFile.addClass('hide');
 
-						existingPath.set('value', undoPath.get('value'));
-					}
-				},
-				['aui-base']
-			);
+					var undoPath = $('#<portlet:namespace />undoPath' + index);
+
+					existingPath.val(undoPath.val());
+				}
+			}
 		</c:when>
 		<c:otherwise>
-			Liferay.provide(
-				window,
-				'<portlet:namespace />deleteAttachment',
-				function(index) {
-					var A = AUI();
+			function <portlet:namespace />deleteAttachment(index) {
+				var $ = AUI.$;
 
-					var button = A.one('#<portlet:namespace />removeExisting' + index);
-					var span = A.one('#<portlet:namespace />existingFile' + index);
-					var file = A.one('#<portlet:namespace />msgFile' + index);
+				$('#<portlet:namespace />removeExisting' + index).remove();
+				$('#<portlet:namespace />existingFile' + index).remove();
 
-					if (button) {
-						button.remove();
-					}
+				var file = $('#<portlet:namespace />msgFile' + index);
 
-					if (span) {
-						span.remove();
-					}
-
-					if (file) {
-						file.ancestor('.field').show();
-
-						file.ancestor('li').addClass('deleted-input');
-					}
-				},
-				['aui-base']
-			);
+				file.removeClass('hide');
+				file.closest('li').addClass('deleted-input');
+			}
 		</c:otherwise>
 	</c:choose>
 </aui:script>
-
-<c:if test="<%= TrashUtil.isTrashEnabled(scopeGroupId) %>">
-	<aui:script use="aui-base">
-
-		<%
-		for (int i = 1; i <= existingAttachmentsFileEntries.size(); i++) {
-		%>
-
-			var removeExisting = A.one('#<portlet:namespace />removeExisting' + <%= i %>);
-
-			if (removeExisting) {
-				removeExisting.on(
-					'click',
-					function(event) {
-						<portlet:namespace />trashAttachment(<%= i %>, '<%= Constants.MOVE_TO_TRASH %>');
-					}
-				);
-			}
-
-		<%
-		}
-		%>
-
-	</aui:script>
-</c:if>

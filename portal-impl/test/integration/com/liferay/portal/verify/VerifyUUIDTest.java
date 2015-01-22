@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,48 +14,74 @@
 
 package com.liferay.portal.verify;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.kernel.exception.BulkException;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.verify.model.LayoutVerifiableModel;
+import com.liferay.portal.verify.model.VerifiableUUIDModel;
 
-import java.sql.SQLException;
-
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Manuel de la Peña
  */
-@ExecutionTestListeners(listeners = {MainServletExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-public class VerifyUUIDTest extends BaseVerifyTestCase {
+public class VerifyUUIDTest extends BaseVerifyProcessTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Test
 	public void testVerifyModel() throws Exception {
-		testVerifyModel("Layout", "plid");
+		VerifyUUID.verify(new LayoutVerifiableModel());
 	}
 
-	@Test(expected = SQLException.class)
+	@Test(expected = BulkException.class)
 	public void testVerifyModelWithUnknownPKColumnName() throws Exception {
-		testVerifyModel("Layout", _UNKNOWN);
+		VerifyUUID.verify(
+			new VerifiableUUIDModel() {
+
+				@Override
+				public String getPrimaryKeyColumnName() {
+					return _UNKNOWN;
+				}
+
+				@Override
+				public String getTableName() {
+					return "Layout";
+				}
+
+			});
 	}
 
-	@Test(expected = SQLException.class)
+	@Test(expected = BulkException.class)
 	public void testVerifyUnknownModelWithUnknownPKColumnName()
 		throws Exception {
 
-		testVerifyModel(_UNKNOWN, _UNKNOWN);
+		VerifyUUID.verify(
+			new VerifiableUUIDModel() {
+
+				@Override
+				public String getPrimaryKeyColumnName() {
+					return _UNKNOWN;
+				}
+
+				@Override
+				public String getTableName() {
+					return _UNKNOWN;
+				}
+
+			});
 	}
 
 	@Override
 	protected VerifyProcess getVerifyProcess() {
 		return new VerifyUUID();
-	}
-
-	protected void testVerifyModel(String model, String pkColumnName)
-		throws Exception {
-
-		VerifyUUID.verifyModel(model, pkColumnName);
 	}
 
 	private static final String _UNKNOWN = "Unknown";

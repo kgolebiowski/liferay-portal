@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -33,36 +33,9 @@ if (Validator.isNull(title)) {
 
 request.setAttribute("view.jsp-showIconLabel", false);
 
-PortletURL viewFullContentURL = renderResponse.createRenderURL();
-
-viewFullContentURL.setParameter("struts_action", "/asset_publisher/view_content");
-viewFullContentURL.setParameter("assetEntryId", String.valueOf(assetEntry.getEntryId()));
-viewFullContentURL.setParameter("type", assetRendererFactory.getType());
-
-if (Validator.isNotNull(assetRenderer.getUrlTitle())) {
-	if (assetRenderer.getGroupId() != scopeGroupId) {
-		viewFullContentURL.setParameter("groupId", String.valueOf(assetRenderer.getGroupId()));
-	}
-
-	viewFullContentURL.setParameter("urlTitle", assetRenderer.getUrlTitle());
-}
-
-String viewURL = null;
-
 boolean viewInContext = ((Boolean)request.getAttribute("view.jsp-viewInContext")).booleanValue();
 
-if (viewInContext) {
-	String viewFullContentURLString = viewFullContentURL.toString();
-
-	viewFullContentURLString = HttpUtil.setParameter(viewFullContentURLString, "redirect", currentURL);
-
-	viewURL = assetRenderer.getURLViewInContext(liferayPortletRequest, liferayPortletResponse, viewFullContentURLString);
-}
-else {
-	viewURL = viewFullContentURL.toString();
-}
-
-viewURL = AssetUtil.checkViewURL(assetEntry, viewInContext, viewURL, currentURL, themeDisplay);
+String viewURL = AssetPublisherHelperUtil.getAssetViewURL(liferayPortletRequest, liferayPortletResponse, assetEntry, viewInContext);
 %>
 
 	<c:if test="<%= assetEntryIndex == 0 %>">
@@ -71,22 +44,21 @@ viewURL = AssetUtil.checkViewURL(assetEntry, viewInContext, viewURL, currentURL,
 
 	<li class="title-list <%= assetRendererFactory.getType() %>">
 		<liferay-ui:icon
+			iconCssClass="<%= assetRenderer.getIconCssClass() %>"
 			label="<%= true %>"
+			localizeMessage="<%= false %>"
 			message="<%= HtmlUtil.escape(title) %>"
-			src="<%= assetRenderer.getIconPath(renderRequest) %>"
 			url="<%= viewURL %>"
 		/>
 
 		<liferay-util:include page="/html/portlet/asset_publisher/asset_actions.jsp" />
 
-		<div class="asset-metadata">
-
-			<%
-			String[] metadataFields = assetPublisherDisplayContext.getMetadataFields();
-			%>
-
-			<%@ include file="/html/portlet/asset_publisher/asset_metadata.jspf" %>
-		</div>
+		<liferay-ui:asset-metadata
+			className="<%= assetEntry.getClassName() %>"
+			classPK="<%= assetEntry.getClassPK() %>"
+			filterByMetadata="<%= true %>"
+			metadataFields="<%= assetPublisherDisplayContext.getMetadataFields() %>"
+		/>
 	</li>
 
 	<c:if test="<%= (assetEntryIndex + 1) == results.size() %>">

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portlet.dynamicdatamapping.util;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -185,7 +184,7 @@ public abstract class BaseDDMDisplay implements DDMDisplay {
 			return new long[] {classPK};
 		}
 
-		List<Long> classPKs = new ArrayList<Long>();
+		List<Long> classPKs = new ArrayList<>();
 
 		classPKs.add(0L);
 
@@ -202,11 +201,12 @@ public abstract class BaseDDMDisplay implements DDMDisplay {
 
 	@Override
 	public long[] getTemplateGroupIds(
-			ThemeDisplay themeDisplay, boolean showGlobalScope)
+			ThemeDisplay themeDisplay, boolean includeAncestorTemplates)
 		throws Exception {
 
-		if (showGlobalScope) {
-			return PortalUtil.getSiteAndCompanyGroupIds(themeDisplay);
+		if (includeAncestorTemplates) {
+			return PortalUtil.getCurrentAndAncestorSiteGroupIds(
+				themeDisplay.getScopeGroupId());
 		}
 
 		return new long[] {themeDisplay.getScopeGroupId()};
@@ -311,7 +311,7 @@ public abstract class BaseDDMDisplay implements DDMDisplay {
 
 	protected long getControlPanelPlid(
 			LiferayPortletRequest liferayPortletRequest)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return PortalUtil.getControlPanelPlid(liferayPortletRequest);
 	}
@@ -342,12 +342,12 @@ public abstract class BaseDDMDisplay implements DDMDisplay {
 		return portletURL.toString();
 	}
 
-	private static Set<String> _templateLanguageTypes =
+	private static final Set<String> _templateLanguageTypes =
 		SetUtil.fromArray(
 			new String[] {
 				TemplateConstants.LANG_TYPE_FTL, TemplateConstants.LANG_TYPE_VM
 			});
-	private static Set<String> _viewTemplateExcludedColumnNames =
+	private static final Set<String> _viewTemplateExcludedColumnNames =
 		SetUtil.fromArray(new String[] {"structure"});
 
 }

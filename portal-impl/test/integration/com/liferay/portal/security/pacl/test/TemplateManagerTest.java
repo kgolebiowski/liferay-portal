@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,45 +19,39 @@ import com.liferay.portal.kernel.template.StringTemplateResource;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.security.pacl.PACLExecutionTestListener;
-import com.liferay.portal.security.pacl.PACLIntegrationJUnitTestRunner;
+import com.liferay.portal.log.CaptureAppender;
+import com.liferay.portal.log.Log4JLoggerTestUtil;
 import com.liferay.portal.template.TemplateContextHelper;
-import com.liferay.portal.test.CaptureAppender;
-import com.liferay.portal.test.Log4JLoggerTestUtil;
+import com.liferay.portal.test.PACLTestRule;
 
 import org.apache.log4j.Level;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Raymond Augé
  */
-@ExecutionTestListeners(listeners = {PACLExecutionTestListener.class})
-@RunWith(PACLIntegrationJUnitTestRunner.class)
 public class TemplateManagerTest {
+
+	@ClassRule
+	@Rule
+	public static final PACLTestRule paclTestRule = new PACLTestRule();
 
 	@BeforeClass
 	public static void setUpClass() {
-		CaptureAppender captureAppender =
-			Log4JLoggerTestUtil.configureLog4JLogger(
-				TemplateContextHelper.class.getName(), Level.OFF);
-
-		captureAppender.close();
+		_captureAppender = Log4JLoggerTestUtil.configureLog4JLogger(
+			TemplateContextHelper.class.getName(), Level.OFF);
 	}
 
 	@AfterClass
 	public static void tearDownClass() {
-		CaptureAppender captureAppender =
-			Log4JLoggerTestUtil.configureLog4JLogger(
-				TemplateContextHelper.class.getName(), null);
-
-		captureAppender.close();
+		_captureAppender.close();
 	}
 
 	@Test
@@ -217,5 +211,7 @@ public class TemplateManagerTest {
 
 		Assert.assertEquals(11, GetterUtil.getInteger(result));
 	}
+
+	private static CaptureAppender _captureAppender;
 
 }

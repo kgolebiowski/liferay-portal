@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -65,7 +65,7 @@ public abstract class AbstractTemplate implements Template {
 		this.templateResource = templateResource;
 		this.errorTemplateResource = errorTemplateResource;
 
-		this.context = new HashMap<String, Object>();
+		this.context = new HashMap<>();
 
 		if (context != null) {
 			for (Map.Entry<String, Object> entry : context.entrySet()) {
@@ -78,6 +78,19 @@ public abstract class AbstractTemplate implements Template {
 		if (interval != 0) {
 			_cacheTemplateResource(templateManagerName);
 		}
+	}
+
+	@Override
+	public void doProcessTemplate(Writer writer) throws Exception {
+		UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter();
+
+		put(TemplateConstants.WRITER, unsyncStringWriter);
+
+		processTemplate(templateResource, unsyncStringWriter);
+
+		StringBundler sb = unsyncStringWriter.getStringBundler();
+
+		sb.writeTo(writer);
 	}
 
 	@Override
@@ -120,15 +133,7 @@ public abstract class AbstractTemplate implements Template {
 		Writer oldWriter = (Writer)get(TemplateConstants.WRITER);
 
 		try {
-			UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter();
-
-			put(TemplateConstants.WRITER, unsyncStringWriter);
-
-			processTemplate(templateResource, unsyncStringWriter);
-
-			StringBundler sb = unsyncStringWriter.getStringBundler();
-
-			sb.writeTo(writer);
+			doProcessTemplate(writer);
 		}
 		catch (Exception e) {
 			put(TemplateConstants.WRITER, writer);
@@ -245,6 +250,6 @@ public abstract class AbstractTemplate implements Template {
 		return MultiVMPoolUtil.getCache(cacheName);
 	}
 
-	private TemplateContextHelper _templateContextHelper;
+	private final TemplateContextHelper _templateContextHelper;
 
 }

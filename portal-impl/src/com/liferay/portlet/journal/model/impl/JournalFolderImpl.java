@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.journal.model.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portlet.journal.NoSuchFolderException;
 import com.liferay.portlet.journal.model.JournalFolder;
 import com.liferay.portlet.journal.model.JournalFolderConstants;
@@ -29,14 +28,9 @@ import java.util.List;
  */
 public class JournalFolderImpl extends JournalFolderBaseImpl {
 
-	public JournalFolderImpl() {
-	}
-
 	@Override
-	public List<Long> getAncestorFolderIds()
-		throws PortalException, SystemException {
-
-		List<Long> ancestorFolderIds = new ArrayList<Long>();
+	public List<Long> getAncestorFolderIds() throws PortalException {
+		List<Long> ancestorFolderIds = new ArrayList<>();
 
 		JournalFolder folder = this;
 
@@ -59,10 +53,8 @@ public class JournalFolderImpl extends JournalFolderBaseImpl {
 	}
 
 	@Override
-	public List<JournalFolder> getAncestors()
-		throws PortalException, SystemException {
-
-		List<JournalFolder> ancestors = new ArrayList<JournalFolder>();
+	public List<JournalFolder> getAncestors() throws PortalException {
+		List<JournalFolder> ancestors = new ArrayList<>();
 
 		JournalFolder folder = this;
 
@@ -76,9 +68,7 @@ public class JournalFolderImpl extends JournalFolderBaseImpl {
 	}
 
 	@Override
-	public JournalFolder getParentFolder()
-		throws PortalException, SystemException {
-
+	public JournalFolder getParentFolder() throws PortalException {
 		if (getParentFolderId() ==
 				JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 

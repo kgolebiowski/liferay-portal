@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,9 +16,9 @@ package com.liferay.portal.kernel.template;
 
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
-import com.liferay.portal.kernel.util.UniqueList;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 
 /**
  * @author Jorge Ferrer
@@ -26,12 +26,11 @@ import java.util.Collection;
 public class TemplateVariableGroup {
 
 	public TemplateVariableGroup(String label) {
-		_label = label;
+		this(label, null);
 	}
 
 	public TemplateVariableGroup(String label, String[] restrictedVariables) {
-		this(label);
-
+		_label = label;
 		_restrictedVariables = restrictedVariables;
 	}
 
@@ -155,9 +154,8 @@ public class TemplateVariableGroup {
 
 	private boolean _autocompleteEnabled = true;
 	private String _label;
-	private String[] _restrictedVariables;
-	private Collection<TemplateVariableDefinition>
-		_templateVariableDefinitions =
-			new UniqueList<TemplateVariableDefinition>();
+	private final String[] _restrictedVariables;
+	private final Collection<TemplateVariableDefinition>
+		_templateVariableDefinitions = new LinkedHashSet<>();
 
 }

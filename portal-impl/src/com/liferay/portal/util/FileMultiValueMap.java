@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -106,7 +106,7 @@ public class FileMultiValueMap<K extends Serializable, V extends Serializable>
 
 			while (rs.next()) {
 				if (values == null) {
-					values = new HashSet<V>();
+					values = new HashSet<>();
 				}
 
 				V value = null;
@@ -155,7 +155,7 @@ public class FileMultiValueMap<K extends Serializable, V extends Serializable>
 
 			while (rs.next()) {
 				if (keys == null) {
-					keys = new HashSet<K>();
+					keys = new HashSet<>();
 				}
 
 				K key = null;
@@ -216,7 +216,7 @@ public class FileMultiValueMap<K extends Serializable, V extends Serializable>
 		}
 
 		if (curValues == null) {
-			values = new HashSet<V>();
+			values = new HashSet<>();
 		}
 
 		for (V value : values) {
@@ -382,6 +382,6 @@ public class FileMultiValueMap<K extends Serializable, V extends Serializable>
 
 	private static final String _VALUE = "value_";
 
-	private String _fileName;
+	private final String _fileName;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,19 +18,17 @@ import com.liferay.portal.kernel.io.OutputStreamWriter;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedWriter;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
+import com.liferay.portal.kernel.microsofttranslator.MicrosoftTranslator;
 import com.liferay.portal.kernel.microsofttranslator.MicrosoftTranslatorException;
+import com.liferay.portal.kernel.microsofttranslator.MicrosoftTranslatorFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.NumericalStringComparator;
+import com.liferay.portal.kernel.util.NaturalOrderStringComparator;
 import com.liferay.portal.kernel.util.PropertiesUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.webcache.WebCacheItem;
-import com.liferay.portal.util.InitUtil;
-import com.liferay.portlet.translator.model.Translation;
-import com.liferay.portlet.translator.util.TranslationWebCacheItem;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,11 +52,11 @@ public class LangBuilder {
 		" (Automatic Translation)";
 
 	public static void main(String[] args) {
+		ToolDependencies.wireBasic();
+
 		Map<String, String> arguments = ArgumentsUtil.parseArguments(args);
 
 		System.setProperty("line.separator", StringPool.NEW_LINE);
-
-		InitUtil.initWithSpring();
 
 		String langDir = arguments.get("lang.dir");
 		String langFile = arguments.get("lang.file");
@@ -96,11 +94,17 @@ public class LangBuilder {
 
 			_portalLanguageProperties.load(inputStream);
 		}
+		else {
+			_portalLanguageProperties = null;
+		}
 
 		File renameKeysFile = new File(_langDir + "/rename.properties");
 
 		if (renameKeysFile.exists()) {
 			_renameKeys = PropertiesUtil.load(FileUtil.read(renameKeysFile));
+		}
+		else {
+			_renameKeys = null;
 		}
 
 		String content = _orderProperties(
@@ -195,153 +199,236 @@ public class LangBuilder {
 			}
 		}
 
-		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
-			new UnsyncStringReader(content));
-		UnsyncBufferedWriter unsyncBufferedWriter = new UnsyncBufferedWriter(
-			new OutputStreamWriter(
-				new FileOutputStream(propertiesFile), StringPool.UTF8));
+		try (UnsyncBufferedReader unsyncBufferedReader =
+				new UnsyncBufferedReader(new UnsyncStringReader(content));
+			UnsyncBufferedWriter unsyncBufferedWriter =
+				new UnsyncBufferedWriter(
+					new OutputStreamWriter(
+						new FileOutputStream(propertiesFile),
+						StringPool.UTF8))) {
 
-		boolean firstLine = true;
-		int state = 0;
+			boolean firstLine = true;
+			int state = 0;
 
-		String line = null;
+			String line = null;
 
-		while ((line = unsyncBufferedReader.readLine()) != null) {
-			line = line.trim();
+			while ((line = unsyncBufferedReader.readLine()) != null) {
+				line = line.trim();
 
-			int pos = line.indexOf("=");
+				int pos = line.indexOf("=");
 
-			if (pos != -1) {
-				String key = line.substring(0, pos);
-				String value = line.substring(pos + 1);
+				if (pos != -1) {
+					String key = line.substring(0, pos);
+					String value = line.substring(pos + 1);
 
-				if (((state == 1) && !key.startsWith("lang.")) ||
-					((state == 2) && !key.startsWith("javax.portlet.")) ||
-					((state == 3) && !key.startsWith("category.")) ||
-					((state == 4) && !key.startsWith("model.resource.")) ||
-					((state == 5) && !key.startsWith("action.")) ||
-					((state == 7) && !key.startsWith("country.")) ||
-					((state == 8) && !key.startsWith("currency.")) ||
-					((state == 9) && !key.startsWith("language.")) ||
-					((state != 9) && key.startsWith("language."))) {
+					if (((state == 1) && !key.startsWith("lang.")) ||
+						((state == 2) && !key.startsWith("javax.portlet.")) ||
+						((state == 3) && !key.startsWith("category.")) ||
+						((state == 4) && !key.startsWith("model.resource.")) ||
+						((state == 5) && !key.startsWith("action.")) ||
+						((state == 7) && !key.startsWith("country.")) ||
+						((state == 8) && !key.startsWith("currency.")) ||
+						((state == 9) && !key.startsWith("language.")) ||
+						((state != 9) && key.startsWith("language."))) {
 
-					throw new RuntimeException(
-						"File " + languageId + " with state " + state +
-							" has key " + key);
-				}
+						throw new RuntimeException(
+							"File " + languageId + " with state " + state +
+								" has key " + key);
+					}
 
-				String translatedText = properties.getProperty(key);
+					String translatedText = properties.getProperty(key);
 
-				if ((translatedText == null) && (parentProperties != null)) {
-					translatedText = parentProperties.getProperty(key);
-				}
+					if ((translatedText == null) && (parentProperties != null))
+					{
+						translatedText = parentProperties.getProperty(key);
+					}
 
-				if ((translatedText == null) && (_renameKeys != null)) {
-					String renameKey = _renameKeys.getProperty(key);
+					if ((translatedText == null) && (_renameKeys != null)) {
+						String renameKey = _renameKeys.getProperty(key);
 
-					if (renameKey != null) {
-						translatedText = properties.getProperty(key);
+						if (renameKey != null) {
+							translatedText = properties.getProperty(key);
 
-						if ((translatedText == null) &&
-							(parentProperties != null)) {
+							if ((translatedText == null) &&
+								(parentProperties != null)) {
 
-							translatedText = parentProperties.getProperty(key);
+								translatedText = parentProperties.getProperty(
+									key);
+							}
 						}
 					}
-				}
 
-				if (translatedText != null) {
-					if (translatedText.contains("Babel Fish") ||
-						translatedText.contains("Yahoo! - 999")) {
+					if (translatedText != null) {
+						if (translatedText.contains("Babel Fish") ||
+							translatedText.contains("Yahoo! - 999")) {
 
-						translatedText = "";
+							translatedText = "";
+						}
+						else if (translatedText.endsWith(AUTOMATIC_COPY)) {
+							translatedText = value + AUTOMATIC_COPY;
+						}
 					}
-					else if (translatedText.endsWith(AUTOMATIC_COPY)) {
-						translatedText = value + AUTOMATIC_COPY;
-					}
-				}
 
-				if ((translatedText == null) || translatedText.equals("")) {
-					if (line.contains("{") || line.contains("<")) {
-						translatedText = value + AUTOMATIC_COPY;
-					}
-					else if (line.contains("[")) {
-						pos = line.indexOf("[");
+					if ((translatedText == null) || translatedText.equals("")) {
+						if (line.contains("{") || line.contains("<")) {
+							translatedText = value + AUTOMATIC_COPY;
+						}
+						else if (line.contains("[")) {
+							pos = line.indexOf("[");
 
-						String baseKey = line.substring(0, pos);
+							String baseKey = line.substring(0, pos);
 
-						String translatedBaseKey = properties.getProperty(
-							baseKey);
+							String translatedBaseKey = properties.getProperty(
+								baseKey);
 
-						if (Validator.isNotNull(translatedBaseKey)) {
-							translatedText = translatedBaseKey;
+							if (Validator.isNotNull(translatedBaseKey)) {
+								translatedText = translatedBaseKey;
+							}
+							else {
+								translatedText = value + AUTOMATIC_COPY;
+							}
+						}
+						else if (key.equals("lang.dir")) {
+							translatedText = "ltr";
+						}
+						else if (key.equals("lang.line.begin")) {
+							translatedText = "left";
+						}
+						else if (key.equals("lang.line.end")) {
+							translatedText = "right";
+						}
+						else if (languageId.equals("el") &&
+								 (key.equals("enabled") || key.equals("on") ||
+								  key.equals("on-date"))) {
+
+							translatedText = "";
+						}
+						else if (languageId.equals("es") && key.equals("am")) {
+							translatedText = "";
+						}
+						else if (languageId.equals("fi") &&
+								 (key.equals("on") || key.equals("the"))) {
+
+							translatedText = "";
+						}
+						else if (languageId.equals("it") && key.equals("am")) {
+							translatedText = "";
+						}
+						else if (languageId.equals("ja") &&
+								 (key.equals("any") || key.equals("anytime") ||
+								  key.equals("down") || key.equals("on") ||
+								  key.equals("on-date") || key.equals("the"))) {
+
+							translatedText = "";
+						}
+						else if (languageId.equals("ko") && key.equals("the")) {
+							translatedText = "";
 						}
 						else {
-							translatedText = value + AUTOMATIC_COPY;
+							translatedText = _translate(
+								"en", languageId, key, value, 0);
+
+							if (Validator.isNull(translatedText)) {
+								translatedText = value + AUTOMATIC_COPY;
+							}
+							else if (!key.startsWith("country.") &&
+									 !key.startsWith("language.")) {
+
+								translatedText =
+									translatedText + AUTOMATIC_TRANSLATION;
+							}
 						}
 					}
-					else if (key.equals("lang.dir")) {
-						translatedText = "ltr";
-					}
-					else if (key.equals("lang.line.begin")) {
-						translatedText = "left";
-					}
-					else if (key.equals("lang.line.end")) {
-						translatedText = "right";
-					}
-					else if (languageId.equals("el") &&
-							 (key.equals("enabled") || key.equals("on") ||
-							  key.equals("on-date"))) {
 
-						translatedText = "";
-					}
-					else if (languageId.equals("es") && key.equals("am")) {
-						translatedText = "";
-					}
-					else if (languageId.equals("fi") &&
-							 (key.equals("on") || key.equals("the"))) {
+					if (Validator.isNotNull(translatedText)) {
+						if (translatedText.contains("Babel Fish") ||
+							translatedText.contains("Yahoo! - 999")) {
 
-						translatedText = "";
-					}
-					else if (languageId.equals("it") && key.equals("am")) {
-						translatedText = "";
-					}
-					else if (languageId.equals("ja") &&
-							 (key.equals("any") || key.equals("anytime") ||
-							  key.equals("down") || key.equals("on") ||
-							  key.equals("on-date") || key.equals("the"))) {
-
-						translatedText = "";
-					}
-					else if (languageId.equals("ko") && key.equals("the")) {
-						translatedText = "";
-					}
-					else {
-						translatedText = _translate(
-							"en", languageId, key, value, 0);
-
-						if (Validator.isNull(translatedText)) {
-							translatedText = value + AUTOMATIC_COPY;
+							throw new IOException(
+								"IP was blocked because of over usage. " +
+									"Please use another IP.");
 						}
-						else if (!key.startsWith("country.") &&
-								 !key.startsWith("language.")) {
 
-							translatedText =
-								translatedText + AUTOMATIC_TRANSLATION;
+						translatedText = _fixTranslation(translatedText);
+
+						if (firstLine) {
+							firstLine = false;
 						}
+						else {
+							unsyncBufferedWriter.newLine();
+						}
+
+						unsyncBufferedWriter.write(key + "=" + translatedText);
+
+						unsyncBufferedWriter.flush();
 					}
 				}
+				else {
+					if (line.startsWith("## Language settings")) {
+						if (state == 1) {
+							throw new RuntimeException(languageId);
+						}
 
-				if (Validator.isNotNull(translatedText)) {
-					if (translatedText.contains("Babel Fish") ||
-						translatedText.contains("Yahoo! - 999")) {
-
-						throw new IOException(
-							"IP was blocked because of over usage. Please " +
-								"use another IP.");
+						state = 1;
 					}
+					else if (line.startsWith(
+								"## Portlet descriptions and titles")) {
 
-					translatedText = _fixTranslation(translatedText);
+						if (state == 2) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 2;
+					}
+					else if (line.startsWith("## Category titles")) {
+						if (state == 3) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 3;
+					}
+					else if (line.startsWith("## Model resources")) {
+						if (state == 4) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 4;
+					}
+					else if (line.startsWith("## Action names")) {
+						if (state == 5) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 5;
+					}
+					else if (line.startsWith("## Messages")) {
+						if (state == 6) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 6;
+					}
+					else if (line.startsWith("## Country")) {
+						if (state == 7) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 7;
+					}
+					else if (line.startsWith("## Currency")) {
+						if (state == 8) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 8;
+					}
+					else if (line.startsWith("## Language")) {
+						if (state == 9) {
+							throw new RuntimeException(languageId);
+						}
+
+						state = 9;
+					}
 
 					if (firstLine) {
 						firstLine = false;
@@ -350,98 +437,18 @@ public class LangBuilder {
 						unsyncBufferedWriter.newLine();
 					}
 
-					unsyncBufferedWriter.write(key + "=" + translatedText);
+					unsyncBufferedWriter.write(line);
 
 					unsyncBufferedWriter.flush();
 				}
 			}
-			else {
-				if (line.startsWith("## Language settings")) {
-					if (state == 1) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 1;
-				}
-				else if (line.startsWith(
-							"## Portlet descriptions and titles")) {
-
-					if (state == 2) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 2;
-				}
-				else if (line.startsWith("## Category titles")) {
-					if (state == 3) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 3;
-				}
-				else if (line.startsWith("## Model resources")) {
-					if (state == 4) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 4;
-				}
-				else if (line.startsWith("## Action names")) {
-					if (state == 5) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 5;
-				}
-				else if (line.startsWith("## Messages")) {
-					if (state == 6) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 6;
-				}
-				else if (line.startsWith("## Country")) {
-					if (state == 7) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 7;
-				}
-				else if (line.startsWith("## Currency")) {
-					if (state == 8) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 8;
-				}
-				else if (line.startsWith("## Language")) {
-					if (state == 9) {
-						throw new RuntimeException(languageId);
-					}
-
-					state = 9;
-				}
-
-				if (firstLine) {
-					firstLine = false;
-				}
-				else {
-					unsyncBufferedWriter.newLine();
-				}
-
-				unsyncBufferedWriter.write(line);
-
-				unsyncBufferedWriter.flush();
-			}
 		}
-
-		unsyncBufferedReader.close();
-		unsyncBufferedWriter.close();
 	}
 
 	private String _fixEnglishTranslation(String key, String value) {
 
 		// http://en.wikibooks.org/wiki/Basic_Book_Design/Capitalizing_Words_in_Titles
+		// http://titlecapitalization.com
 		// http://www.imdb.com
 
 		if (value.contains(" this ")) {
@@ -482,72 +489,71 @@ public class LangBuilder {
 
 		String content = FileUtil.read(propertiesFile);
 
-		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
-			new UnsyncStringReader(content));
-		UnsyncBufferedWriter unsyncBufferedWriter = new UnsyncBufferedWriter(
-			new FileWriter(propertiesFile));
+		try (UnsyncBufferedReader unsyncBufferedReader =
+			new UnsyncBufferedReader(new UnsyncStringReader(content));
+			UnsyncBufferedWriter unsyncBufferedWriter =
+				new UnsyncBufferedWriter(new FileWriter(propertiesFile))) {
 
-		Map<String, String> messages = new TreeMap<String, String>(
-			new NumericalStringComparator(true, true));
+			Map<String, String> messages = new TreeMap<>(
+				new NaturalOrderStringComparator(true, true));
 
-		boolean begin = false;
-		boolean firstLine = true;
+			boolean begin = false;
+			boolean firstLine = true;
 
-		String line = null;
+			String line = null;
 
-		while ((line = unsyncBufferedReader.readLine()) != null) {
-			int pos = line.indexOf("=");
+			while ((line = unsyncBufferedReader.readLine()) != null) {
+				int pos = line.indexOf("=");
 
-			if (pos != -1) {
-				String key = line.substring(0, pos);
+				if (pos != -1) {
+					String key = line.substring(0, pos);
 
-				String value = line.substring(pos + 1);
+					String value = line.substring(pos + 1);
 
-				if (Validator.isNotNull(value)) {
-					value = _fixTranslation(line.substring(pos + 1));
+					if (Validator.isNotNull(value)) {
+						value = _fixTranslation(line.substring(pos + 1));
 
-					value = _fixEnglishTranslation(key, value);
+						value = _fixEnglishTranslation(key, value);
 
-					if (_portalLanguageProperties != null) {
-						String portalValue = String.valueOf(
-							_portalLanguageProperties.get(key));
+						if (_portalLanguageProperties != null) {
+							String portalValue = String.valueOf(
+								_portalLanguageProperties.get(key));
 
-						if (value.equals(portalValue)) {
-							System.out.println("Duplicate key " + key);
+							if (value.equals(portalValue)) {
+								System.out.println("Duplicate key " + key);
+							}
 						}
+
+						messages.put(key, value);
 					}
-
-					messages.put(key, value);
-				}
-			}
-			else {
-				if (begin && line.equals(StringPool.BLANK)) {
-					_sortAndWrite(unsyncBufferedWriter, messages, firstLine);
-				}
-
-				if (line.equals(StringPool.BLANK)) {
-					begin = !begin;
-				}
-
-				if (firstLine) {
-					firstLine = false;
 				}
 				else {
-					unsyncBufferedWriter.newLine();
+					if (begin && line.equals(StringPool.BLANK)) {
+						_sortAndWrite(
+							unsyncBufferedWriter, messages, firstLine);
+					}
+
+					if (line.equals(StringPool.BLANK)) {
+						begin = !begin;
+					}
+
+					if (firstLine) {
+						firstLine = false;
+					}
+					else {
+						unsyncBufferedWriter.newLine();
+					}
+
+					unsyncBufferedWriter.write(line);
 				}
 
-				unsyncBufferedWriter.write(line);
+				unsyncBufferedWriter.flush();
 			}
 
-			unsyncBufferedWriter.flush();
+			if (!messages.isEmpty()) {
+				_sortAndWrite(unsyncBufferedWriter, messages, firstLine);
+			}
 		}
-
-		if (!messages.isEmpty()) {
-			_sortAndWrite(unsyncBufferedWriter, messages, firstLine);
-		}
-
-		unsyncBufferedReader.close();
-		unsyncBufferedWriter.close();
 
 		return FileUtil.read(propertiesFile);
 	}
@@ -646,12 +652,11 @@ public class LangBuilder {
 
 			System.out.println(sb.toString());
 
-			WebCacheItem wci = new TranslationWebCacheItem(
+			MicrosoftTranslator microsoftTranslator =
+				MicrosoftTranslatorFactoryUtil.getMicrosoftTranslator();
+
+			toText = microsoftTranslator.translate(
 				fromLanguageId, toLanguageId, fromText);
-
-			Translation translation = (Translation)wci.convert("");
-
-			toText = translation.getToText();
 		}
 		catch (Exception e) {
 			Throwable cause = e.getCause();
@@ -675,10 +680,10 @@ public class LangBuilder {
 		return toText;
 	}
 
-	private String _langDir;
-	private String _langFile;
-	private boolean _langTranslate;
-	private Properties _portalLanguageProperties;
-	private Properties _renameKeys;
+	private final String _langDir;
+	private final String _langFile;
+	private final boolean _langTranslate;
+	private final Properties _portalLanguageProperties;
+	private final Properties _renameKeys;
 
 }

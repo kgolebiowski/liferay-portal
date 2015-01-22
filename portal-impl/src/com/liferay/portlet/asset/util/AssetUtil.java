@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.asset.util;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
@@ -23,6 +22,7 @@ import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.Indexer;
@@ -38,6 +38,7 @@ import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PredicateFilter;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -54,24 +55,26 @@ import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.asset.AssetRendererFactoryRegistryUtil;
-import com.liferay.portlet.asset.NoSuchTagException;
 import com.liferay.portlet.asset.model.AssetCategory;
 import com.liferay.portlet.asset.model.AssetCategoryProperty;
 import com.liferay.portlet.asset.model.AssetEntry;
 import com.liferay.portlet.asset.model.AssetRendererFactory;
 import com.liferay.portlet.asset.model.AssetTag;
-import com.liferay.portlet.asset.model.AssetTagProperty;
+import com.liferay.portlet.asset.model.AssetVocabulary;
+import com.liferay.portlet.asset.model.ClassType;
+import com.liferay.portlet.asset.model.ClassTypeReader;
 import com.liferay.portlet.asset.service.AssetCategoryLocalServiceUtil;
 import com.liferay.portlet.asset.service.AssetCategoryPropertyLocalServiceUtil;
 import com.liferay.portlet.asset.service.AssetEntryLocalServiceUtil;
 import com.liferay.portlet.asset.service.AssetTagLocalServiceUtil;
-import com.liferay.portlet.asset.service.AssetTagPropertyLocalServiceUtil;
 import com.liferay.portlet.asset.service.permission.AssetCategoryPermission;
 import com.liferay.portlet.asset.service.permission.AssetTagPermission;
+import com.liferay.portlet.asset.service.permission.AssetVocabularyPermission;
 import com.liferay.portlet.asset.service.persistence.AssetEntryQuery;
 import com.liferay.portlet.assetpublisher.util.AssetSearcher;
 import com.liferay.portlet.documentlibrary.model.DLFileEntry;
 import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
+import com.liferay.portlet.dynamicdatalists.model.DDLRecord;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.util.DDMIndexerImpl;
@@ -113,9 +116,6 @@ public class AssetUtil {
 		CharPool.QUESTION, CharPool.QUOTE, CharPool.RETURN, CharPool.SEMICOLON,
 		CharPool.SLASH, CharPool.STAR, CharPool.TILDE
 	};
-
-	public static final String[] SELECTED_FIELD_NAMES =
-		{Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK};
 
 	public static Set<String> addLayoutTags(
 		HttpServletRequest request, List<AssetTag> tags) {
@@ -174,7 +174,7 @@ public class AssetUtil {
 
 		if (!viewInContext ||
 			(Validator.isNotNull(assetEntryLayoutUuid) &&
-		 	!assetEntryLayoutUuid.equals(layout.getUuid()))) {
+			 !assetEntryLayoutUuid.equals(layout.getUuid()))) {
 
 			viewURL = HttpUtil.setParameter(viewURL, "redirect", currentURL);
 		}
@@ -184,9 +184,9 @@ public class AssetUtil {
 
 	public static long[] filterCategoryIds(
 			PermissionChecker permissionChecker, long[] categoryIds)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		List<Long> viewableCategoryIds = new ArrayList<Long>();
+		List<Long> viewableCategoryIds = new ArrayList<>();
 
 		for (long categoryId : categoryIds) {
 			AssetCategory category =
@@ -206,9 +206,9 @@ public class AssetUtil {
 
 	public static long[] filterTagIds(
 			PermissionChecker permissionChecker, long[] tagIds)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		List<Long> viewableTagIds = new ArrayList<Long>();
+		List<Long> viewableTagIds = new ArrayList<>();
 
 		for (long tagId : tagIds) {
 			if (AssetTagPermission.contains(
@@ -224,14 +224,14 @@ public class AssetUtil {
 
 	public static long[][] filterTagIdsArray(
 			PermissionChecker permissionChecker, long[][] tagIdsArray)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		List<long[]> viewableTagIdsArray = new ArrayList<long[]>();
+		List<long[]> viewableTagIdsArray = new ArrayList<>();
 
 		for (int i = 0; i< tagIdsArray.length; i++) {
 			long[] tagIds = tagIdsArray[i];
 
-			List<Long> viewableTagIds = new ArrayList<Long>();
+			List<Long> viewableTagIds = new ArrayList<>();
 
 			for (long tagId : tagIds) {
 				if (AssetTagPermission.contains(
@@ -250,10 +250,50 @@ public class AssetUtil {
 			new long[viewableTagIdsArray.size()][]);
 	}
 
+	public static List<AssetVocabulary> filterVocabularies(
+		List<AssetVocabulary> vocabularies, String className,
+		final long classTypePK) {
+
+		final long classNameId = PortalUtil.getClassNameId(className);
+
+		PredicateFilter<AssetVocabulary> predicateFilter =
+			new PredicateFilter<AssetVocabulary>() {
+
+				@Override
+				public boolean filter(AssetVocabulary assetVocabulary) {
+					return
+						assetVocabulary.isAssociatedToClassNameIdAndClassTypePK(
+							classNameId, classTypePK);
+				}
+
+			};
+
+		return ListUtil.filter(vocabularies, predicateFilter);
+	}
+
+	public static long[] filterVocabularyIds(
+			PermissionChecker permissionChecker, long[] vocabularyIds)
+		throws PortalException {
+
+		List<Long> viewableVocabularyIds = new ArrayList<>();
+
+		for (long vocabularyId : vocabularyIds) {
+			if (AssetVocabularyPermission.contains(
+					permissionChecker, vocabularyId, ActionKeys.VIEW)) {
+
+				viewableVocabularyIds.add(vocabularyId);
+			}
+		}
+
+		return ArrayUtil.toArray(
+			viewableVocabularyIds.toArray(
+				new Long[viewableVocabularyIds.size()]));
+	}
+
 	public static PortletURL getAddPortletURL(
 			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse, String className,
-			long classTypeId, long[] allAssetCategoryIds,
+			LiferayPortletResponse liferayPortletResponse, long groupId,
+			String className, long classTypeId, long[] allAssetCategoryIds,
 			String[] allAssetTagNames, String redirect)
 		throws Exception {
 
@@ -265,12 +305,12 @@ public class AssetUtil {
 			AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(
 				className);
 
-		if (assetRendererFactory == null) {
+		if ((assetRendererFactory == null) ||
+			!assetRendererFactory.hasAddPermission(
+				themeDisplay.getPermissionChecker(), groupId, classTypeId)) {
+
 			return null;
 		}
-
-		liferayPortletRequest.setAttribute(
-			WebKeys.ASSET_RENDERER_FACTORY_CLASS_TYPE_ID, classTypeId);
 
 		PortletURL addPortletURL = assetRendererFactory.getURLAdd(
 			liferayPortletRequest, liferayPortletResponse);
@@ -298,7 +338,7 @@ public class AssetUtil {
 
 			if (allAssetCategoryIds != null) {
 				Map<Long, String> assetVocabularyAssetCategoryIds =
-					new HashMap<Long, String>();
+					new HashMap<>();
 
 				for (long assetCategoryId : allAssetCategoryIds) {
 					AssetCategory assetCategory =
@@ -351,6 +391,11 @@ public class AssetUtil {
 			addPortletURL.setParameter(
 				"classTypeId", String.valueOf(classTypeId));
 
+			if (className.equals(DDLRecord.class.getName())) {
+				addPortletURL.setParameter(
+					"recordSetId", String.valueOf(classTypeId));
+			}
+
 			if (className.equals(DLFileEntry.class.getName())) {
 				addPortletURL.setParameter(Constants.CMD, Constants.ADD);
 				addPortletURL.setParameter(
@@ -365,7 +410,7 @@ public class AssetUtil {
 					DDMStructureLocalServiceUtil.getStructure(classTypeId);
 
 				addPortletURL.setParameter(
-					"structureId", ddmStructure.getStructureKey());
+					"ddmStructureKey", ddmStructure.getStructureKey());
 			}
 		}
 
@@ -375,10 +420,17 @@ public class AssetUtil {
 		return addPortletURL;
 	}
 
-	public static Map<String, PortletURL> getAddPortletURLs(
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link
+	 *             #getAddPortletURL(LiferayPortletRequest,
+	 *             LiferayPortletResponse, long, String, long, long[], String[],
+	 *             String)}
+	 */
+	@Deprecated
+	public static PortletURL getAddPortletURL(
 			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse, long[] classNameIds,
-			long[] classTypeIds, long[] allAssetCategoryIds,
+			LiferayPortletResponse liferayPortletResponse, String className,
+			long classTypeId, long[] allAssetCategoryIds,
 			String[] allAssetTagNames, String redirect)
 		throws Exception {
 
@@ -386,9 +438,26 @@ public class AssetUtil {
 			(ThemeDisplay)liferayPortletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		Map<String, PortletURL> addPortletURLs =
-			new TreeMap<String, PortletURL>(
-				new ModelResourceComparator(themeDisplay.getLocale()));
+		return getAddPortletURL(
+			liferayPortletRequest, liferayPortletResponse,
+			themeDisplay.getScopeGroupId(), className, classTypeId,
+			allAssetCategoryIds, allAssetTagNames, redirect);
+	}
+
+	public static Map<String, PortletURL> getAddPortletURLs(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse, long groupId,
+			long[] classNameIds, long[] classTypeIds,
+			long[] allAssetCategoryIds, String[] allAssetTagNames,
+			String redirect)
+		throws Exception {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		Map<String, PortletURL> addPortletURLs = new TreeMap<>(
+			new ModelResourceComparator(themeDisplay.getLocale()));
 
 		if (Validator.isNull(redirect)) {
 			PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
@@ -399,7 +468,8 @@ public class AssetUtil {
 					PortletRequest.RENDER_PHASE, false);
 
 			redirectURL.setParameter(
-				"struts_action", "/asset_publisher/add_asset_redirect");
+				"mvcPath",
+				"/html/portlet/asset_publisher/add_asset_redirect.jsp");
 			redirectURL.setParameter("redirect", themeDisplay.getURLCurrent());
 			redirectURL.setWindowState(LiferayWindowState.POP_UP);
 
@@ -421,36 +491,41 @@ public class AssetUtil {
 				continue;
 			}
 
-			Map<Long, String> classTypes = assetRendererFactory.getClassTypes(
-				new long[] {
-					themeDisplay.getCompanyGroupId(),
-					themeDisplay.getScopeGroupId()
-				},
-				themeDisplay.getLocale());
+			ClassTypeReader classTypeReader =
+				assetRendererFactory.getClassTypeReader();
+
+			List<ClassType> classTypes =
+				classTypeReader.getAvailableClassTypes(
+					PortalUtil.getCurrentAndAncestorSiteGroupIds(
+						themeDisplay.getScopeGroupId()),
+					themeDisplay.getLocale());
 
 			if ((classTypeIds.length == 0) || classTypes.isEmpty()) {
 				PortletURL addPortletURL = getAddPortletURL(
-					liferayPortletRequest, liferayPortletResponse, className, 0,
-					allAssetCategoryIds, allAssetTagNames, redirect);
+					liferayPortletRequest, liferayPortletResponse, groupId,
+					className, 0, allAssetCategoryIds, allAssetTagNames,
+					redirect);
 
 				if (addPortletURL != null) {
 					addPortletURLs.put(className, addPortletURL);
 				}
 			}
 
-			for (long classTypeId : classTypes.keySet()) {
+			for (ClassType classType : classTypes) {
+				long classTypeId = classType.getClassTypeId();
+
 				if (ArrayUtil.contains(classTypeIds, classTypeId) ||
 					(classTypeIds.length == 0)) {
 
 					PortletURL addPortletURL = getAddPortletURL(
-						liferayPortletRequest, liferayPortletResponse,
+						liferayPortletRequest, liferayPortletResponse, groupId,
 						className, classTypeId, allAssetCategoryIds,
 						allAssetTagNames, redirect);
 
 					if (addPortletURL != null) {
 						String mesage =
 							className + CLASSNAME_SEPARATOR +
-								classTypes.get(classTypeId);
+								classType.getName();
 
 						addPortletURLs.put(mesage, addPortletURL);
 					}
@@ -461,8 +536,32 @@ public class AssetUtil {
 		return addPortletURLs;
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link
+	 *             #getAddPortletURLs(LiferayPortletRequest,
+	 *             LiferayPortletResponse, long, long[], long[], long[],
+	 *             String[], String)}
+	 */
+	@Deprecated
+	public static Map<String, PortletURL> getAddPortletURLs(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse, long[] classNameIds,
+			long[] classTypeIds, long[] allAssetCategoryIds,
+			String[] allAssetTagNames, String redirect)
+		throws Exception {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		return getAddPortletURLs(
+			liferayPortletRequest, liferayPortletResponse,
+			themeDisplay.getScopeGroupId(), classNameIds, classTypeIds,
+			allAssetCategoryIds, allAssetTagNames, redirect);
+	}
+
 	public static List<AssetEntry> getAssetEntries(Hits hits) {
-		List<AssetEntry> assetEntries = new ArrayList<AssetEntry>();
+		List<AssetEntry> assetEntries = new ArrayList<>();
 
 		for (Document document : hits.getDocs()) {
 			String className = GetterUtil.getString(
@@ -483,9 +582,7 @@ public class AssetUtil {
 		return assetEntries;
 	}
 
-	public static String getAssetKeywords(String className, long classPK)
-		throws SystemException {
-
+	public static String getAssetKeywords(String className, long classPK) {
 		List<AssetTag> tags = AssetTagLocalServiceUtil.getTags(
 			className, classPK);
 		List<AssetCategory> categories =
@@ -509,7 +606,7 @@ public class AssetUtil {
 			WebKeys.ASSET_LAYOUT_TAG_NAMES);
 
 		if (tagNames == null) {
-			tagNames = new HashSet<String>();
+			tagNames = new HashSet<>();
 
 			request.setAttribute(WebKeys.ASSET_LAYOUT_TAG_NAMES, tagNames);
 		}
@@ -620,17 +717,15 @@ public class AssetUtil {
 		AssetSearcher assetSearcher = getAssetSearcher(
 			searchContext, assetEntryQuery, start, end);
 
-		Hits hits = assetSearcher.search(searchContext, SELECTED_FIELD_NAMES);
+		Hits hits = assetSearcher.search(searchContext);
 
 		List<AssetEntry> assetEntries = getAssetEntries(hits);
 
-		return new BaseModelSearchResult<AssetEntry>(
-			assetEntries, hits.getLength());
+		return new BaseModelSearchResult<>(assetEntries, hits.getLength());
 	}
 
 	public static String substituteCategoryPropertyVariables(
-			long groupId, long categoryId, String s)
-		throws SystemException {
+		long groupId, long categoryId, String s) {
 
 		String result = s;
 
@@ -649,37 +744,6 @@ public class AssetUtil {
 				result = StringUtil.replace(
 					result, "[$" + categoryProperty.getKey() + "$]",
 					categoryProperty.getValue());
-			}
-		}
-
-		return StringUtil.stripBetween(result, "[$", "$]");
-	}
-
-	public static String substituteTagPropertyVariables(
-			long groupId, String tagName, String s)
-		throws PortalException, SystemException {
-
-		String result = s;
-
-		AssetTag tag = null;
-
-		if (tagName != null) {
-			try {
-				tag = AssetTagLocalServiceUtil.getTag(groupId, tagName);
-			}
-			catch (NoSuchTagException nste) {
-			}
-		}
-
-		if (tag != null) {
-			List<AssetTagProperty> tagProperties =
-				AssetTagPropertyLocalServiceUtil.getTagProperties(
-					tag.getTagId());
-
-			for (AssetTagProperty tagProperty : tagProperties) {
-				result = StringUtil.replace(
-					result, "[$" + tagProperty.getKey() + "$]",
-					tagProperty.getValue());
 			}
 		}
 
@@ -775,9 +839,9 @@ public class AssetUtil {
 
 		if (sortField.startsWith(
 				DDMIndexerImpl.DDM_FIELD_NAMESPACE +
-					StringPool.FORWARD_SLASH)) {
+					StringPool.DOUBLE_UNDERLINE)) {
 
-			String[] sortFields = sortField.split(StringPool.FORWARD_SLASH);
+			String[] sortFields = sortField.split(StringPool.DOUBLE_UNDERLINE);
 
 			long ddmStructureId = GetterUtil.getLong(sortFields[1]);
 			String fieldName = sortFields[2];
@@ -796,8 +860,8 @@ public class AssetUtil {
 			sortField = Field.MODIFIED_DATE;
 		}
 		else if (sortField.equals("title")) {
-			sortField = "localized_title_".concat(
-				LocaleUtil.toLanguageId(locale));
+			sortField = DocumentImpl.getSortableFieldName(
+				"localized_title_".concat(LocaleUtil.toLanguageId(locale)));
 		}
 
 		return SortFactoryUtil.getSort(
@@ -845,6 +909,6 @@ public class AssetUtil {
 		return sortType;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(AssetUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(AssetUtil.class);
 
 }

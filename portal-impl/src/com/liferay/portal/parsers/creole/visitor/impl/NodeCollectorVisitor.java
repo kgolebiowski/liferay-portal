@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,11 +26,11 @@ import java.util.List;
 public abstract class NodeCollectorVisitor extends BaseASTVisitor {
 
 	public List<ASTNode> collect(WikiPageNode wikiPageNode) {
-		_astNodes = new ArrayList<ASTNode>();
+		_astNodes = new ArrayList<>();
 
 		visit(wikiPageNode);
 
-		List<ASTNode> astNodes = new ArrayList<ASTNode>(_astNodes);
+		List<ASTNode> astNodes = new ArrayList<>(_astNodes);
 
 		_astNodes = null;
 

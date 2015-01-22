@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.model.impl;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.json.JSON;
@@ -53,6 +55,7 @@ import java.util.Map;
  * @generated
  */
 @JSON(strict = true)
+@ProviderType
 public class LayoutSetModelImpl extends BaseModelImpl<LayoutSet>
 	implements LayoutSetModel {
 	/*
@@ -96,10 +99,10 @@ public class LayoutSetModelImpl extends BaseModelImpl<LayoutSet>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portal.model.LayoutSet"),
 			true);
-	public static long GROUPID_COLUMN_BITMASK = 1L;
-	public static long LAYOUTSETPROTOTYPEUUID_COLUMN_BITMASK = 2L;
-	public static long PRIVATELAYOUT_COLUMN_BITMASK = 4L;
-	public static long LAYOUTSETID_COLUMN_BITMASK = 8L;
+	public static final long GROUPID_COLUMN_BITMASK = 1L;
+	public static final long LAYOUTSETPROTOTYPEUUID_COLUMN_BITMASK = 2L;
+	public static final long PRIVATELAYOUT_COLUMN_BITMASK = 4L;
+	public static final long LAYOUTSETID_COLUMN_BITMASK = 8L;
 
 	/**
 	 * Converts the soap model instance into a normal model instance.
@@ -594,6 +597,14 @@ public class LayoutSetModelImpl extends BaseModelImpl<LayoutSet>
 		_layoutSetPrototypeLinkEnabled = layoutSetPrototypeLinkEnabled;
 	}
 
+	public java.lang.String getCompanyFallbackVirtualHostname() {
+		return null;
+	}
+
+	public void setCompanyFallbackVirtualHostname(
+		java.lang.String companyFallbackVirtualHostname) {
+	}
+
 	public java.lang.String getVirtualHostname() {
 		return null;
 	}
@@ -721,6 +732,8 @@ public class LayoutSetModelImpl extends BaseModelImpl<LayoutSet>
 
 		layoutSetModelImpl._originalLayoutSetPrototypeUuid = layoutSetModelImpl._layoutSetPrototypeUuid;
 
+		setCompanyFallbackVirtualHostname(null);
+
 		setVirtualHostname(null);
 
 		layoutSetModelImpl._columnBitmask = 0;
@@ -820,6 +833,8 @@ public class LayoutSetModelImpl extends BaseModelImpl<LayoutSet>
 		}
 
 		layoutSetCacheModel.layoutSetPrototypeLinkEnabled = getLayoutSetPrototypeLinkEnabled();
+
+		layoutSetCacheModel._companyFallbackVirtualHostname = getCompanyFallbackVirtualHostname();
 
 		layoutSetCacheModel._virtualHostname = getVirtualHostname();
 
@@ -951,8 +966,8 @@ public class LayoutSetModelImpl extends BaseModelImpl<LayoutSet>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = LayoutSet.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = LayoutSet.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			LayoutSet.class
 		};
 	private long _mvccVersion;

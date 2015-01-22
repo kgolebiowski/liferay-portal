@@ -22,7 +22,7 @@ AUI.add(
 					content = '#' + randomId + 'updateAsignee';
 				}
 
-				title = icon.text();
+				var title = icon.text();
 
 				WorkflowTasks.showPopup(icon.attr('href'), A.one(content), title, randomId);
 			},
@@ -72,7 +72,7 @@ AUI.add(
 							},
 							width: 350
 						},
-						title: Liferay.Util.escapeHTML(title)
+						title: A.Lang.String.escapeHTML(title)
 					}
 				);
 			}

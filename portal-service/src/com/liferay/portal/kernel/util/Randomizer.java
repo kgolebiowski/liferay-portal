@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -32,7 +32,6 @@ public class Randomizer extends Random {
 	}
 
 	public Randomizer() {
-		super();
 	}
 
 	public Randomizer(long seed) {
@@ -44,7 +43,7 @@ public class Randomizer extends Random {
 			size = n;
 		}
 
-		Set<Integer> set = new LinkedHashSet<Integer>();
+		Set<Integer> set = new LinkedHashSet<>();
 
 		for (int i = 0; i < size; i++) {
 			while (true) {
@@ -138,6 +137,6 @@ public class Randomizer extends Random {
 		return new String(array);
 	}
 
-	private static Randomizer _instance = new Randomizer();
+	private static final Randomizer _instance = new Randomizer();
 
 }

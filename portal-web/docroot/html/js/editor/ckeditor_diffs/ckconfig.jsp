@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,27 +14,34 @@
  */
 --%>
 
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-
-<%@ page import="com.liferay.portal.kernel.util.ContentTypes" %>
-<%@ page import="com.liferay.portal.kernel.util.HtmlUtil" %>
-<%@ page import="com.liferay.portal.kernel.util.ParamUtil" %>
-<%@ page import="com.liferay.portal.kernel.xuggler.XugglerUtil" %>
-<%@ page import="com.liferay.portal.util.PortalUtil" %>
+<%@ include file="/html/js/editor/ckeditor_init.jsp" %>
 
 <%
 String contentsLanguageId = ParamUtil.getString(request, "contentsLanguageId");
+
+Locale contentsLocale = LocaleUtil.fromLanguageId(contentsLanguageId);
+
+contentsLanguageId = LocaleUtil.toLanguageId(contentsLocale);
+
+String colorSchemeCssClass = ParamUtil.getString(request, "colorSchemeCssClass");
 String cssPath = ParamUtil.getString(request, "cssPath");
 String cssClasses = ParamUtil.getString(request, "cssClasses");
 boolean inlineEdit = ParamUtil.getBoolean(request, "inlineEdit");
+
 String languageId = ParamUtil.getString(request, "languageId");
+
+Locale locale = LocaleUtil.fromLanguageId(languageId);
+
+languageId = LocaleUtil.toLanguageId(locale);
+
 String name = ParamUtil.getString(request, "name");
 boolean resizable = ParamUtil.getBoolean(request, "resizable");
+boolean showSource = ParamUtil.getBoolean(request, "showSource");
 
 response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 %>
 
-;(function() {
+;window['<%= HtmlUtil.escapeJS(name) %>Config'] = function() {
 	var ckEditor = CKEDITOR.instances['<%= HtmlUtil.escapeJS(name) %>'];
 
 	if (!CKEDITOR.stylesSet.get('liferayStyles')) {
@@ -67,27 +74,43 @@ response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 
 	var config = ckEditor.config;
 
+	config.allowedContent = true;
+
 	config.autoParagraph = false;
 
 	config.autoSaveTimeout = 3000;
 
-	config.bodyClass = 'html-editor <%= HtmlUtil.escapeJS(cssClasses) %>';
+	config.bodyClass = 'html-editor <%= HtmlUtil.escapeJS(colorSchemeCssClass) %> <%= HtmlUtil.escapeJS(cssClasses) %>';
 
 	config.closeNoticeTimeout = 8000;
 
 	config.contentsCss = ['<%= HtmlUtil.escapeJS(cssPath) %>/aui.css', '<%= HtmlUtil.escapeJS(cssPath) %>/main.css'];
 
-	config.contentsLangDirection = '<%= PortalUtil.isRightToLeft(request) ? "rtl" : "ltr" %>';
+	<%
+	String contentsLanguageDir = LanguageUtil.get(contentsLocale, "lang.dir");
+	%>
 
-	config.contentsLanguage = '<%= HtmlUtil.escapeJS(contentsLanguageId.replace("iw_", "he_")) %>';
+	config.contentsLangDirection = '<%= HtmlUtil.escapeJS(contentsLanguageDir) %>';
+
+	config.contentsLanguage = '<%= contentsLanguageId.replace("iw_", "he_") %>';
 
 	config.entities = false;
 
-	config.extraPlugins = 'ajaxsave,media,restore,scayt,wsc';
+	config.extraPlugins = 'a11yhelpbtn,lfrpopup,media,scayt,wsc';
+
+	<c:if test="<%= inlineEdit %>">
+		config.extraPlugins += ',ajaxsave,restore';
+	</c:if>
+
+	config.filebrowserWindowFeatures = 'title=<%= LanguageUtil.get(locale, "browse") %>';
 
 	config.height = 265;
 
-	config.language = '<%= HtmlUtil.escapeJS(languageId.replace("iw_", "he_")) %>';
+	config.language = '<%= languageId.replace("iw_", "he_") %>';
+
+	config.pasteFromWordRemoveFontStyles = false;
+
+	config.pasteFromWordRemoveStyles = false;
 
 	config.resize_enabled = <%= resizable %>;
 
@@ -98,82 +121,118 @@ response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 	config.stylesCombo_stylesSet = 'liferayStyles';
 
 	config.toolbar_editInPlace = [
+		['Bold', 'Italic', 'Underline', 'Strike', '-', 'Subscript', 'Superscript', '-', 'RemoveFormat'],
+		['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+		'/',
 		['Styles'],
-		['Bold', 'Italic', 'Underline', 'Strike'],
-		['Subscript', 'Superscript', 'SpecialChar'],
+		['SpellChecker', 'Scayt', '-', 'SpecialChar'],
 		['Undo', 'Redo'],
-		['SpellChecker', 'Scayt'],
-		['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'], ['Source', 'RemoveFormat'],
+
+		<c:if test="<%= showSource %>">
+			['Source'],
+		</c:if>
+
+		['A11YBtn']
 	];
 
 	config.toolbar_email = [
-		['FontSize', 'TextColor', 'BGColor', '-', 'Bold', 'Italic', 'Underline', 'Strike'],
+		['Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'],
+		['TextColor', 'BGColor'],
 		['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-		['SpellChecker', 'Scayt'],
-		'/',
-		['Undo', 'Redo', '-', 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'SelectAll', 'RemoveFormat'],
-		['Source'],
+		['FontSize'],
 		['Link', 'Unlink'],
-		['Image']
+		['Image'],
+		'/',
+		['Cut', 'Copy', 'Paste', '-', 'PasteText', 'PasteFromWord', '-', 'SelectAll', '-', 'Undo', 'Redo' ],
+		['SpellChecker', 'Scayt'],
+
+		<c:if test="<%= showSource %>">
+			['Source'],
+		</c:if>
+
+		['A11YBtn']
 	];
 
 	config.toolbar_liferay = [
-		['Bold', 'Italic', 'Underline', 'Strike'],
+		['Bold', 'Italic', 'Underline', 'Strike', '-', 'Subscript', 'Superscript', '-', 'RemoveFormat'],
+		['TextColor', 'BGColor'],
+		['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
+		['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+		'/',
+		['Styles', 'FontSize'],
+		['Link', 'Unlink', 'Anchor'],
+
+		['Table', '-', 'Image', <c:if test="<%= XugglerUtil.isEnabled() %>"> 'Audio', 'Video',</c:if> 'Flash', '-', 'Smiley', 'SpecialChar'],
+		'/',
 
 		<c:if test="<%= inlineEdit %>">
 			['AjaxSave', '-', 'Restore'],
 		</c:if>
 
-		['Undo', 'Redo', '-', 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', ],
-		['Styles', 'FontSize', '-', 'TextColor', 'BGColor'],
-		'/',
-		['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
-		['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-		['Image', 'Link', 'Unlink', 'Anchor'],
-		['Flash', <c:if test="<%= XugglerUtil.isEnabled() %>"> 'Audio', 'Video',</c:if> 'Table', '-', 'Smiley', 'SpecialChar'],
-		['Find', 'Replace', 'SpellChecker', 'Scayt'],
-		['SelectAll', 'RemoveFormat'],
-		['Subscript', 'Superscript']
+		['Cut', 'Copy', 'Paste', '-', 'PasteText', 'PasteFromWord', '-', 'SelectAll' , '-', 'Undo', 'Redo'],
+		['Find', 'Replace', '-', 'SpellChecker', 'Scayt'],
 
-		<c:if test="<%= !inlineEdit %>">
-			,['Source']
+		<c:if test="<%= !inlineEdit && showSource %>">
+			['Source'],
 		</c:if>
+
+		['A11YBtn']
 	];
 
 	config.toolbar_liferayArticle = [
-		['Styles', 'FontSize', '-', 'TextColor', 'BGColor'],
-		['Bold', 'Italic', 'Underline', 'Strike'],
-		['Subscript', 'Superscript'],
-		'/',
-		['Undo', 'Redo', '-', 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'SelectAll', 'RemoveFormat'],
-		['Find', 'Replace', 'SpellChecker', 'Scayt'],
-		['NumberedList','BulletedList','-','Outdent','Indent','Blockquote'],
+		['Bold', 'Italic', 'Underline', 'Strike', '-', 'Subscript', 'Superscript', '-', 'RemoveFormat'],
+		['TextColor', 'BGColor'],
 		['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
+		['NumberedList', 'BulletedList', '-' ,'Outdent', 'Indent', '-', 'Blockquote'],
 		'/',
-		['Source'],
+		['Styles', 'FontSize'],
 		['Link', 'Unlink', 'Anchor'],
-		['Image', 'Flash', <c:if test="<%= XugglerUtil.isEnabled() %>">'Audio', 'Video',</c:if> 'Table', '-', 'Smiley', 'SpecialChar', 'LiferayPageBreak']
+		['Table', '-', 'Image', <c:if test="<%= XugglerUtil.isEnabled() %>">'Audio', 'Video',</c:if>, 'Flash', '-', 'LiferayPageBreak', '-', 'Smiley', 'SpecialChar'],
+		'/',
+		['Cut', 'Copy', 'Paste', '-', 'PasteText', 'PasteFromWord', '-', 'SelectAll', '-', 'Undo', 'Redo'],
+		['Find', 'Replace', '-', 'SpellChecker', 'Scayt'],
+
+		<c:if test="<%= showSource %>">
+			['Source'],
+		</c:if>
+
+		['A11YBtn']
 	];
 
 	config.toolbar_phone = [
 		['Bold', 'Italic', 'Underline'],
 		['NumberedList', 'BulletedList'],
-		['Image', 'Link', 'Unlink']
+		['Link', 'Unlink'],
+		['Image']
 	];
+
+	<c:if test="<%= showSource %>">
+		config.toolbar_phone.push(['Source']);
+	</c:if>
 
 	config.toolbar_simple = [
 		['Bold', 'Italic', 'Underline', 'Strike'],
 		['NumberedList', 'BulletedList'],
-		['Image', 'Link', 'Unlink', 'Table']
+		['Link', 'Unlink'],
+		['Table', 'Image']
 	];
+
+	<c:if test="<%= showSource %>">
+		config.toolbar_simple.push(['Source']);
+	</c:if>
 
 	config.toolbar_tablet = [
 		['Bold', 'Italic', 'Underline', 'Strike'],
-		['NumberedList', 'BulletedList'],
-		['Image', 'Link', 'Unlink'],
 		['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-		['Styles', 'FontSize']
+		['NumberedList', 'BulletedList'],
+		['Styles', 'FontSize'],
+		['Link', 'Unlink'],
+		['Image']
 	];
+
+	<c:if test="<%= showSource %>">
+		config.toolbar_tablet.push(['Source']);
+	</c:if>
 
 	ckEditor.on(
 		'dialogDefinition',
@@ -202,4 +261,8 @@ response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 			}
 		}
 	);
-})();
+
+	<%@ include file="/html/js/editor/ckeditor/ckconfig-ext.jsp" %>
+};
+
+window['<%= HtmlUtil.escapeJS(name) %>Config']();

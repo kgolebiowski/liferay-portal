@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -136,12 +136,11 @@ public class MBCategoryDisplayImpl implements MBCategoryDisplay {
 
 		_rootCategory.setCategoryId(categoryId);
 
-		_categoryTree = new ListTree<MBCategory>(_rootCategory);
+		_categoryTree = new ListTree<>(_rootCategory);
 
-		_categoryNodesMap = new HashMap<Long, TreeNode<MBCategory>>();
+		_categoryNodesMap = new HashMap<>();
 
-		Map<Long, List<MBCategory>> categoriesMap =
-			new HashMap<Long, List<MBCategory>>();
+		Map<Long, List<MBCategory>> categoriesMap = new HashMap<>();
 
 		for (MBCategory category : _allCategories) {
 			Long parentCategoryId = category.getParentCategoryId();
@@ -150,7 +149,7 @@ public class MBCategoryDisplayImpl implements MBCategoryDisplay {
 				parentCategoryId);
 
 			if (curCategories == null) {
-				curCategories = new ArrayList<MBCategory>();
+				curCategories = new ArrayList<>();
 
 				categoriesMap.put(parentCategoryId, curCategories);
 			}
@@ -188,7 +187,7 @@ public class MBCategoryDisplayImpl implements MBCategoryDisplay {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		MBCategoryDisplayImpl.class);
 
 	private List<MBCategory> _allCategories;

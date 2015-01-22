@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,7 +18,6 @@ import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.PortalSessionContext;
@@ -48,9 +47,7 @@ import javax.servlet.http.HttpSession;
 public class LiveUsers {
 
 	public static void addClusterNode(
-			String clusterNodeId,
-			Map<Long, Map<Long, Set<String>>> clusterUsers)
-		throws SystemException {
+		String clusterNodeId, Map<Long, Map<Long, Set<String>>> clusterUsers) {
 
 		_instance._addClusterNode(clusterNodeId, clusterUsers);
 	}
@@ -68,9 +65,7 @@ public class LiveUsers {
 		return getGroupUsers(companyId, groupId).size();
 	}
 
-	public static Map<Long, Map<Long, Set<String>>> getLocalClusterUsers()
-		throws SystemException {
-
+	public static Map<Long, Map<Long, Set<String>>> getLocalClusterUsers() {
 		return _instance._getLocalClusterUsers();
 	}
 
@@ -108,16 +103,13 @@ public class LiveUsers {
 		_instance._leaveGroup(companyId, groupId, userIds);
 	}
 
-	public static void removeClusterNode(String clusterNodeId)
-		throws SystemException {
-
+	public static void removeClusterNode(String clusterNodeId) {
 		_instance._removeClusterNode(clusterNodeId);
 	}
 
 	public static void signIn(
-			String clusterNodeId, long companyId, long userId, String sessionId,
-			String remoteAddr, String remoteHost, String userAgent)
-		throws SystemException {
+		String clusterNodeId, long companyId, long userId, String sessionId,
+		String remoteAddr, String remoteHost, String userAgent) {
 
 		_instance._signIn(
 			clusterNodeId, companyId, userId, sessionId, remoteAddr, remoteHost,
@@ -125,8 +117,7 @@ public class LiveUsers {
 	}
 
 	public static void signOut(
-			String clusterNodeId, long companyId, long userId, String sessionId)
-		throws SystemException {
+		String clusterNodeId, long companyId, long userId, String sessionId) {
 
 		_instance._signOut(clusterNodeId, companyId, userId, sessionId);
 	}
@@ -135,9 +126,8 @@ public class LiveUsers {
 	}
 
 	private void _addClusterNode(
-			String clusterNodeId,
-			Map<Long, Map<Long, Set<String>>> clusterUsers)
-		throws SystemException {
+		String clusterNodeId,
+		Map<Long, Map<Long, Set<String>>> clusterUsers) {
 
 		if (Validator.isNull(clusterNodeId)) {
 			return;
@@ -174,8 +164,7 @@ public class LiveUsers {
 			clusterNodeId);
 
 		if (clusterUsers == null) {
-			clusterUsers =
-				new ConcurrentHashMap<Long, Map<Long, Set<String>>>();
+			clusterUsers = new ConcurrentHashMap<>();
 
 			_clusterUsers.put(clusterNodeId, clusterUsers);
 		}
@@ -183,7 +172,7 @@ public class LiveUsers {
 		Map<Long, Set<String>> companyUsers = clusterUsers.get(companyId);
 
 		if (companyUsers == null) {
-			companyUsers = new ConcurrentHashMap<Long, Set<String>>();
+			companyUsers = new ConcurrentHashMap<>();
 
 			clusterUsers.put(companyId, companyUsers);
 		}
@@ -191,7 +180,7 @@ public class LiveUsers {
 		Set<String> userSessions = companyUsers.get(userId);
 
 		if (userSessions == null) {
-			userSessions = new ConcurrentHashSet<String>();
+			userSessions = new ConcurrentHashSet<>();
 
 			companyUsers.put(userId, userSessions);
 		}
@@ -208,7 +197,7 @@ public class LiveUsers {
 			userTrackers.add(userTracker);
 		}
 		else {
-			userTrackers = new ArrayList<UserTracker>();
+			userTrackers = new ArrayList<>();
 
 			userTrackers.add(userTracker);
 
@@ -231,7 +220,7 @@ public class LiveUsers {
 		Set<Long> groupUsers = liveUsers.get(groupId);
 
 		if (groupUsers == null) {
-			groupUsers = new ConcurrentHashSet<Long>();
+			groupUsers = new ConcurrentHashSet<>();
 
 			liveUsers.put(groupId, groupUsers);
 		}
@@ -243,7 +232,7 @@ public class LiveUsers {
 		Map<Long, Set<Long>> liveUsers = _liveUsers.get(companyId);
 
 		if (liveUsers == null) {
-			liveUsers = new ConcurrentHashMap<Long, Set<Long>>();
+			liveUsers = new ConcurrentHashMap<>();
 
 			_liveUsers.put(companyId, liveUsers);
 		}
@@ -251,9 +240,7 @@ public class LiveUsers {
 		return liveUsers;
 	}
 
-	private Map<Long, Map<Long, Set<String>>> _getLocalClusterUsers()
-		throws SystemException {
-
+	private Map<Long, Map<Long, Set<String>>> _getLocalClusterUsers() {
 		ClusterNode clusterNode = ClusterExecutorUtil.getLocalClusterNode();
 
 		if (clusterNode == null) {
@@ -267,7 +254,7 @@ public class LiveUsers {
 		Map<String, UserTracker> sessionUsers = _sessionUsers.get(companyId);
 
 		if (sessionUsers == null) {
-			sessionUsers = new ConcurrentHashMap<String, UserTracker>();
+			sessionUsers = new ConcurrentHashMap<>();
 
 			_sessionUsers.put(companyId, sessionUsers);
 		}
@@ -293,7 +280,7 @@ public class LiveUsers {
 			companyId);
 
 		if (userTrackersMap == null) {
-			userTrackersMap = new ConcurrentHashMap<Long, List<UserTracker>>();
+			userTrackersMap = new ConcurrentHashMap<>();
 
 			_userTrackers.put(companyId, userTrackersMap);
 		}
@@ -341,9 +328,7 @@ public class LiveUsers {
 		}
 	}
 
-	private void _removeClusterNode(String clusterNodeId)
-		throws SystemException {
-
+	private void _removeClusterNode(String clusterNodeId) {
 		if (Validator.isNull(clusterNodeId)) {
 			return;
 		}
@@ -423,7 +408,7 @@ public class LiveUsers {
 			}
 		}
 
-		if (userTrackers.size() == 0) {
+		if (userTrackers.isEmpty()) {
 			Map<Long, List<UserTracker>> userTrackersMap = _getUserTrackersMap(
 				companyId);
 
@@ -432,9 +417,8 @@ public class LiveUsers {
 	}
 
 	private void _signIn(
-			String clusterNodeId, long companyId, long userId, String sessionId,
-			String remoteAddr, String remoteHost, String userAgent)
-		throws SystemException {
+		String clusterNodeId, long companyId, long userId, String sessionId,
+		String remoteAddr, String remoteHost, String userAgent) {
 
 		_addClusterUser(clusterNodeId, companyId, userId, sessionId);
 
@@ -474,8 +458,7 @@ public class LiveUsers {
 	}
 
 	private void _signOut(
-			String clusterNodeId, long companyId, long userId, String sessionId)
-		throws SystemException {
+		String clusterNodeId, long companyId, long userId, String sessionId) {
 
 		_removeClusterUser(clusterNodeId, companyId, userId, sessionId);
 
@@ -534,13 +517,11 @@ public class LiveUsers {
 	}
 
 	private Map<Long, Set<Long>> _updateGroupStatus(
-			long companyId, long userId, boolean signedIn)
-		throws SystemException {
+		long companyId, long userId, boolean signedIn) {
 
 		Map<Long, Set<Long>> liveUsers = _getLiveUsers(companyId);
 
-		LinkedHashMap<String, Object> groupParams =
-			new LinkedHashMap<String, Object>();
+		LinkedHashMap<String, Object> groupParams = new LinkedHashMap<>();
 
 		groupParams.put("usersGroups", userId);
 
@@ -563,19 +544,19 @@ public class LiveUsers {
 		return liveUsers;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LiveUsers.class);
+	private static final Log _log = LogFactoryUtil.getLog(LiveUsers.class);
 
-	private static LiveUsers _instance = new LiveUsers();
+	private static final LiveUsers _instance = new LiveUsers();
 
 	// PLACEHOLDER 26
 
-	private Map<String, Map<Long, Map<Long, Set<String>>>> _clusterUsers =
-		new ConcurrentHashMap<String, Map<Long, Map<Long, Set<String>>>>();
-	private Map<Long, Map<Long, Set<Long>>> _liveUsers =
-		new ConcurrentHashMap<Long, Map<Long, Set<Long>>>();
-	private Map<Long, Map<String, UserTracker>> _sessionUsers =
-		new ConcurrentHashMap<Long, Map<String, UserTracker>>();
-	private Map<Long, Map<Long, List<UserTracker>>> _userTrackers =
-		new ConcurrentHashMap<Long, Map<Long, List<UserTracker>>>();
+	private final Map<String, Map<Long, Map<Long, Set<String>>>> _clusterUsers =
+		new ConcurrentHashMap<>();
+	private final Map<Long, Map<Long, Set<Long>>> _liveUsers =
+		new ConcurrentHashMap<>();
+	private final Map<Long, Map<String, UserTracker>> _sessionUsers =
+		new ConcurrentHashMap<>();
+	private final Map<Long, Map<Long, List<UserTracker>>> _userTrackers =
+		new ConcurrentHashMap<>();
 
 }

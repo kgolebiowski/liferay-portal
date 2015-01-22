@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,11 +18,11 @@ import com.liferay.portal.NoSuchLayoutException;
 import com.liferay.portal.dao.shard.ShardDataSourceTargetSource;
 import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.events.StartupAction;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.cache.Lifecycle;
 import com.liferay.portal.kernel.cache.ThreadLocalCacheManager;
 import com.liferay.portal.kernel.deploy.hot.HotDeployUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -82,7 +82,6 @@ import com.liferay.portal.struts.StrutsUtil;
 import com.liferay.portal.util.ClassLoaderUtil;
 import com.liferay.portal.util.ExtRegistry;
 import com.liferay.portal.util.MaintenanceUtil;
-import com.liferay.portal.util.Portal;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
@@ -195,10 +194,6 @@ public class MainServlet extends ActionServlet {
 		callParentInit();
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize servlet context pool");
-		}
-
-		if (_log.isDebugEnabled()) {
 			_log.debug("Process startup events");
 		}
 
@@ -242,7 +237,7 @@ public class MainServlet extends ActionServlet {
 			_log.debug("Initialize portlets");
 		}
 
-		List<Portlet> portlets = new ArrayList<Portlet>();
+		List<Portlet> portlets = new ArrayList<>();
 
 		try {
 			portlets.addAll(initPortlets(pluginPackage));
@@ -352,6 +347,8 @@ public class MainServlet extends ActionServlet {
 
 		servletContext.setAttribute(WebKeys.STARTUP_FINISHED, true);
 
+		StartupHelperUtil.setStartupFinished(true);
+
 		ThreadLocalCacheManager.clearAll(Lifecycle.REQUEST);
 	}
 
@@ -418,7 +415,7 @@ public class MainServlet extends ActionServlet {
 			_log.debug("Set portal port");
 		}
 
-		setPortalPort(request);
+		setPortalInetSocketAddresses(request);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Check variables");
@@ -857,19 +854,12 @@ public class MainServlet extends ActionServlet {
 
 		ServletContext servletContext = getServletContext();
 
-		String[] xmls = new String[] {
-			HttpUtil.URLtoString(
-				servletContext.getResource(
-					"/WEB-INF/" + Portal.PORTLET_XML_FILE_NAME_CUSTOM)),
-			HttpUtil.URLtoString(
-				servletContext.getResource("/WEB-INF/portlet-ext.xml")),
-			HttpUtil.URLtoString(
-				servletContext.getResource("/WEB-INF/liferay-portlet.xml")),
-			HttpUtil.URLtoString(
-				servletContext.getResource("/WEB-INF/liferay-portlet-ext.xml")),
-			HttpUtil.URLtoString(
-				servletContext.getResource("/WEB-INF/web.xml"))
-		};
+		String[] xmls = new String[PropsValues.PORTLET_CONFIGS.length];
+
+		for (int i = 0; i < PropsValues.PORTLET_CONFIGS.length; i++) {
+			xmls[i] = HttpUtil.URLtoString(
+				servletContext.getResource(PropsValues.PORTLET_CONFIGS[i]));
+		}
 
 		PortletLocalServiceUtil.initEAR(servletContext, xmls, pluginPackage);
 
@@ -973,7 +963,7 @@ public class MainServlet extends ActionServlet {
 	protected long loginUser(
 			HttpServletRequest request, HttpServletResponse response,
 			long companyId, long userId, String remoteUser)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if ((userId > 0) || (remoteUser == null)) {
 			return userId;
@@ -992,8 +982,8 @@ public class MainServlet extends ActionServlet {
 
 		User user = UserLocalServiceUtil.getUserById(userId);
 
-		if (PropsValues.USERS_UPDATE_LAST_LOGIN) {
-			UserLocalServiceUtil.updateLastLogin(
+		if (PropsValues.USERS_UPDATE_LAST_LOGIN && !user.isDefaultUser()) {
+			user = UserLocalServiceUtil.updateLastLogin(
 				userId, request.getRemoteAddr());
 		}
 
@@ -1041,7 +1031,7 @@ public class MainServlet extends ActionServlet {
 
 	protected boolean processGroupInactiveRequest(
 			HttpServletRequest request, HttpServletResponse response)
-		throws IOException, PortalException, SystemException {
+		throws IOException, PortalException {
 
 		long plid = ParamUtil.getLong(request, "p_l_id");
 
@@ -1189,6 +1179,8 @@ public class MainServlet extends ActionServlet {
 
 		if (plid > 0) {
 			try {
+				redirect = HttpUtil.addParameter(redirect, "refererPlid", plid);
+
 				Layout layout = LayoutLocalServiceUtil.getLayout(plid);
 
 				Group group = layout.getGroup();
@@ -1269,8 +1261,8 @@ public class MainServlet extends ActionServlet {
 		PortalUtil.sendError(status, (Exception)t, dynamicRequest, response);
 	}
 
-	protected void setPortalPort(HttpServletRequest request) {
-		PortalUtil.setPortalPort(request);
+	protected void setPortalInetSocketAddresses(HttpServletRequest request) {
+		PortalUtil.setPortalInetSocketAddresses(request);
 	}
 
 	protected void setPrincipal(
@@ -1318,6 +1310,6 @@ public class MainServlet extends ActionServlet {
 	private static final String _LIFERAY_PORTAL_REQUEST_HEADER =
 		"Liferay-Portal";
 
-	private static Log _log = LogFactoryUtil.getLog(MainServlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(MainServlet.class);
 
 }

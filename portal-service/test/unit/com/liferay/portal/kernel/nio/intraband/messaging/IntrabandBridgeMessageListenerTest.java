@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,13 +16,11 @@ package com.liferay.portal.kernel.nio.intraband.messaging;
 
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
-import com.liferay.portal.kernel.nio.intraband.MockIntraband;
-import com.liferay.portal.kernel.nio.intraband.MockRegistrationReference;
+import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
+import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-
-import java.lang.reflect.Field;
 
 import java.nio.ByteBuffer;
 
@@ -36,19 +34,22 @@ import org.junit.Test;
 public class IntrabandBridgeMessageListenerTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Test
-	public void testConstructor() throws Exception {
+	public void testConstructor() {
 		IntrabandBridgeMessageListener intrabandBridgeMessageListener =
 			new IntrabandBridgeMessageListener(_mockRegistrationReference);
 
 		Assert.assertSame(
-			_mockIntraband, getIntraband(intrabandBridgeMessageListener));
+			_mockIntraband,
+			ReflectionTestUtil.getFieldValue(
+				intrabandBridgeMessageListener, "_intraband"));
 		Assert.assertSame(
 			_mockRegistrationReference,
-			getRegistrationReference(intrabandBridgeMessageListener));
+			ReflectionTestUtil.getFieldValue(
+				intrabandBridgeMessageListener, "_registrationReference"));
 	}
 
 	@Test
@@ -84,30 +85,8 @@ public class IntrabandBridgeMessageListenerTest {
 		Assert.assertEquals(payload, receivedMessage.getPayload());
 	}
 
-	private static MockIntraband getIntraband(
-			IntrabandBridgeMessageListener intrabandBridgeMessageListener)
-		throws Exception {
-
-		Field intrabandField = ReflectionUtil.getDeclaredField(
-			IntrabandBridgeMessageListener.class, "_intraband");
-
-		return (MockIntraband)intrabandField.get(
-			intrabandBridgeMessageListener);
-	}
-
-	private static MockRegistrationReference getRegistrationReference(
-			IntrabandBridgeMessageListener intrabandBridgeMessageListener)
-		throws Exception {
-
-		Field registrationReferenceField = ReflectionUtil.getDeclaredField(
-			IntrabandBridgeMessageListener.class, "_registrationReference");
-
-		return (MockRegistrationReference)registrationReferenceField.get(
-			intrabandBridgeMessageListener);
-	}
-
-	private MockIntraband _mockIntraband = new MockIntraband();
-	private MockRegistrationReference _mockRegistrationReference =
+	private final MockIntraband _mockIntraband = new MockIntraband();
+	private final MockRegistrationReference _mockRegistrationReference =
 		new MockRegistrationReference(_mockIntraband);
 
 }

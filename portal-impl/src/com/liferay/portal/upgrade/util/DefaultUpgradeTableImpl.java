@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -111,13 +111,13 @@ public class DefaultUpgradeTableImpl
 
 		columns = columns.clone();
 
-		List<String> sortedColumnNames = new ArrayList<String>();
+		List<String> sortedColumnNames = new ArrayList<>();
 
 		for (UpgradeColumn upgradeColumn : upgradeColumns) {
 			getSortedColumnName(sortedColumnNames, upgradeColumn);
 		}
 
-		if (sortedColumnNames.size() > 0) {
+		if (!sortedColumnNames.isEmpty()) {
 			Arrays.sort(columns, new ColumnsComparator(sortedColumnNames));
 		}
 
@@ -160,6 +160,6 @@ public class DefaultUpgradeTableImpl
 		}
 	}
 
-	private UpgradeColumn[] _upgradeColumns;
+	private final UpgradeColumn[] _upgradeColumns;
 
 }

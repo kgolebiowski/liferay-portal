@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,10 +14,9 @@
 
 package com.liferay.portal.tools.sourceformatter;
 
-import com.liferay.portal.kernel.util.StringUtil;
-
 import java.io.File;
-import java.io.IOException;
+
+import java.util.List;
 
 /**
  * @author Hugo Huijser
@@ -25,35 +24,22 @@ import java.io.IOException;
 public class SHSourceProcessor extends BaseSourceProcessor {
 
 	@Override
-	protected void format() throws Exception {
-		format("ext/create.sh");
-		format("hooks/create.sh");
-		format("layouttpl/create.sh");
-		format("portlets/create.sh");
-		format("themes/create.sh");
+	protected String doFormat(
+			File file, String fileName, String absolutePath, String content)
+		throws Exception {
+
+		return content;
 	}
 
 	@Override
-	protected String format(String fileName) throws IOException {
-		File file = new File(fileName);
+	protected void format() throws Exception {
+		String[] includes = new String[] {"**\\*.sh"};
 
-		if (!file.exists()) {
-			return null;
+		List<String> fileNames = getFileNames(new String[0], includes);
+
+		for (String fileName : fileNames) {
+			format(fileName);
 		}
-
-		String content = fileUtil.read(new File(fileName), true);
-
-		if (content.contains("\r")) {
-			processErrorMessage(fileName, "Invalid new line character");
-
-			if (isAutoFix()) {
-				content = StringUtil.replace(content, "\r", "");
-
-				fileUtil.write(fileName, content);
-			}
-		}
-
-		return content;
 	}
 
 }

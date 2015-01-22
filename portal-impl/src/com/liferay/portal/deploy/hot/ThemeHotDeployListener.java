@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.deploy.hot.HotDeployEvent;
 import com.liferay.portal.kernel.deploy.hot.HotDeployException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.FileTimestampUtil;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
@@ -49,10 +50,7 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error registering themes for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error registering themes for ", t);
 		}
 	}
 
@@ -65,10 +63,7 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error unregistering themes for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error unregistering themes for ", t);
 		}
 	}
 
@@ -96,6 +91,8 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		if (_log.isInfoEnabled()) {
 			_log.info("Registering themes for " + servletContextName);
 		}
+
+		FileTimestampUtil.reset();
 
 		List<Theme> themes = ThemeLocalServiceUtil.init(
 			servletContextName, servletContext, null, true, xmls,
@@ -177,10 +174,9 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ThemeHotDeployListener.class);
 
-	private static Map<String, List<Theme>> _themes =
-		new HashMap<String, List<Theme>>();
+	private static final Map<String, List<Theme>> _themes = new HashMap<>();
 
 }

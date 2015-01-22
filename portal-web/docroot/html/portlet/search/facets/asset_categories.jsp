@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -85,6 +85,8 @@ boolean showAssetCount = dataJSONObject.getBoolean("showAssetCount", true);
 			}
 
 			AssetCategory curAssetCategory = AssetCategoryLocalServiceUtil.getAssetCategory(assetCategoryId);
+
+			if (AssetCategoryPermission.contains(permissionChecker, curAssetCategory, ActionKeys.VIEW)) {
 		%>
 
 				<c:if test="<%= fieldParam.equals(termCollector.getTerm()) %>">
@@ -98,27 +100,28 @@ boolean showAssetCount = dataJSONObject.getBoolean("showAssetCount", true);
 					</aui:script>
 				</c:if>
 
+				<%
+				int popularity = (int)(1 + ((maxCount - (maxCount - (termCollector.getFrequency() - minCount))) * multiplier));
+
+				if (frequencyThreshold > termCollector.getFrequency()) {
+					j--;
+
+					continue;
+				}
+				%>
+
+				<li class="facet-value tag-popularity-<%= popularity %> <%= fieldParam.equals(termCollector.getTerm()) ? "active" : StringPool.BLANK %>">
+					<a data-value="<%= HtmlUtil.escapeAttribute(String.valueOf(assetCategoryId)) %>" href="javascript:;">
+						<%= HtmlUtil.escape(curAssetCategory.getTitle(locale)) %>
+
+						<c:if test="<%= showAssetCount %>">
+							<span class="badge badge-info frequency"><%= termCollector.getFrequency() %></span>
+						</c:if>
+					</a>
+				</li>
+
 		<%
-			int popularity = (int)(1 + ((maxCount - (maxCount - (termCollector.getFrequency() - minCount))) * multiplier));
-
-			if (frequencyThreshold > termCollector.getFrequency()) {
-				j--;
-
-				continue;
 			}
-		%>
-
-			<li class="facet-value tag-popularity-<%= popularity %> <%= fieldParam.equals(termCollector.getTerm()) ? "active" : StringPool.BLANK %>">
-				<a data-value="<%= HtmlUtil.escapeAttribute(String.valueOf(assetCategoryId)) %>" href="javascript:;">
-					<%= HtmlUtil.escape(curAssetCategory.getTitle(locale)) %>
-
-					<c:if test="<%= showAssetCount %>">
-						<span class="badge badge-info frequency"><%= termCollector.getFrequency() %></span>
-					</c:if>
-				</a>
-			</li>
-
-		<%
 		}
 		%>
 

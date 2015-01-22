@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,6 +21,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -34,10 +35,10 @@ public class SetUtil {
 
 	public static Set<Boolean> fromArray(boolean[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Boolean>();
+			return new HashSet<>();
 		}
 
-		Set<Boolean> set = new HashSet<Boolean>(array.length);
+		Set<Boolean> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -48,10 +49,10 @@ public class SetUtil {
 
 	public static Set<Byte> fromArray(byte[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Byte>();
+			return new HashSet<>();
 		}
 
-		Set<Byte> set = new HashSet<Byte>(array.length);
+		Set<Byte> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -62,10 +63,10 @@ public class SetUtil {
 
 	public static Set<Character> fromArray(char[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Character>();
+			return new HashSet<>();
 		}
 
-		Set<Character> set = new HashSet<Character>(array.length);
+		Set<Character> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -76,10 +77,10 @@ public class SetUtil {
 
 	public static Set<Double> fromArray(double[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Double>();
+			return new HashSet<>();
 		}
 
-		Set<Double> set = new HashSet<Double>(array.length);
+		Set<Double> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -90,10 +91,10 @@ public class SetUtil {
 
 	public static <E> Set<E> fromArray(E[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<E>();
+			return new HashSet<>();
 		}
 
-		Set<E> set = new HashSet<E>(array.length);
+		Set<E> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -104,10 +105,10 @@ public class SetUtil {
 
 	public static Set<Float> fromArray(float[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Float>();
+			return new HashSet<>();
 		}
 
-		Set<Float> set = new HashSet<Float>(array.length);
+		Set<Float> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -118,10 +119,10 @@ public class SetUtil {
 
 	public static Set<Integer> fromArray(int[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Integer>();
+			return new HashSet<>();
 		}
 
-		Set<Integer> set = new HashSet<Integer>(array.length);
+		Set<Integer> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -132,10 +133,10 @@ public class SetUtil {
 
 	public static Set<Long> fromArray(long[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Long>();
+			return new HashSet<>();
 		}
 
-		Set<Long> set = new HashSet<Long>(array.length);
+		Set<Long> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -146,10 +147,10 @@ public class SetUtil {
 
 	public static Set<Short> fromArray(short[] array) {
 		if (ArrayUtil.isEmpty(array)) {
-			return new HashSet<Short>();
+			return new HashSet<>();
 		}
 
-		Set<Short> set = new HashSet<Short>(array.length);
+		Set<Short> set = new HashSet<>(array.length);
 
 		for (int i = 0; i < array.length; i++) {
 			set.add(array[i]);
@@ -158,21 +159,20 @@ public class SetUtil {
 		return set;
 	}
 
-	@SuppressWarnings("rawtypes")
-	public static <E> Set<E> fromCollection(Collection<E> c) {
-		if ((c != null) && Set.class.isAssignableFrom(c.getClass())) {
-			return (Set)c;
+	public static <E> Set<E> fromCollection(Collection<? extends E> c) {
+		if ((c != null) && (c instanceof Set)) {
+			return (Set<E>)c;
 		}
 
 		if ((c == null) || (c.size() == 0)) {
-			return new HashSet<E>();
+			return new HashSet<>();
 		}
 
-		return new HashSet<E>(c);
+		return new HashSet<>(c);
 	}
 
-	public static <E> Set<E> fromEnumeration(Enumeration<E> enu) {
-		Set<E> set = new HashSet<E>();
+	public static <E> Set<E> fromEnumeration(Enumeration<? extends E> enu) {
+		Set<E> set = new HashSet<>();
 
 		while (enu.hasMoreElements()) {
 			set.add(enu.nextElement());
@@ -182,18 +182,17 @@ public class SetUtil {
 	}
 
 	public static Set<String> fromFile(File file) throws IOException {
-		Set<String> set = new HashSet<String>();
+		Set<String> set = new HashSet<>();
 
-		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
-			new FileReader(file));
+		try (UnsyncBufferedReader unsyncBufferedReader =
+				new UnsyncBufferedReader(new FileReader(file))) {
 
-		String s = StringPool.BLANK;
+			String s = StringPool.BLANK;
 
-		while ((s = unsyncBufferedReader.readLine()) != null) {
-			set.add(s);
+			while ((s = unsyncBufferedReader.readLine()) != null) {
+				set.add(s);
+			}
 		}
-
-		unsyncBufferedReader.close();
 
 		return set;
 	}
@@ -203,7 +202,7 @@ public class SetUtil {
 	}
 
 	public static <E> Set<E> fromIterator(Iterator<E> itr) {
-		Set<E> set = new HashSet<E>();
+		Set<E> set = new HashSet<>();
 
 		while (itr.hasNext()) {
 			set.add(itr.next());
@@ -212,16 +211,56 @@ public class SetUtil {
 		return set;
 	}
 
-	public static <E> Set<E> fromList(List<E> array) {
-		if ((array == null) || (array.size() == 0)) {
-			return new HashSet<E>();
+	public static <E> Set<E> fromList(List<? extends E> array) {
+		if (ListUtil.isEmpty(array)) {
+			return new HashSet<>();
 		}
 
-		return new HashSet<E>(array);
+		return new HashSet<>(array);
 	}
 
 	public static Set<String> fromString(String s) {
 		return fromArray(StringUtil.splitLines(s));
+	}
+
+	public static <T> Set<T> intersect(
+		Collection<T> collection1, Collection<T> collection2) {
+
+		if (collection1.isEmpty() || collection2.isEmpty()) {
+			return Collections.emptySet();
+		}
+
+		Set<T> set1 = null;
+
+		if (collection1 instanceof Set) {
+			set1 = (Set<T>)collection1;
+		}
+		else {
+			set1 = new HashSet<>(collection1);
+		}
+
+		Set<T> set2 = null;
+
+		if (collection2 instanceof Set) {
+			set2 = (Set<T>)collection2;
+		}
+		else {
+			set2 = new HashSet<>(collection2);
+		}
+
+		if (set1.size() > set2.size()) {
+			set2.retainAll(set1);
+
+			return set2;
+		}
+
+		set1.retainAll(set2);
+
+		return set1;
+	}
+
+	public static Set<Long> intersect(long[] array1, long[] array2) {
+		return intersect(fromArray(array1), fromArray(array2));
 	}
 
 }

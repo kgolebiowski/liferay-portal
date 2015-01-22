@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -124,8 +124,7 @@ public class ScriptingPortlet extends GenericPortlet {
 				 !filePath.endsWith(StringPool.SLASH)) {
 
 			throw new PortletException(
-				"template-path " + filePath +
-					" must start and end with a /");
+				"template-path " + filePath + " must start and end with a /");
 		}
 
 		actionFile = getInitParameter("action-file");
@@ -348,6 +347,7 @@ public class ScriptingPortlet extends GenericPortlet {
 
 	private static final String _ERROR = ScriptingPortlet.class + ".ERROR";
 
-	private static Log _log = LogFactoryUtil.getLog(ScriptingPortlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ScriptingPortlet.class);
 
 }

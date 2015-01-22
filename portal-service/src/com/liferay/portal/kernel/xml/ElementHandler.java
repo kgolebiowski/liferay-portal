@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -109,7 +109,7 @@ public class ElementHandler implements ContentHandler {
 	}
 
 	private Element _element;
-	private ElementProcessor _elementProcessor;
-	private Set<String> _triggers = new HashSet<String>();
+	private final ElementProcessor _elementProcessor;
+	private final Set<String> _triggers = new HashSet<>();
 
 }

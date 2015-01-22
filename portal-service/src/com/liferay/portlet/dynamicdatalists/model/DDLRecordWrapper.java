@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -158,84 +158,15 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 		}
 	}
 
-	/**
-	* Returns the primary key of this d d l record.
-	*
-	* @return the primary key of this d d l record
-	*/
 	@Override
-	public long getPrimaryKey() {
-		return _ddlRecord.getPrimaryKey();
+	public java.lang.Object clone() {
+		return new DDLRecordWrapper((DDLRecord)_ddlRecord.clone());
 	}
 
-	/**
-	* Sets the primary key of this d d l record.
-	*
-	* @param primaryKey the primary key of this d d l record
-	*/
 	@Override
-	public void setPrimaryKey(long primaryKey) {
-		_ddlRecord.setPrimaryKey(primaryKey);
-	}
-
-	/**
-	* Returns the uuid of this d d l record.
-	*
-	* @return the uuid of this d d l record
-	*/
-	@Override
-	public java.lang.String getUuid() {
-		return _ddlRecord.getUuid();
-	}
-
-	/**
-	* Sets the uuid of this d d l record.
-	*
-	* @param uuid the uuid of this d d l record
-	*/
-	@Override
-	public void setUuid(java.lang.String uuid) {
-		_ddlRecord.setUuid(uuid);
-	}
-
-	/**
-	* Returns the record ID of this d d l record.
-	*
-	* @return the record ID of this d d l record
-	*/
-	@Override
-	public long getRecordId() {
-		return _ddlRecord.getRecordId();
-	}
-
-	/**
-	* Sets the record ID of this d d l record.
-	*
-	* @param recordId the record ID of this d d l record
-	*/
-	@Override
-	public void setRecordId(long recordId) {
-		_ddlRecord.setRecordId(recordId);
-	}
-
-	/**
-	* Returns the group ID of this d d l record.
-	*
-	* @return the group ID of this d d l record
-	*/
-	@Override
-	public long getGroupId() {
-		return _ddlRecord.getGroupId();
-	}
-
-	/**
-	* Sets the group ID of this d d l record.
-	*
-	* @param groupId the group ID of this d d l record
-	*/
-	@Override
-	public void setGroupId(long groupId) {
-		_ddlRecord.setGroupId(groupId);
+	public int compareTo(
+		com.liferay.portlet.dynamicdatalists.model.DDLRecord ddlRecord) {
+		return _ddlRecord.compareTo(ddlRecord);
 	}
 
 	/**
@@ -249,140 +180,6 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 	}
 
 	/**
-	* Sets the company ID of this d d l record.
-	*
-	* @param companyId the company ID of this d d l record
-	*/
-	@Override
-	public void setCompanyId(long companyId) {
-		_ddlRecord.setCompanyId(companyId);
-	}
-
-	/**
-	* Returns the user ID of this d d l record.
-	*
-	* @return the user ID of this d d l record
-	*/
-	@Override
-	public long getUserId() {
-		return _ddlRecord.getUserId();
-	}
-
-	/**
-	* Sets the user ID of this d d l record.
-	*
-	* @param userId the user ID of this d d l record
-	*/
-	@Override
-	public void setUserId(long userId) {
-		_ddlRecord.setUserId(userId);
-	}
-
-	/**
-	* Returns the user uuid of this d d l record.
-	*
-	* @return the user uuid of this d d l record
-	* @throws SystemException if a system exception occurred
-	*/
-	@Override
-	public java.lang.String getUserUuid()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getUserUuid();
-	}
-
-	/**
-	* Sets the user uuid of this d d l record.
-	*
-	* @param userUuid the user uuid of this d d l record
-	*/
-	@Override
-	public void setUserUuid(java.lang.String userUuid) {
-		_ddlRecord.setUserUuid(userUuid);
-	}
-
-	/**
-	* Returns the user name of this d d l record.
-	*
-	* @return the user name of this d d l record
-	*/
-	@Override
-	public java.lang.String getUserName() {
-		return _ddlRecord.getUserName();
-	}
-
-	/**
-	* Sets the user name of this d d l record.
-	*
-	* @param userName the user name of this d d l record
-	*/
-	@Override
-	public void setUserName(java.lang.String userName) {
-		_ddlRecord.setUserName(userName);
-	}
-
-	/**
-	* Returns the version user ID of this d d l record.
-	*
-	* @return the version user ID of this d d l record
-	*/
-	@Override
-	public long getVersionUserId() {
-		return _ddlRecord.getVersionUserId();
-	}
-
-	/**
-	* Sets the version user ID of this d d l record.
-	*
-	* @param versionUserId the version user ID of this d d l record
-	*/
-	@Override
-	public void setVersionUserId(long versionUserId) {
-		_ddlRecord.setVersionUserId(versionUserId);
-	}
-
-	/**
-	* Returns the version user uuid of this d d l record.
-	*
-	* @return the version user uuid of this d d l record
-	* @throws SystemException if a system exception occurred
-	*/
-	@Override
-	public java.lang.String getVersionUserUuid()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getVersionUserUuid();
-	}
-
-	/**
-	* Sets the version user uuid of this d d l record.
-	*
-	* @param versionUserUuid the version user uuid of this d d l record
-	*/
-	@Override
-	public void setVersionUserUuid(java.lang.String versionUserUuid) {
-		_ddlRecord.setVersionUserUuid(versionUserUuid);
-	}
-
-	/**
-	* Returns the version user name of this d d l record.
-	*
-	* @return the version user name of this d d l record
-	*/
-	@Override
-	public java.lang.String getVersionUserName() {
-		return _ddlRecord.getVersionUserName();
-	}
-
-	/**
-	* Sets the version user name of this d d l record.
-	*
-	* @param versionUserName the version user name of this d d l record
-	*/
-	@Override
-	public void setVersionUserName(java.lang.String versionUserName) {
-		_ddlRecord.setVersionUserName(versionUserName);
-	}
-
-	/**
 	* Returns the create date of this d d l record.
 	*
 	* @return the create date of this d d l record
@@ -392,34 +189,17 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 		return _ddlRecord.getCreateDate();
 	}
 
-	/**
-	* Sets the create date of this d d l record.
-	*
-	* @param createDate the create date of this d d l record
-	*/
 	@Override
-	public void setCreateDate(java.util.Date createDate) {
-		_ddlRecord.setCreateDate(createDate);
+	public java.util.List<com.liferay.portlet.dynamicdatamapping.storage.DDMFormFieldValue> getDDMFormFieldValues(
+		java.lang.String fieldName)
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getDDMFormFieldValues(fieldName);
 	}
 
-	/**
-	* Returns the modified date of this d d l record.
-	*
-	* @return the modified date of this d d l record
-	*/
 	@Override
-	public java.util.Date getModifiedDate() {
-		return _ddlRecord.getModifiedDate();
-	}
-
-	/**
-	* Sets the modified date of this d d l record.
-	*
-	* @param modifiedDate the modified date of this d d l record
-	*/
-	@Override
-	public void setModifiedDate(java.util.Date modifiedDate) {
-		_ddlRecord.setModifiedDate(modifiedDate);
+	public com.liferay.portlet.dynamicdatamapping.storage.DDMFormValues getDDMFormValues()
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getDDMFormValues();
 	}
 
 	/**
@@ -433,13 +213,87 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 	}
 
 	/**
-	* Sets the d d m storage ID of this d d l record.
+	* Returns the display index of this d d l record.
 	*
-	* @param DDMStorageId the d d m storage ID of this d d l record
+	* @return the display index of this d d l record
 	*/
 	@Override
-	public void setDDMStorageId(long DDMStorageId) {
-		_ddlRecord.setDDMStorageId(DDMStorageId);
+	public int getDisplayIndex() {
+		return _ddlRecord.getDisplayIndex();
+	}
+
+	@Override
+	public com.liferay.portlet.expando.model.ExpandoBridge getExpandoBridge() {
+		return _ddlRecord.getExpandoBridge();
+	}
+
+	@Override
+	public java.io.Serializable getFieldDataType(java.lang.String fieldName)
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getFieldDataType(fieldName);
+	}
+
+	@Override
+	public java.io.Serializable getFieldType(java.lang.String fieldName)
+		throws java.lang.Exception {
+		return _ddlRecord.getFieldType(fieldName);
+	}
+
+	/**
+	* Returns the group ID of this d d l record.
+	*
+	* @return the group ID of this d d l record
+	*/
+	@Override
+	public long getGroupId() {
+		return _ddlRecord.getGroupId();
+	}
+
+	@Override
+	public com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion getLatestRecordVersion()
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getLatestRecordVersion();
+	}
+
+	/**
+	* Returns the modified date of this d d l record.
+	*
+	* @return the modified date of this d d l record
+	*/
+	@Override
+	public java.util.Date getModifiedDate() {
+		return _ddlRecord.getModifiedDate();
+	}
+
+	/**
+	* Returns the primary key of this d d l record.
+	*
+	* @return the primary key of this d d l record
+	*/
+	@Override
+	public long getPrimaryKey() {
+		return _ddlRecord.getPrimaryKey();
+	}
+
+	@Override
+	public java.io.Serializable getPrimaryKeyObj() {
+		return _ddlRecord.getPrimaryKeyObj();
+	}
+
+	/**
+	* Returns the record ID of this d d l record.
+	*
+	* @return the record ID of this d d l record
+	*/
+	@Override
+	public long getRecordId() {
+		return _ddlRecord.getRecordId();
+	}
+
+	@Override
+	public com.liferay.portlet.dynamicdatalists.model.DDLRecordSet getRecordSet()
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getRecordSet();
 	}
 
 	/**
@@ -452,14 +306,63 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 		return _ddlRecord.getRecordSetId();
 	}
 
+	@Override
+	public com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion getRecordVersion()
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getRecordVersion();
+	}
+
+	@Override
+	public com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion getRecordVersion(
+		java.lang.String version)
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getRecordVersion(version);
+	}
+
+	@Override
+	public int getStatus()
+		throws com.liferay.portal.kernel.exception.PortalException {
+		return _ddlRecord.getStatus();
+	}
+
 	/**
-	* Sets the record set ID of this d d l record.
+	* Returns the user ID of this d d l record.
 	*
-	* @param recordSetId the record set ID of this d d l record
+	* @return the user ID of this d d l record
 	*/
 	@Override
-	public void setRecordSetId(long recordSetId) {
-		_ddlRecord.setRecordSetId(recordSetId);
+	public long getUserId() {
+		return _ddlRecord.getUserId();
+	}
+
+	/**
+	* Returns the user name of this d d l record.
+	*
+	* @return the user name of this d d l record
+	*/
+	@Override
+	public java.lang.String getUserName() {
+		return _ddlRecord.getUserName();
+	}
+
+	/**
+	* Returns the user uuid of this d d l record.
+	*
+	* @return the user uuid of this d d l record
+	*/
+	@Override
+	public java.lang.String getUserUuid() {
+		return _ddlRecord.getUserUuid();
+	}
+
+	/**
+	* Returns the uuid of this d d l record.
+	*
+	* @return the uuid of this d d l record
+	*/
+	@Override
+	public java.lang.String getUuid() {
+		return _ddlRecord.getUuid();
 	}
 
 	/**
@@ -473,23 +376,93 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 	}
 
 	/**
-	* Sets the version of this d d l record.
+	* Returns the version user ID of this d d l record.
 	*
-	* @param version the version of this d d l record
+	* @return the version user ID of this d d l record
 	*/
 	@Override
-	public void setVersion(java.lang.String version) {
-		_ddlRecord.setVersion(version);
+	public long getVersionUserId() {
+		return _ddlRecord.getVersionUserId();
 	}
 
 	/**
-	* Returns the display index of this d d l record.
+	* Returns the version user name of this d d l record.
 	*
-	* @return the display index of this d d l record
+	* @return the version user name of this d d l record
 	*/
 	@Override
-	public int getDisplayIndex() {
-		return _ddlRecord.getDisplayIndex();
+	public java.lang.String getVersionUserName() {
+		return _ddlRecord.getVersionUserName();
+	}
+
+	/**
+	* Returns the version user uuid of this d d l record.
+	*
+	* @return the version user uuid of this d d l record
+	*/
+	@Override
+	public java.lang.String getVersionUserUuid() {
+		return _ddlRecord.getVersionUserUuid();
+	}
+
+	@Override
+	public int hashCode() {
+		return _ddlRecord.hashCode();
+	}
+
+	@Override
+	public boolean isCachedModel() {
+		return _ddlRecord.isCachedModel();
+	}
+
+	@Override
+	public boolean isEscapedModel() {
+		return _ddlRecord.isEscapedModel();
+	}
+
+	@Override
+	public boolean isNew() {
+		return _ddlRecord.isNew();
+	}
+
+	@Override
+	public void persist() {
+		_ddlRecord.persist();
+	}
+
+	@Override
+	public void setCachedModel(boolean cachedModel) {
+		_ddlRecord.setCachedModel(cachedModel);
+	}
+
+	/**
+	* Sets the company ID of this d d l record.
+	*
+	* @param companyId the company ID of this d d l record
+	*/
+	@Override
+	public void setCompanyId(long companyId) {
+		_ddlRecord.setCompanyId(companyId);
+	}
+
+	/**
+	* Sets the create date of this d d l record.
+	*
+	* @param createDate the create date of this d d l record
+	*/
+	@Override
+	public void setCreateDate(java.util.Date createDate) {
+		_ddlRecord.setCreateDate(createDate);
+	}
+
+	/**
+	* Sets the d d m storage ID of this d d l record.
+	*
+	* @param DDMStorageId the d d m storage ID of this d d l record
+	*/
+	@Override
+	public void setDDMStorageId(long DDMStorageId) {
+		_ddlRecord.setDDMStorageId(DDMStorageId);
 	}
 
 	/**
@@ -500,46 +473,6 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 	@Override
 	public void setDisplayIndex(int displayIndex) {
 		_ddlRecord.setDisplayIndex(displayIndex);
-	}
-
-	@Override
-	public boolean isNew() {
-		return _ddlRecord.isNew();
-	}
-
-	@Override
-	public void setNew(boolean n) {
-		_ddlRecord.setNew(n);
-	}
-
-	@Override
-	public boolean isCachedModel() {
-		return _ddlRecord.isCachedModel();
-	}
-
-	@Override
-	public void setCachedModel(boolean cachedModel) {
-		_ddlRecord.setCachedModel(cachedModel);
-	}
-
-	@Override
-	public boolean isEscapedModel() {
-		return _ddlRecord.isEscapedModel();
-	}
-
-	@Override
-	public java.io.Serializable getPrimaryKeyObj() {
-		return _ddlRecord.getPrimaryKeyObj();
-	}
-
-	@Override
-	public void setPrimaryKeyObj(java.io.Serializable primaryKeyObj) {
-		_ddlRecord.setPrimaryKeyObj(primaryKeyObj);
-	}
-
-	@Override
-	public com.liferay.portlet.expando.model.ExpandoBridge getExpandoBridge() {
-		return _ddlRecord.getExpandoBridge();
 	}
 
 	@Override
@@ -560,20 +493,144 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 		_ddlRecord.setExpandoBridgeAttributes(serviceContext);
 	}
 
+	/**
+	* Sets the group ID of this d d l record.
+	*
+	* @param groupId the group ID of this d d l record
+	*/
 	@Override
-	public java.lang.Object clone() {
-		return new DDLRecordWrapper((DDLRecord)_ddlRecord.clone());
+	public void setGroupId(long groupId) {
+		_ddlRecord.setGroupId(groupId);
+	}
+
+	/**
+	* Sets the modified date of this d d l record.
+	*
+	* @param modifiedDate the modified date of this d d l record
+	*/
+	@Override
+	public void setModifiedDate(java.util.Date modifiedDate) {
+		_ddlRecord.setModifiedDate(modifiedDate);
 	}
 
 	@Override
-	public int compareTo(
-		com.liferay.portlet.dynamicdatalists.model.DDLRecord ddlRecord) {
-		return _ddlRecord.compareTo(ddlRecord);
+	public void setNew(boolean n) {
+		_ddlRecord.setNew(n);
+	}
+
+	/**
+	* Sets the primary key of this d d l record.
+	*
+	* @param primaryKey the primary key of this d d l record
+	*/
+	@Override
+	public void setPrimaryKey(long primaryKey) {
+		_ddlRecord.setPrimaryKey(primaryKey);
 	}
 
 	@Override
-	public int hashCode() {
-		return _ddlRecord.hashCode();
+	public void setPrimaryKeyObj(java.io.Serializable primaryKeyObj) {
+		_ddlRecord.setPrimaryKeyObj(primaryKeyObj);
+	}
+
+	/**
+	* Sets the record ID of this d d l record.
+	*
+	* @param recordId the record ID of this d d l record
+	*/
+	@Override
+	public void setRecordId(long recordId) {
+		_ddlRecord.setRecordId(recordId);
+	}
+
+	/**
+	* Sets the record set ID of this d d l record.
+	*
+	* @param recordSetId the record set ID of this d d l record
+	*/
+	@Override
+	public void setRecordSetId(long recordSetId) {
+		_ddlRecord.setRecordSetId(recordSetId);
+	}
+
+	/**
+	* Sets the user ID of this d d l record.
+	*
+	* @param userId the user ID of this d d l record
+	*/
+	@Override
+	public void setUserId(long userId) {
+		_ddlRecord.setUserId(userId);
+	}
+
+	/**
+	* Sets the user name of this d d l record.
+	*
+	* @param userName the user name of this d d l record
+	*/
+	@Override
+	public void setUserName(java.lang.String userName) {
+		_ddlRecord.setUserName(userName);
+	}
+
+	/**
+	* Sets the user uuid of this d d l record.
+	*
+	* @param userUuid the user uuid of this d d l record
+	*/
+	@Override
+	public void setUserUuid(java.lang.String userUuid) {
+		_ddlRecord.setUserUuid(userUuid);
+	}
+
+	/**
+	* Sets the uuid of this d d l record.
+	*
+	* @param uuid the uuid of this d d l record
+	*/
+	@Override
+	public void setUuid(java.lang.String uuid) {
+		_ddlRecord.setUuid(uuid);
+	}
+
+	/**
+	* Sets the version of this d d l record.
+	*
+	* @param version the version of this d d l record
+	*/
+	@Override
+	public void setVersion(java.lang.String version) {
+		_ddlRecord.setVersion(version);
+	}
+
+	/**
+	* Sets the version user ID of this d d l record.
+	*
+	* @param versionUserId the version user ID of this d d l record
+	*/
+	@Override
+	public void setVersionUserId(long versionUserId) {
+		_ddlRecord.setVersionUserId(versionUserId);
+	}
+
+	/**
+	* Sets the version user name of this d d l record.
+	*
+	* @param versionUserName the version user name of this d d l record
+	*/
+	@Override
+	public void setVersionUserName(java.lang.String versionUserName) {
+		_ddlRecord.setVersionUserName(versionUserName);
+	}
+
+	/**
+	* Sets the version user uuid of this d d l record.
+	*
+	* @param versionUserUuid the version user uuid of this d d l record
+	*/
+	@Override
+	public void setVersionUserUuid(java.lang.String versionUserUuid) {
+		_ddlRecord.setVersionUserUuid(versionUserUuid);
 	}
 
 	@Override
@@ -587,106 +644,18 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 	}
 
 	@Override
-	public com.liferay.portlet.dynamicdatalists.model.DDLRecord toUnescapedModel() {
-		return new DDLRecordWrapper(_ddlRecord.toUnescapedModel());
-	}
-
-	@Override
 	public java.lang.String toString() {
 		return _ddlRecord.toString();
 	}
 
 	@Override
+	public com.liferay.portlet.dynamicdatalists.model.DDLRecord toUnescapedModel() {
+		return new DDLRecordWrapper(_ddlRecord.toUnescapedModel());
+	}
+
+	@Override
 	public java.lang.String toXmlString() {
 		return _ddlRecord.toXmlString();
-	}
-
-	@Override
-	public void persist()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		_ddlRecord.persist();
-	}
-
-	@Override
-	public com.liferay.portlet.dynamicdatamapping.storage.Field getField(
-		java.lang.String fieldName)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _ddlRecord.getField(fieldName);
-	}
-
-	@Override
-	public java.io.Serializable getFieldDataType(java.lang.String fieldName)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getFieldDataType(fieldName);
-	}
-
-	@Override
-	public com.liferay.portlet.dynamicdatamapping.storage.Fields getFields()
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _ddlRecord.getFields();
-	}
-
-	@Override
-	public java.io.Serializable getFieldType(java.lang.String fieldName)
-		throws java.lang.Exception {
-		return _ddlRecord.getFieldType(fieldName);
-	}
-
-	@Override
-	public java.io.Serializable getFieldValue(java.lang.String fieldName)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _ddlRecord.getFieldValue(fieldName);
-	}
-
-	@Override
-	public java.io.Serializable getFieldValue(java.lang.String fieldName,
-		java.util.Locale locale)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _ddlRecord.getFieldValue(fieldName, locale);
-	}
-
-	@Override
-	public java.util.List<java.io.Serializable> getFieldValues(
-		java.lang.String fieldName, java.util.Locale locale)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _ddlRecord.getFieldValues(fieldName, locale);
-	}
-
-	@Override
-	public com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion getLatestRecordVersion()
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getLatestRecordVersion();
-	}
-
-	@Override
-	public com.liferay.portlet.dynamicdatalists.model.DDLRecordSet getRecordSet()
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getRecordSet();
-	}
-
-	@Override
-	public com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion getRecordVersion()
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getRecordVersion();
-	}
-
-	@Override
-	public com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion getRecordVersion(
-		java.lang.String version)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getRecordVersion(version);
-	}
-
-	@Override
-	public int getStatus()
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return _ddlRecord.getStatus();
 	}
 
 	@Override
@@ -741,5 +710,5 @@ public class DDLRecordWrapper implements DDLRecord, ModelWrapper<DDLRecord> {
 		_ddlRecord.resetOriginalValues();
 	}
 
-	private DDLRecord _ddlRecord;
+	private final DDLRecord _ddlRecord;
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.social.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
@@ -23,8 +25,10 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.impl.BaseModelImpl;
 import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -56,6 +60,7 @@ import java.util.Map;
  * @generated
  */
 @JSON(strict = true)
+@ProviderType
 public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 	implements SocialActivityModel {
 	/*
@@ -96,16 +101,16 @@ public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portlet.social.model.SocialActivity"),
 			true);
-	public static long ACTIVITYSETID_COLUMN_BITMASK = 1L;
-	public static long CLASSNAMEID_COLUMN_BITMASK = 2L;
-	public static long CLASSPK_COLUMN_BITMASK = 4L;
-	public static long COMPANYID_COLUMN_BITMASK = 8L;
-	public static long CREATEDATE_COLUMN_BITMASK = 16L;
-	public static long GROUPID_COLUMN_BITMASK = 32L;
-	public static long MIRRORACTIVITYID_COLUMN_BITMASK = 64L;
-	public static long RECEIVERUSERID_COLUMN_BITMASK = 128L;
-	public static long TYPE_COLUMN_BITMASK = 256L;
-	public static long USERID_COLUMN_BITMASK = 512L;
+	public static final long ACTIVITYSETID_COLUMN_BITMASK = 1L;
+	public static final long CLASSNAMEID_COLUMN_BITMASK = 2L;
+	public static final long CLASSPK_COLUMN_BITMASK = 4L;
+	public static final long COMPANYID_COLUMN_BITMASK = 8L;
+	public static final long CREATEDATE_COLUMN_BITMASK = 16L;
+	public static final long GROUPID_COLUMN_BITMASK = 32L;
+	public static final long MIRRORACTIVITYID_COLUMN_BITMASK = 64L;
+	public static final long RECEIVERUSERID_COLUMN_BITMASK = 128L;
+	public static final long TYPE_COLUMN_BITMASK = 256L;
+	public static final long USERID_COLUMN_BITMASK = 512L;
 
 	/**
 	 * Converts the soap model instance into a normal model instance.
@@ -383,13 +388,19 @@ public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	public long getOriginalUserId() {
@@ -612,14 +623,19 @@ public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 	}
 
 	@Override
-	public String getReceiverUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getReceiverUserId(), "uuid",
-			_receiverUserUuid);
+	public String getReceiverUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getReceiverUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setReceiverUserUuid(String receiverUserUuid) {
-		_receiverUserUuid = receiverUserUuid;
 	}
 
 	public long getOriginalReceiverUserId() {
@@ -932,8 +948,8 @@ public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = SocialActivity.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = SocialActivity.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			SocialActivity.class
 		};
 	private long _activityId;
@@ -944,7 +960,6 @@ public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 	private long _originalCompanyId;
 	private boolean _setOriginalCompanyId;
 	private long _userId;
-	private String _userUuid;
 	private long _originalUserId;
 	private boolean _setOriginalUserId;
 	private long _createDate;
@@ -969,7 +984,6 @@ public class SocialActivityModelImpl extends BaseModelImpl<SocialActivity>
 	private boolean _setOriginalType;
 	private String _extraData;
 	private long _receiverUserId;
-	private String _receiverUserUuid;
 	private long _originalReceiverUserId;
 	private boolean _setOriginalReceiverUserId;
 	private long _columnBitmask;

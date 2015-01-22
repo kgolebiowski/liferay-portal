@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -48,10 +48,8 @@ public class IndexCommitSerializationUtil {
 			inputStream = new GZIPInputStream(inputStream);
 		}
 
-		ObjectInputStream objectInputStream = null;
-
-		try {
-			objectInputStream = new ObjectInputStream(inputStream);
+		try (ObjectInputStream objectInputStream = new ObjectInputStream(
+				inputStream)) {
 
 			IndexCommitMetaInfo indexCommitMetaInfo = null;
 
@@ -60,7 +58,7 @@ public class IndexCommitSerializationUtil {
 					(IndexCommitMetaInfo)objectInputStream.readObject();
 			}
 			catch (ClassNotFoundException cnfe) {
-				throw new IOException(cnfe.getMessage());
+				throw new IOException(cnfe);
 			}
 
 			if (_log.isDebugEnabled()) {
@@ -84,11 +82,6 @@ public class IndexCommitSerializationUtil {
 			}
 
 			_writeSegmentsGen(directory, indexCommitMetaInfo.getGeneration());
-		}
-		finally {
-			if (objectInputStream != null) {
-				objectInputStream.close();
-			}
 		}
 	}
 
@@ -197,16 +190,12 @@ public class IndexCommitSerializationUtil {
 					generation);
 		}
 
-		IndexOutput indexOutput = directory.createOutput(
-			_SEGMENTS_GEN_FILE_NAME);
+		try (IndexOutput indexOutput = directory.createOutput(
+				_SEGMENTS_GEN_FILE_NAME)) {
 
-		try {
 			indexOutput.writeInt(SegmentInfos.FORMAT_LOCKLESS);
 			indexOutput.writeLong(generation);
 			indexOutput.writeLong(generation);
-		}
-		finally {
-			indexOutput.close();
 		}
 	}
 
@@ -214,7 +203,7 @@ public class IndexCommitSerializationUtil {
 
 	private static final String _SEGMENTS_GEN_FILE_NAME = "segments.gen";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		IndexCommitSerializationUtil.class);
 
 }

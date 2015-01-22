@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.service.http;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -49,6 +51,7 @@ import com.liferay.portal.service.LayoutRevisionServiceUtil;
  * @see com.liferay.portal.service.LayoutRevisionServiceUtil
  * @generated
  */
+@ProviderType
 public class LayoutRevisionServiceHttp {
 	public static com.liferay.portal.model.LayoutRevision addLayoutRevision(
 		HttpPrincipal httpPrincipal, long userId, long layoutSetBranchId,
@@ -61,8 +64,7 @@ public class LayoutRevisionServiceHttp {
 		java.lang.String colorSchemeId, java.lang.String wapThemeId,
 		java.lang.String wapColorSchemeId, java.lang.String css,
 		com.liferay.portal.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(LayoutRevisionServiceUtil.class,
 					"addLayoutRevision", _addLayoutRevisionParameterTypes0);
@@ -82,10 +84,6 @@ public class LayoutRevisionServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);

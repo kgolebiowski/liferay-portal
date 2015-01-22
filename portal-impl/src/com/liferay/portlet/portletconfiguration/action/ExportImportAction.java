@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,8 +20,8 @@ import com.liferay.portal.LARTypeException;
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.NoSuchLayoutException;
 import com.liferay.portal.PortletIdException;
+import com.liferay.portal.kernel.lar.ExportImportDateUtil;
 import com.liferay.portal.kernel.lar.ExportImportHelper;
-import com.liferay.portal.kernel.lar.ExportImportHelperUtil;
 import com.liferay.portal.kernel.lar.MissingReferences;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -92,7 +92,7 @@ public class ExportImportAction extends ImportLayoutsAction {
 
 				if (cmd.equals(Constants.ADD_TEMP)) {
 					addTempFileEntry(
-						actionRequest, actionResponse,
+						actionRequest,
 						ExportImportHelper.TEMP_FOLDER_NAME +
 							portlet.getPortletId());
 
@@ -135,7 +135,7 @@ public class ExportImportAction extends ImportLayoutsAction {
 
 					sendRedirect(actionRequest, actionResponse, redirect);
 				}
-				else if (cmd.equals("publish_to_live")) {
+				else if (cmd.equals(Constants.PUBLISH_TO_LIVE)) {
 					hideDefaultSuccessMessage(actionRequest);
 
 					StagingUtil.publishToLive(actionRequest, portlet);
@@ -201,9 +201,15 @@ public class ExportImportAction extends ImportLayoutsAction {
 
 		renderRequest = ActionUtil.getWrappedRenderRequest(renderRequest, null);
 
-		return actionMapping.findForward(
-			getForward(
-				renderRequest, "portlet.portlet_configuration.export_import"));
+		String cmd = ParamUtil.getString(renderRequest, Constants.CMD);
+
+		String forward = "portlet.portlet_configuration.export_import";
+
+		if (cmd.equals(Constants.PUBLISH_TO_LIVE)) {
+			forward = "portlet.portlet_configuration.staging";
+		}
+
+		return actionMapping.findForward(getForward(renderRequest, forward));
 	}
 
 	@Override
@@ -257,9 +263,9 @@ public class ExportImportAction extends ImportLayoutsAction {
 			String fileName = ParamUtil.getString(
 				actionRequest, "exportFileName");
 
-			DateRange dateRange = ExportImportHelperUtil.getDateRange(
+			DateRange dateRange = ExportImportDateUtil.getDateRange(
 				actionRequest, groupId, false, plid, portlet.getPortletId(),
-				"all");
+				ExportImportDateUtil.RANGE_ALL);
 
 			LayoutServiceUtil.exportPortletInfoAsFileInBackground(
 				portlet.getPortletId(), plid, groupId, portlet.getPortletId(),
@@ -306,6 +312,7 @@ public class ExportImportAction extends ImportLayoutsAction {
 			actionRequest.getParameterMap(), inputStream);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ExportImportAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ExportImportAction.class);
 
 }

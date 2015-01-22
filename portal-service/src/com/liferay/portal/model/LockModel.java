@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -138,9 +137,8 @@ public interface LockModel extends BaseModel<Lock>, MVCCModel {
 	 * Returns the user uuid of this lock.
 	 *
 	 * @return the user uuid of this lock
-	 * @throws SystemException if a system exception occurred
 	 */
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this lock.
@@ -295,19 +293,19 @@ public interface LockModel extends BaseModel<Lock>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(Lock lock);
+	public int compareTo(com.liferay.portal.model.Lock lock);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Lock> toCacheModel();
+	public CacheModel<com.liferay.portal.model.Lock> toCacheModel();
 
 	@Override
-	public Lock toEscapedModel();
+	public com.liferay.portal.model.Lock toEscapedModel();
 
 	@Override
-	public Lock toUnescapedModel();
+	public com.liferay.portal.model.Lock toUnescapedModel();
 
 	@Override
 	public String toString();

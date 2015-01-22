@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,26 +25,12 @@ long folderId = ParamUtil.getLong(request, "folderId");
 long breadcrumbsFolderId = ParamUtil.getLong(request, "breadcrumbsFolderId");
 
 long searchFolderId = ParamUtil.getLong(request, "searchFolderId");
-long searchFolderIds = ParamUtil.getLong(request, "searchFolderIds");
-
-long[] folderIdsArray = null;
-
-if (searchFolderId > 0) {
-	folderIdsArray = new long[] {searchFolderId};
-}
-else {
-	long dataRepositoryId = DLFolderConstants.getFolderId(scopeGroupId, DLFolderConstants.getDataRepositoryId(scopeGroupId, searchFolderIds));
-
-	List<Long> folderIds = DLAppServiceUtil.getSubfolderIds(scopeGroupId, searchFolderIds);
-
-	folderIds.add(0, dataRepositoryId);
-
-	folderIdsArray = StringUtil.split(StringUtil.merge(folderIds), 0L);
-}
 
 String keywords = ParamUtil.getString(request, "keywords");
 
 int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+
+DLActionsDisplayContext dlActionsDisplayContext = new DLActionsDisplayContext(request, dlPortletInstanceSettings);
 %>
 
 <liferay-portlet:renderURL varImpl="searchURL">
@@ -58,7 +44,6 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 	<aui:input name="folderId" type="hidden" value="<%= folderId %>" />
 	<aui:input name="breadcrumbsFolderId" type="hidden" value="<%= breadcrumbsFolderId %>" />
 	<aui:input name="searchFolderId" type="hidden" value="<%= searchFolderId %>" />
-	<aui:input name="searchFolderIds" type="hidden" value="<%= searchFolderIds %>" />
 
 	<liferay-ui:header
 		backURL="<%= redirect %>"
@@ -89,7 +74,6 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 			searchExternalRepositoryURL.setParameter("folderId", String.valueOf(mountFolder.getFolderId()));
 			searchExternalRepositoryURL.setParameter("breadcrumbsFolderId", String.valueOf(breadcrumbsFolderId));
 			searchExternalRepositoryURL.setParameter("searchFolderId", String.valueOf(searchFolderId));
-			searchExternalRepositoryURL.setParameter("searchFolderIds", String.valueOf(searchFolderIds));
 			searchExternalRepositoryURL.setParameter("keywords", keywords);
 
 			sb.append("<a href=\"");
@@ -118,12 +102,11 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 	portletURL.setParameter("folderId", String.valueOf(folderId));
 	portletURL.setParameter("breadcrumbsFolderId", String.valueOf(breadcrumbsFolderId));
 	portletURL.setParameter("searchFolderId", String.valueOf(searchFolderId));
-	portletURL.setParameter("searchFolderIds", String.valueOf(searchFolderIds));
 	portletURL.setParameter("keywords", keywords);
 	%>
 
 	<liferay-ui:search-container
-		emptyResultsMessage='<%= LanguageUtil.format(pageContext, "no-documents-were-found-that-matched-the-keywords-x", "<strong>" + HtmlUtil.escape(keywords) + "</strong>", false) %>'
+		emptyResultsMessage='<%= LanguageUtil.format(request, "no-documents-were-found-that-matched-the-keywords-x", "<strong>" + HtmlUtil.escape(keywords) + "</strong>", false) %>'
 		iteratorURL="<%= portletURL %>"
 	>
 
@@ -132,16 +115,9 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 
 		searchContext.setAttribute("paginationType", "more");
 		searchContext.setEnd(searchContainer.getEnd());
-		searchContext.setFolderIds(folderIdsArray);
+		searchContext.setFolderIds(new long[] {searchFolderId});
 		searchContext.setIncludeDiscussions(true);
 		searchContext.setKeywords(keywords);
-
-		QueryConfig queryConfig = new QueryConfig();
-
-		queryConfig.setHighlightEnabled(true);
-
-		searchContext.setQueryConfig(queryConfig);
-
 		searchContext.setStart(searchContainer.getStart());
 
 		Hits hits = DLAppServiceUtil.search(repositoryId, searchContext);
@@ -192,14 +168,14 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 					</portlet:renderURL>
 
 					<liferay-ui:app-view-search-entry
-						actionJsp='<%= (showActions) ? "/html/portlet/document_library/file_entry_action.jsp" : StringPool.BLANK %>'
+						actionJsp='<%= (dlActionsDisplayContext.isShowActions()) ? "/html/portlet/document_library/file_entry_action.jsp" : StringPool.BLANK %>'
 						containerName="<%= DLUtil.getAbsolutePath(renderRequest, fileEntry.getFolderId()) %>"
 						cssClass='<%= MathUtil.isEven(index) ? "search" : "search alt" %>'
-						description="<%= (summary != null) ? HtmlUtil.escape(summary.getContent()) : fileEntry.getDescription() %>"
+						description="<%= (summary != null) ? summary.getContent() : fileEntry.getDescription() %>"
 						mbMessages="<%= searchResult.getMBMessages() %>"
 						queryTerms="<%= hits.getQueryTerms() %>"
-						thumbnailSrc="<%= DLUtil.getThumbnailSrc(fileEntry, null, themeDisplay) %>"
-						title="<%= (summary != null) ? HtmlUtil.escape(summary.getTitle()) : fileEntry.getTitle() %>"
+						thumbnailSrc="<%= DLUtil.getThumbnailSrc(fileEntry, themeDisplay) %>"
+						title="<%= (summary != null) ? summary.getTitle() : fileEntry.getTitle() %>"
 						url="<%= rowURL %>"
 					/>
 				</c:when>
@@ -208,7 +184,7 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 					<%
 					String folderImage = "folder_empty_document";
 
-					if (DLAppServiceUtil.getFoldersAndFileEntriesAndFileShortcutsCount(folder.getRepositoryId(), folder.getFolderId(), WorkflowConstants.STATUS_APPROVED, true) > 0) {
+					if (PropsValues.DL_FOLDER_ICON_CHECK_COUNT && (DLAppServiceUtil.getFoldersAndFileEntriesAndFileShortcutsCount(folder.getRepositoryId(), folder.getFolderId(), WorkflowConstants.STATUS_APPROVED, true) > 0)) {
 						folderImage = "folder_full_document";
 					}
 
@@ -224,13 +200,13 @@ int mountFoldersCount = DLAppServiceUtil.getMountFoldersCount(scopeGroupId, DLFo
 					</portlet:renderURL>
 
 					<liferay-ui:app-view-search-entry
-						actionJsp='<%= (showActions) ? "/html/portlet/document_library/folder_action.jsp" : StringPool.BLANK %>'
+						actionJsp='<%= (dlActionsDisplayContext.isShowActions()) ? "/html/portlet/document_library/folder_action.jsp" : StringPool.BLANK %>'
 						containerName="<%= DLUtil.getAbsolutePath(renderRequest, folder.getParentFolderId()) %>"
 						cssClass='<%= MathUtil.isEven(index) ? "search" : "search alt" %>'
-						description="<%= (summary != null) ? HtmlUtil.escape(summary.getContent()) : folder.getDescription() %>"
+						description="<%= (summary != null) ? summary.getContent() : folder.getDescription() %>"
 						queryTerms="<%= hits.getQueryTerms() %>"
 						thumbnailSrc='<%= themeDisplay.getPathThemeImages() + "/file_system/large/" + folderImage + ".png" %>'
-						title="<%= (summary != null) ? HtmlUtil.escape(summary.getTitle()) : folder.getName() %>"
+						title="<%= (summary != null) ? summary.getTitle() : folder.getName() %>"
 						url="<%= rowURL %>"
 					/>
 				</c:when>
@@ -246,5 +222,5 @@ if (searchFolderId > 0) {
 	DLUtil.addPortletBreadcrumbEntries(searchFolderId, request, renderResponse);
 }
 
-PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "search") + ": " + keywords, currentURL);
+PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "search") + ": " + keywords, currentURL);
 %>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portlet.asset.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.model.AuditedModel;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.CacheModel;
@@ -115,10 +114,9 @@ public interface AssetCategoryPropertyModel extends AuditedModel,
 	 * Returns the user uuid of this asset category property.
 	 *
 	 * @return the user uuid of this asset category property
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this asset category property.
@@ -258,19 +256,20 @@ public interface AssetCategoryPropertyModel extends AuditedModel,
 	public Object clone();
 
 	@Override
-	public int compareTo(AssetCategoryProperty assetCategoryProperty);
+	public int compareTo(
+		com.liferay.portlet.asset.model.AssetCategoryProperty assetCategoryProperty);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<AssetCategoryProperty> toCacheModel();
+	public CacheModel<com.liferay.portlet.asset.model.AssetCategoryProperty> toCacheModel();
 
 	@Override
-	public AssetCategoryProperty toEscapedModel();
+	public com.liferay.portlet.asset.model.AssetCategoryProperty toEscapedModel();
 
 	@Override
-	public AssetCategoryProperty toUnescapedModel();
+	public com.liferay.portlet.asset.model.AssetCategoryProperty toUnescapedModel();
 
 	@Override
 	public String toString();

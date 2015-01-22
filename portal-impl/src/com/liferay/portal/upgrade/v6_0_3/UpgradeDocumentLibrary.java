@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -57,7 +57,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 			rs = ps.executeQuery();
 
-			List<Long> fileVersionIds = new ArrayList<Long>();
+			List<Long> fileVersionIds = new ArrayList<>();
 
 			while (rs.next()) {
 				long fileVersionId = rs.getLong("fileVersionId");
@@ -77,7 +77,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 
-		List<Long> tableIds = new ArrayList<Long>();
+		List<Long> tableIds = new ArrayList<>();
 
 		try {
 			long classNameId = PortalUtil.getClassNameId(DLFileEntry.class);
@@ -151,8 +151,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 	}
 
 	protected void updateFileVersion(
-			long fileVersionId, String extension, String title, String
-			description, String extraSettings)
+			long fileVersionId, String extension, String title,
+			String description, String extraSettings)
 		throws Exception {
 
 		Connection con = null;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.dynamicdatalists.model.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecord;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.NoSuchTemplateException;
@@ -23,9 +22,7 @@ import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.service.DDMTemplateLocalServiceUtil;
-import com.liferay.portlet.dynamicdatamapping.storage.Fields;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,19 +30,14 @@ import java.util.List;
  */
 public class DDLRecordSetImpl extends DDLRecordSetBaseImpl {
 
-	public DDLRecordSetImpl() {
-	}
-
 	@Override
-	public DDMStructure getDDMStructure()
-		throws PortalException, SystemException {
-
+	public DDMStructure getDDMStructure() throws PortalException {
 		return DDMStructureLocalServiceUtil.getStructure(getDDMStructureId());
 	}
 
 	@Override
 	public DDMStructure getDDMStructure(long formDDMTemplateId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		DDMStructure ddmStructure = getDDMStructure();
 
@@ -58,7 +50,7 @@ public class DDLRecordSetImpl extends DDLRecordSetBaseImpl {
 
 				ddmStructure = (DDMStructure)ddmStructure.clone();
 
-				ddmStructure.setXsd(ddmTemplate.getScript());
+				ddmStructure.setDefinition(ddmTemplate.getScript());
 			}
 			catch (NoSuchTemplateException nste) {
 			}
@@ -68,21 +60,8 @@ public class DDLRecordSetImpl extends DDLRecordSetBaseImpl {
 	}
 
 	@Override
-	public List<DDLRecord> getRecords() throws SystemException {
+	public List<DDLRecord> getRecords() {
 		return DDLRecordLocalServiceUtil.getRecords(getRecordSetId());
-	}
-
-	@Override
-	public List<Fields> getRecordsFieldsList()
-		throws PortalException, SystemException {
-
-		List<Fields> fieldsList = new ArrayList<Fields>();
-
-		for (DDLRecord record : getRecords()) {
-			fieldsList.add(record.getFields());
-		}
-
-		return fieldsList;
 	}
 
 }

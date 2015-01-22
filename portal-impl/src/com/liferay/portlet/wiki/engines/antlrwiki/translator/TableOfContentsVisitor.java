@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,7 @@
 
 package com.liferay.portlet.wiki.engines.antlrwiki.translator;
 
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.TreeNode;
 import com.liferay.portal.parsers.creole.ast.HeadingNode;
 import com.liferay.portal.parsers.creole.ast.WikiPageNode;
@@ -27,8 +28,7 @@ import java.util.List;
 public class TableOfContentsVisitor extends BaseASTVisitor {
 
 	public TreeNode<HeadingNode> compose(WikiPageNode wikiPageNode) {
-		_headingNode = new TreeNode<HeadingNode>(
-			new HeadingNode(Integer.MIN_VALUE));
+		_headingNode = new TreeNode<>(new HeadingNode(Integer.MIN_VALUE));
 
 		visit(wikiPageNode);
 
@@ -75,7 +75,7 @@ public class TableOfContentsVisitor extends BaseASTVisitor {
 		List<TreeNode<HeadingNode>> treeNodes = treeNode.getChildNodes();
 
 		if ((headingNode.getLevel() > treeNodeHeadingNode.getLevel()) &&
-			(treeNodes != null) && (treeNodes.size() > 0)) {
+			ListUtil.isNotEmpty(treeNodes)) {
 
 			return true;
 		}

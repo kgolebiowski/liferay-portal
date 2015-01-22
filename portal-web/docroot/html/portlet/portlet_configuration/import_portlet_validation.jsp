@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,7 +22,16 @@ String redirect = ParamUtil.getString(request, "redirect");
 Layout exportableLayout = ExportImportHelperUtil.getExportableLayout(themeDisplay);
 %>
 
-<aui:form cssClass="lfr-export-dialog" method="post" name="fm1">
+<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" var="importPortletURL">
+	<portlet:param name="p_p_isolated" value="true" />
+	<portlet:param name="struts_action" value="/portlet_configuration/export_import" />
+	<portlet:param name="redirect" value="<%= redirect %>" />
+	<portlet:param name="portletResource" value="<%= portletResource %>" />
+	<portlet:param name="groupId" value="<%= String.valueOf(scopeGroupId) %>" />
+	<portlet:param name="validate" value="<%= String.valueOf(Boolean.FALSE) %>" />
+</liferay-portlet:resourceURL>
+
+<aui:form action="<%= importPortletURL %>" cssClass="lfr-export-dialog" method="post" name="fm1">
 	<div class="lfr-dynamic-uploader">
 		<div class="lfr-upload-container" id="<portlet:namespace />fileUpload"></div>
 	</div>
@@ -45,6 +54,13 @@ Layout exportableLayout = ExportImportHelperUtil.getExportableLayout(themeDispla
 		var liferayUpload = new Liferay.Upload(
 			{
 				boundingBox: '#<portlet:namespace />fileUpload',
+
+				<%
+				DecimalFormatSymbols decimalFormatSymbols = DecimalFormatSymbols.getInstance(locale);
+				%>
+
+				decimalSeparator: '<%= decimalFormatSymbols.getDecimalSeparator() %>',
+
 				deleteFile: '<liferay-portlet:actionURL doAsUserId="<%= user.getUserId() %>"><portlet:param name="struts_action" value="/portlet_configuration/export_import" /><portlet:param name="<%= Constants.CMD %>" value="<%= Constants.DELETE_TEMP %>" /><portlet:param name="redirect" value="<%= redirect %>" /><portlet:param name="portletResource" value="<%= portletResource %>" /></liferay-portlet:actionURL>&ticketKey=<%= ticket.getKey() %><liferay-ui:input-permissions-params modelName="<%= Group.class.getName() %>" />',
 				fileDescription: '<%= StringUtil.merge(PrefsPropsUtil.getStringArray(PropsKeys.DL_FILE_EXTENSIONS, StringPool.COMMA)) %>',
 				maxFileSize: '<%= PrefsPropsUtil.getLong(PropsKeys.UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE) %> B',
@@ -57,10 +73,10 @@ Layout exportableLayout = ExportImportHelperUtil.getExportableLayout(themeDispla
 				'strings.pendingFileText': '<liferay-ui:message key="this-file-was-previously-uploaded-but-not-actually-imported" />',
 				'strings.uploadsCompleteText': '<liferay-ui:message key="the-file-is-ready-to-be-imported" />',
 				tempFileURL: {
-					method: Liferay.Service.bind('/layout/get-temp-file-entry-names'),
+					method: Liferay.Service.bind('/layout/get-temp-file-names'),
 					params: {
-						groupId: <%= scopeGroupId %>,
-						tempFolderName: '<%= HtmlUtil.escapeJS(ExportImportHelper.TEMP_FOLDER_NAME + selPortlet.getPortletId()) %>'
+						folderName: '<%= HtmlUtil.escapeJS(ExportImportHelper.TEMP_FOLDER_NAME + selPortlet.getPortletId()) %>',
+						groupId: <%= scopeGroupId %>
 					}
 				},
 				uploadFile: '<liferay-portlet:actionURL doAsUserId="<%= user.getUserId() %>"><portlet:param name="struts_action" value="/portlet_configuration/export_import" /><portlet:param name="<%= Constants.CMD %>" value="<%= Constants.ADD_TEMP %>" /><portlet:param name="redirect" value="<%= redirect %>" /><portlet:param name="plid" value="<%= String.valueOf(exportableLayout.getPlid()) %>" /><portlet:param name="groupId" value="<%= String.valueOf(themeDisplay.getScopeGroupId()) %>" /><portlet:param name="portletResource" value="<%= portletResource %>" /></liferay-portlet:actionURL>&ticketKey=<%= ticket.getKey() %><liferay-ui:input-permissions-params modelName="<%= Group.class.getName() %>" />'
@@ -96,31 +112,17 @@ Layout exportableLayout = ExportImportHelperUtil.getExportableLayout(themeDispla
 	</aui:script>
 </aui:form>
 
-<aui:script use="aui-base,aui-io-plugin-deprecated,aui-loading-mask-deprecated">
-	var form = A.one('#<portlet:namespace />fm1');
-
-	form.on(
-		'submit',
+<aui:script sandbox="<%= true %>">
+	$('#<portlet:namespace />continueButton').on(
+		'click',
 		function(event) {
-			event.halt();
+			event.preventDefault();
 
-			<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" var="importPortletURL">
-				<portlet:param name="struts_action" value="/portlet_configuration/export_import" />
-				<portlet:param name="redirect" value="<%= redirect %>" />
-				<portlet:param name="portletResource" value="<%= portletResource %>" />
-				<portlet:param name="groupId" value="<%= String.valueOf(scopeGroupId) %>" />
-				<portlet:param name="validate" value="<%= String.valueOf(Boolean.FALSE) %>" />
-			</liferay-portlet:resourceURL>
-
-			var exportImportOptions = A.one('#<portlet:namespace />exportImportOptions');
-
-			exportImportOptions.plug(
-				A.Plugin.IO,
+			$('#<portlet:namespace />fm1').ajaxSubmit(
 				{
-					form: {
-						id: '<portlet:namespace />fm1'
-					},
-					uri: '<%= importPortletURL %>'
+					success: function(responseData) {
+						$('#<portlet:namespace />exportImportOptions').html(responseData);
+					}
 				}
 			);
 		}

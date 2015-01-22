@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.model.impl;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -47,6 +49,7 @@ import java.util.Map;
  * @see com.liferay.portal.model.ClusterGroupModel
  * @generated
  */
+@ProviderType
 public class ClusterGroupModelImpl extends BaseModelImpl<ClusterGroup>
 	implements ClusterGroupModel {
 	/*
@@ -402,8 +405,8 @@ public class ClusterGroupModelImpl extends BaseModelImpl<ClusterGroup>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = ClusterGroup.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = ClusterGroup.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			ClusterGroup.class
 		};
 	private long _mvccVersion;

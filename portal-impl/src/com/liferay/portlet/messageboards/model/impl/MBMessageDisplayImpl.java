@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -42,6 +42,9 @@ public class MBMessageDisplayImpl implements MBMessageDisplay {
 		if (!threadView.equals(MBThreadConstants.THREAD_VIEW_FLAT)) {
 			_treeWalker = new MBTreeWalkerImpl(
 				message, status, messageLocalService);
+		}
+		else {
+			_treeWalker = null;
 		}
 
 		_previousThread = previousThread;
@@ -89,13 +92,13 @@ public class MBMessageDisplayImpl implements MBMessageDisplay {
 		return _treeWalker;
 	}
 
-	private MBCategory _category;
-	private MBMessage _message;
-	private MBThread _nextThread;
-	private MBMessage _parentMessage;
-	private MBThread _previousThread;
-	private MBThread _thread;
-	private String _threadView;
-	private MBTreeWalker _treeWalker;
+	private final MBCategory _category;
+	private final MBMessage _message;
+	private final MBThread _nextThread;
+	private final MBMessage _parentMessage;
+	private final MBThread _previousThread;
+	private final MBThread _thread;
+	private final String _threadView;
+	private final MBTreeWalker _treeWalker;
 
 }

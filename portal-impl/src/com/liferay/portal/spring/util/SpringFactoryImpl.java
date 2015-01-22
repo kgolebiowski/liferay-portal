@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -55,7 +55,7 @@ public class SpringFactoryImpl implements SpringFactory {
 	}
 
 	public void setBeanDefinitions(Map<String, String> beanDefinitions) {
-		_beanDefinitions = new HashMap<String, Set<String>>();
+		_beanDefinitions = new HashMap<>();
 
 		for (Map.Entry<String, String> entry : beanDefinitions.entrySet()) {
 			String className = entry.getKey();

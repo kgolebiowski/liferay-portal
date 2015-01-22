@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,10 +15,12 @@
 package com.liferay.portal.service.persistence.impl;
 
 import com.liferay.portal.NoSuchModelException;
+import com.liferay.portal.cache.MockPortalCacheManager;
 import com.liferay.portal.cache.memory.MemoryPortalCache;
 import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.cache.MultiVMPoolUtil;
 import com.liferay.portal.kernel.cache.PortalCache;
+import com.liferay.portal.kernel.cache.PortalCacheManager;
 import com.liferay.portal.kernel.dao.jdbc.MappingSqlQuery;
 import com.liferay.portal.kernel.dao.jdbc.MappingSqlQueryFactory;
 import com.liferay.portal.kernel.dao.jdbc.MappingSqlQueryFactoryUtil;
@@ -29,11 +31,15 @@ import com.liferay.portal.kernel.dao.jdbc.SqlUpdateFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.BaseModelListener;
+import com.liferay.portal.model.ModelListener;
+import com.liferay.portal.util.PropsImpl;
 
 import java.io.Serializable;
 
@@ -45,8 +51,10 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -61,7 +69,7 @@ import org.junit.Test;
 public class TableMapperTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
+	public static final CodeCoverageAssertor codeCoverageAssertor =
 		new CodeCoverageAssertor() {
 
 			@Override
@@ -87,6 +95,8 @@ public class TableMapperTest {
 
 		multiVMPoolUtil.setMultiVMPool(new MockMultiVMPool());
 
+		PropsUtil.setProps(new PropsImpl());
+
 		SqlUpdateFactoryUtil sqlUpdateFactoryUtil = new SqlUpdateFactoryUtil();
 
 		sqlUpdateFactoryUtil.setSqlUpdateFactory(new MockSqlUpdateFactory());
@@ -96,23 +106,33 @@ public class TableMapperTest {
 		ClassLoader classLoader = clazz.getClassLoader();
 
 		_dataSource = (DataSource)ProxyUtil.newProxyInstance(
-			classLoader, new Class<?>[] {DataSource.class}, null);
+			classLoader, new Class<?>[] {DataSource.class},
+			new InvocationHandler() {
 
-		_leftBasePersistence = new MockBasePersistence<Left>(Left.class);
+				@Override
+				public Object invoke(Object proxy, Method method, Object[] args)
+					throws Throwable {
+
+					throw new UnsupportedOperationException();
+				}
+
+			});
+
+		_leftBasePersistence = new MockBasePersistence<>(Left.class);
 
 		_leftBasePersistence.setDataSource(_dataSource);
 
-		_rightBasePersistence = new MockBasePersistence<Right>(Right.class);
+		_rightBasePersistence = new MockBasePersistence<>(Right.class);
 
 		_rightBasePersistence.setDataSource(_dataSource);
 
 		_tableMapperImpl = new TableMapperImpl<Left, Right>(
-			_tableName, _leftColumnName, _rightColumnName, _leftBasePersistence,
-			_rightBasePersistence);
+			_TABLE_NAME, _LEFT_COLUMN_NAME, _RIGHT_COLUMN_NAME,
+			_leftBasePersistence, _rightBasePersistence);
 	}
 
 	@Test
-	public void testAddTableMapping() throws SystemException {
+	public void testAddTableMapping() {
 
 		// Success, no model listener
 
@@ -161,12 +181,12 @@ public class TableMapperTest {
 		_mappingStore.remove(leftPrimaryKey);
 
 		RecorderModelListener<Left> leftModelListener =
-			new RecorderModelListener<Left>();
+			new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
 		RecorderModelListener<Right> rightModelListener =
-			new RecorderModelListener<Right>();
+			new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -192,11 +212,11 @@ public class TableMapperTest {
 
 		leftToRightPortalCache.put(leftPrimaryKey, new long[0]);
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -228,6 +248,8 @@ public class TableMapperTest {
 
 	@Test
 	public void testConstructor() {
+		new TableMapperFactory();
+
 		Assert.assertTrue(
 			_tableMapperImpl.addTableMappingSqlUpdate
 				instanceof MockAddMappingSqlUpdate);
@@ -248,31 +270,32 @@ public class TableMapperTest {
 				instanceof MockGetRightPrimaryKeysSqlQuery);
 		Assert.assertSame(
 			_leftBasePersistence, _tableMapperImpl.leftBasePersistence);
-		Assert.assertEquals(_leftColumnName, _tableMapperImpl.leftColumnName);
+		Assert.assertEquals(_LEFT_COLUMN_NAME, _tableMapperImpl.leftColumnName);
 
 		PortalCache<Long, long[]> leftToRightPortalCache =
 			_tableMapperImpl.leftToRightPortalCache;
 
 		Assert.assertTrue(leftToRightPortalCache instanceof MemoryPortalCache);
 		Assert.assertEquals(
-			TableMapper.class.getName() + "-" + _tableName + "-LeftToRight",
+			TableMapper.class.getName() + "-" + _TABLE_NAME + "-LeftToRight",
 			leftToRightPortalCache.getName());
 
 		Assert.assertSame(
 			_rightBasePersistence, _tableMapperImpl.rightBasePersistence);
-		Assert.assertEquals(_rightColumnName, _tableMapperImpl.rightColumnName);
+		Assert.assertEquals(
+			_RIGHT_COLUMN_NAME, _tableMapperImpl.rightColumnName);
 
 		PortalCache<Long, long[]> rightToLeftPortalCache =
 			_tableMapperImpl.rightToLeftPortalCache;
 
 		Assert.assertTrue(rightToLeftPortalCache instanceof MemoryPortalCache);
 		Assert.assertEquals(
-			TableMapper.class.getName() + "-" + _tableName + "-RightToLeft",
+			TableMapper.class.getName() + "-" + _TABLE_NAME + "-RightToLeft",
 			rightToLeftPortalCache.getName());
 	}
 
 	@Test
-	public void testContainsTableMapping() throws SystemException {
+	public void testContainsTableMapping() {
 
 		// Does not contain table mapping
 
@@ -298,7 +321,7 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testDeleteLeftPrimaryKeyTableMappings() throws SystemException {
+	public void testDeleteLeftPrimaryKeyTableMappings() {
 
 		// Delete 0 entry
 
@@ -332,7 +355,7 @@ public class TableMapperTest {
 		// Delete 0 entry, with left model listener
 
 		RecorderModelListener<Left> leftModelListener =
-			new RecorderModelListener<Left>();
+			new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
@@ -351,7 +374,7 @@ public class TableMapperTest {
 		// Delete 0 entry, with right model listener
 
 		RecorderModelListener<Right> rightModelListener =
-			new RecorderModelListener<Right>();
+			new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -369,7 +392,7 @@ public class TableMapperTest {
 
 		// Delete 1 entry, with left model listener
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
@@ -389,7 +412,7 @@ public class TableMapperTest {
 
 		// Delete 1 entry, with right model listener
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -409,11 +432,11 @@ public class TableMapperTest {
 
 		// Database error, with both left and right model listeners
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -422,8 +445,7 @@ public class TableMapperTest {
 		MockDeleteLeftPrimaryKeyTableMappingsSqlUpdate
 			mockDeleteLeftPrimaryKeyTableMappingsSqlUpdate =
 				(MockDeleteLeftPrimaryKeyTableMappingsSqlUpdate)
-					_tableMapperImpl.
-						deleteLeftPrimaryKeyTableMappingsSqlUpdate;
+					_tableMapperImpl.deleteLeftPrimaryKeyTableMappingsSqlUpdate;
 
 		mockDeleteLeftPrimaryKeyTableMappingsSqlUpdate.setDatabaseError(true);
 
@@ -460,8 +482,7 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testDeleteRightPrimaryKeyTableMappings()
-		throws SystemException {
+	public void testDeleteRightPrimaryKeyTableMappings() {
 
 		// Delete 0 entry
 
@@ -498,7 +519,7 @@ public class TableMapperTest {
 		// Delete 0 entry, with left model listener
 
 		RecorderModelListener<Left> leftModelListener =
-			new RecorderModelListener<Left>();
+			new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
@@ -518,7 +539,7 @@ public class TableMapperTest {
 		// Delete 0 entry, with right model listener
 
 		RecorderModelListener<Right> rightModelListener =
-			new RecorderModelListener<Right>();
+			new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -537,7 +558,7 @@ public class TableMapperTest {
 
 		// Delete 1 entry, with left model listener
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
@@ -558,7 +579,7 @@ public class TableMapperTest {
 
 		// Delete 1 entry, with right model listener
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -579,11 +600,11 @@ public class TableMapperTest {
 
 		// Database error, with both left and right model listeners
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -631,7 +652,7 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testDeleteTableMapping() throws SystemException {
+	public void testDeleteTableMapping() {
 
 		// No such table mapping
 
@@ -653,12 +674,12 @@ public class TableMapperTest {
 		// Success, with model listener
 
 		RecorderModelListener<Left> leftModelListener =
-			new RecorderModelListener<Left>();
+			new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
 		RecorderModelListener<Right> rightModelListener =
-			new RecorderModelListener<Right>();
+			new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -686,11 +707,11 @@ public class TableMapperTest {
 
 		// Database error, with model listener
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -738,11 +759,11 @@ public class TableMapperTest {
 
 		// Phantom delete, with model listener
 
-		leftModelListener = new RecorderModelListener<Left>();
+		leftModelListener = new RecorderModelListener<>();
 
 		_leftBasePersistence.registerListener(leftModelListener);
 
-		rightModelListener = new RecorderModelListener<Right>();
+		rightModelListener = new RecorderModelListener<>();
 
 		_rightBasePersistence.registerListener(rightModelListener);
 
@@ -774,7 +795,17 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testGetLeftBaseModels() throws SystemException {
+	public void testDestroy() {
+		testDestroy(_tableMapperImpl);
+	}
+
+	@Test
+	public void testDestroyReverse() {
+		testDestroy(new ReverseTableMapper<Right, Left>(_tableMapperImpl));
+	}
+
+	@Test
+	public void testGetLeftBaseModels() {
 
 		// Get 0 result
 
@@ -834,13 +865,10 @@ public class TableMapperTest {
 
 		lefts = _tableMapperImpl.getLeftBaseModels(
 			rightPrimaryKey, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			new OrderByComparator() {
+			new OrderByComparator<Left>() {
 
 				@Override
-				public int compare(Object obj1, Object obj2) {
-					Left left1 = (Left)obj1;
-					Left left2 = (Left)obj2;
-
+				public int compare(Left left1, Left left2) {
 					Long leftPrimaryKey1 = (Long)left1.getPrimaryKeyObj();
 					Long leftPrimaryKey2 = (Long)left2.getPrimaryKeyObj();
 
@@ -899,7 +927,7 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testGetLeftPrimaryKeys() throws SystemException {
+	public void testGetLeftPrimaryKeys() {
 
 		// Get 0 result
 
@@ -963,15 +991,14 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testGetRightBaseModels() throws SystemException {
+	public void testGetRightBaseModels() {
 
 		// Get 0 result
 
 		long leftPrimaryKey = 1;
 
-		List<Right> rights =
-			_tableMapperImpl.getRightBaseModels(
-				leftPrimaryKey, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+		List<Right> rights = _tableMapperImpl.getRightBaseModels(
+			leftPrimaryKey, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 
 		Assert.assertSame(Collections.emptyList(), rights);
 
@@ -1024,13 +1051,10 @@ public class TableMapperTest {
 
 		rights = _tableMapperImpl.getRightBaseModels(
 			leftPrimaryKey, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			new OrderByComparator() {
+			new OrderByComparator<Right>() {
 
 				@Override
-				public int compare(Object obj1, Object obj2) {
-					Right right1 = (Right)obj1;
-					Right right2 = (Right)obj2;
-
+				public int compare(Right right1, Right right2) {
 					Long rightPrimaryKey1 = (Long)right1.getPrimaryKeyObj();
 					Long rightPrimaryKey2 = (Long)right2.getPrimaryKeyObj();
 
@@ -1090,7 +1114,7 @@ public class TableMapperTest {
 	}
 
 	@Test
-	public void testGetRightPrimaryKeys() throws SystemException {
+	public void testGetRightPrimaryKeys() {
 
 		// Get 0 result
 
@@ -1155,8 +1179,8 @@ public class TableMapperTest {
 
 	@Test
 	public void testGetSetReverseTableMapper() {
-		TableMapper<Right, Left> tableMapper =
-			new ReverseTableMapper<Right, Left>(_tableMapperImpl);
+		TableMapper<Right, Left> tableMapper = new ReverseTableMapper<>(
+			_tableMapperImpl);
 
 		_tableMapperImpl.setReverseTableMapper(tableMapper);
 
@@ -1167,15 +1191,15 @@ public class TableMapperTest {
 	@Test
 	public void testMatches() {
 		Assert.assertTrue(
-			_tableMapperImpl.matches(_leftColumnName, _rightColumnName));
+			_tableMapperImpl.matches(_LEFT_COLUMN_NAME, _RIGHT_COLUMN_NAME));
 		Assert.assertFalse(
-			_tableMapperImpl.matches(_leftColumnName, _leftColumnName));
+			_tableMapperImpl.matches(_LEFT_COLUMN_NAME, _LEFT_COLUMN_NAME));
 		Assert.assertFalse(
-			_tableMapperImpl.matches(_rightColumnName, _leftColumnName));
+			_tableMapperImpl.matches(_RIGHT_COLUMN_NAME, _LEFT_COLUMN_NAME));
 	}
 
 	@Test
-	public void testReverseTableMapper() throws SystemException {
+	public void testReverseTableMapper() {
 		Class<?> clazz = TableMapper.class;
 
 		ClassLoader classLoader = clazz.getClassLoader();
@@ -1189,7 +1213,7 @@ public class TableMapperTest {
 				recordInvocationHandler);
 
 		ReverseTableMapper<Right, Left> reverseTableMapper =
-			new ReverseTableMapper<Right, Left>(tableMapper);
+			new ReverseTableMapper<>(tableMapper);
 
 		recordInvocationHandler.setTableMapper(reverseTableMapper);
 
@@ -1254,11 +1278,11 @@ public class TableMapperTest {
 
 		TableMapper<Left, Right> tableMapper =
 			TableMapperFactory.getTableMapper(
-				_tableName, _leftColumnName, _rightColumnName,
+				_TABLE_NAME, _LEFT_COLUMN_NAME, _RIGHT_COLUMN_NAME,
 				_leftBasePersistence, _rightBasePersistence);
 
 		Assert.assertEquals(1, tableMappers.size());
-		Assert.assertSame(tableMapper, tableMappers.get(_tableName));
+		Assert.assertSame(tableMapper, tableMappers.get(_TABLE_NAME));
 
 		TableMapper<Right, Left> reverseTableMapper =
 			tableMapper.getReverseTableMapper();
@@ -1270,7 +1294,7 @@ public class TableMapperTest {
 		Assert.assertSame(
 			tableMapper,
 			TableMapperFactory.getTableMapper(
-				_tableName, _leftColumnName, _rightColumnName,
+				_TABLE_NAME, _LEFT_COLUMN_NAME, _RIGHT_COLUMN_NAME,
 					_leftBasePersistence, _rightBasePersistence));
 
 		// Reverse mapping table
@@ -1278,18 +1302,102 @@ public class TableMapperTest {
 		Assert.assertSame(
 			reverseTableMapper,
 			TableMapperFactory.getTableMapper(
-				_tableName, _rightColumnName, _leftColumnName,
+				_TABLE_NAME, _RIGHT_COLUMN_NAME, _LEFT_COLUMN_NAME,
 				_rightBasePersistence, _leftBasePersistence));
+
+		// Remove
+
+		TableMapperFactory.removeTableMapper(_TABLE_NAME);
+
+		Assert.assertTrue(tableMappers.isEmpty());
+
+		TableMapperFactory.removeTableMapper(_TABLE_NAME);
+
+		Assert.assertTrue(tableMappers.isEmpty());
 	}
+
+	@Test
+	public void testTableMapperFactoryCacheless() {
+		Set<String> cachelessMappingTableNames =
+			TableMapperFactory.cachelessMappingTableNames;
+
+		ReflectionTestUtil.setFieldValue(
+			TableMapperFactory.class, "cachelessMappingTableNames",
+			new HashSet<String>() {
+
+				@Override
+				public boolean contains(Object o) {
+					return true;
+				}
+
+			});
+
+		try {
+			testTableMapperFactory();
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				TableMapperFactory.class, "cachelessMappingTableNames",
+				cachelessMappingTableNames);
+		}
+	}
+
+	protected void testDestroy(TableMapper<?, ?> tableMapper) {
+		MockMultiVMPool mockMultiVMPool =
+			(MockMultiVMPool)MultiVMPoolUtil.getMultiVMPool();
+
+		Map<String, PortalCache<?, ?>> portalCaches =
+			mockMultiVMPool.getPortalCaches();
+
+		Assert.assertEquals(2, portalCaches.size());
+
+		if (tableMapper instanceof ReverseTableMapper) {
+			Assert.assertSame(
+				ReflectionTestUtil.getFieldValue(
+					tableMapper.getReverseTableMapper(),
+					"leftToRightPortalCache"),
+				portalCaches.get(
+					TableMapper.class.getName() + "-" + _TABLE_NAME +
+						"-LeftToRight"));
+			Assert.assertSame(
+				ReflectionTestUtil.getFieldValue(
+					tableMapper.getReverseTableMapper(),
+					"rightToLeftPortalCache"),
+				portalCaches.get(
+					TableMapper.class.getName() + "-" + _TABLE_NAME +
+						"-RightToLeft"));
+		}
+		else {
+			Assert.assertSame(
+				ReflectionTestUtil.getFieldValue(
+					tableMapper, "leftToRightPortalCache"),
+				portalCaches.get(
+					TableMapper.class.getName() + "-" + _TABLE_NAME +
+						"-LeftToRight"));
+			Assert.assertSame(
+				ReflectionTestUtil.getFieldValue(
+					tableMapper, "rightToLeftPortalCache"),
+				portalCaches.get(
+					TableMapper.class.getName() + "-" + _TABLE_NAME +
+						"-RightToLeft"));
+		}
+
+		tableMapper.destroy();
+
+		Assert.assertTrue(portalCaches.isEmpty());
+	}
+
+	private static final String _LEFT_COLUMN_NAME = "leftId";
+
+	private static final String _RIGHT_COLUMN_NAME = "rightId";
+
+	private static final String _TABLE_NAME = "Lefts_Rights";
 
 	private DataSource _dataSource;
 	private MockBasePersistence<Left> _leftBasePersistence;
-	private String _leftColumnName = "leftId";
-	private Map<Long, long[]> _mappingStore = new HashMap<Long, long[]>();
+	private final Map<Long, long[]> _mappingStore = new HashMap<>();
 	private MockBasePersistence<Right> _rightBasePersistence;
-	private String _rightColumnName = "rightId";
 	private TableMapperImpl<Left, Right> _tableMapperImpl;
-	private String _tableName = "Lefts_Rights";
 
 	private class GetPrimaryKeyObjInvocationHandler
 		implements InvocationHandler {
@@ -1309,7 +1417,7 @@ public class TableMapperTest {
 			throw new UnsupportedOperationException();
 		}
 
-		private Serializable _primaryKey;
+		private final Serializable _primaryKey;
 
 	}
 
@@ -1324,8 +1432,8 @@ public class TableMapperTest {
 
 			Assert.assertSame(_dataSource, dataSource);
 			Assert.assertEquals(
-				"INSERT INTO " + _tableName + " (" + _leftColumnName +
-					", " + _rightColumnName+ ") VALUES (?, ?)",
+				"INSERT INTO " + _TABLE_NAME + " (" + _LEFT_COLUMN_NAME +
+					", " + _RIGHT_COLUMN_NAME+ ") VALUES (?, ?)",
 				sql);
 			Assert.assertArrayEquals(
 				new int[] {Types.BIGINT, Types.BIGINT},
@@ -1392,10 +1500,26 @@ public class TableMapperTest {
 				new GetPrimaryKeyObjInvocationHandler(primaryKey));
 		}
 
+		@Override
+		public ModelListener<T>[] getListeners() {
+			return _listeners.toArray(new ModelListener[_listeners.size()]);
+		}
+
+		@Override
+		public void registerListener(ModelListener<T> listener) {
+			_listeners.add(listener);
+		}
+
 		public void setNoSuchModelException(boolean noSuchModelException) {
 			_noSuchModelException = noSuchModelException;
 		}
 
+		@Override
+		public void unregisterListener(ModelListener<T> listener) {
+			_listeners.remove(listener);
+		}
+
+		private final List<ModelListener<T>> _listeners = new ArrayList<>();
 		private boolean _noSuchModelException;
 
 	}
@@ -1408,10 +1532,14 @@ public class TableMapperTest {
 
 			Assert.assertSame(_dataSource, dataSource);
 			Assert.assertEquals(
-				"DELETE FROM " + _tableName + " WHERE " + _leftColumnName +
+				"DELETE FROM " + _TABLE_NAME + " WHERE " + _LEFT_COLUMN_NAME +
 					" = ?",
 				sql);
 			Assert.assertArrayEquals(new int[] {Types.BIGINT}, types);
+		}
+
+		public void setDatabaseError(boolean databaseError) {
+			_databaseError = databaseError;
 		}
 
 		@Override
@@ -1434,10 +1562,6 @@ public class TableMapperTest {
 			return rightPrimaryKeys.length;
 		}
 
-		public void setDatabaseError(boolean databaseError) {
-			_databaseError = databaseError;
-		}
-
 		private boolean _databaseError;
 
 	}
@@ -1449,12 +1573,16 @@ public class TableMapperTest {
 
 			Assert.assertSame(_dataSource, dataSource);
 			Assert.assertEquals(
-				"DELETE FROM " + _tableName + " WHERE " + _leftColumnName +
-					" = ? AND " + _rightColumnName + " = ?",
+				"DELETE FROM " + _TABLE_NAME + " WHERE " + _LEFT_COLUMN_NAME +
+					" = ? AND " + _RIGHT_COLUMN_NAME + " = ?",
 				sql);
 			Assert.assertArrayEquals(
 				new int[] {Types.BIGINT, Types.BIGINT},
 				types);
+		}
+
+		public void setDatabaseError(boolean databaseError) {
+			_databaseError = databaseError;
 		}
 
 		@Override
@@ -1488,10 +1616,6 @@ public class TableMapperTest {
 			return 0;
 		}
 
-		public void setDatabaseError(boolean databaseError) {
-			_databaseError = databaseError;
-		}
-
 		private boolean _databaseError;
 
 	}
@@ -1504,10 +1628,14 @@ public class TableMapperTest {
 
 			Assert.assertSame(_dataSource, dataSource);
 			Assert.assertEquals(
-				"DELETE FROM " + _tableName + " WHERE " + _rightColumnName +
+				"DELETE FROM " + _TABLE_NAME + " WHERE " + _RIGHT_COLUMN_NAME +
 					" = ?",
 				sql);
 			Assert.assertArrayEquals(new int[] {Types.BIGINT}, types);
+		}
+
+		public void setDatabaseError(boolean databaseError) {
+			_databaseError = databaseError;
 		}
 
 		@Override
@@ -1539,10 +1667,6 @@ public class TableMapperTest {
 			return count;
 		}
 
-		public void setDatabaseError(boolean databaseError) {
-			_databaseError = databaseError;
-		}
-
 		private boolean _databaseError;
 
 	}
@@ -1556,8 +1680,8 @@ public class TableMapperTest {
 
 			Assert.assertSame(_dataSource, dataSource);
 			Assert.assertEquals(
-				"SELECT " + _leftColumnName + " FROM " +
-					_tableName + " WHERE " + _rightColumnName + " = ?",
+				"SELECT " + _LEFT_COLUMN_NAME + " FROM " +
+					_TABLE_NAME + " WHERE " + _RIGHT_COLUMN_NAME + " = ?",
 				sql);
 			Assert.assertArrayEquals(new int[] {Types.BIGINT}, types);
 			Assert.assertSame(RowMapper.PRIMARY_KEY, rowMapper);
@@ -1574,7 +1698,7 @@ public class TableMapperTest {
 
 			Long rightPrimaryKey = (Long)params[0];
 
-			List<Long> leftPrimaryKeysList = new ArrayList<Long>();
+			List<Long> leftPrimaryKeysList = new ArrayList<>();
 
 			for (Map.Entry<Long, long[]> entry : _mappingStore.entrySet()) {
 				long[] rightPrimaryKeys = entry.getValue();
@@ -1604,8 +1728,8 @@ public class TableMapperTest {
 
 			Assert.assertSame(_dataSource, dataSource);
 			Assert.assertEquals(
-				"SELECT " + _rightColumnName + " FROM " +
-					_tableName + " WHERE " + _leftColumnName + " = ?",
+				"SELECT " + _RIGHT_COLUMN_NAME + " FROM " +
+					_TABLE_NAME + " WHERE " + _LEFT_COLUMN_NAME + " = ?",
 				sql);
 			Assert.assertArrayEquals(new int[] {Types.BIGINT}, types);
 			Assert.assertSame(RowMapper.PRIMARY_KEY, rowMapper);
@@ -1628,7 +1752,7 @@ public class TableMapperTest {
 				return Collections.emptyList();
 			}
 
-			List<Long> rightPrimaryKeysList = new ArrayList<Long>(
+			List<Long> rightPrimaryKeysList = new ArrayList<>(
 				rightPrimaryKeys.length);
 
 			for (long rightPrimaryKey : rightPrimaryKeys) {
@@ -1671,6 +1795,7 @@ public class TableMapperTest {
 		}
 
 		private int _counter;
+
 	}
 
 	private class MockMultiVMPool implements MultiVMPool {
@@ -1687,7 +1812,8 @@ public class TableMapperTest {
 			PortalCache<?, ?> portalCache = _portalCaches.get(name);
 
 			if (portalCache == null) {
-				portalCache = new MemoryPortalCache<Long, long[]>(name, 16);
+				portalCache = new MemoryPortalCache<>(
+					new MockPortalCacheManager<Long, long[]>(name), name, 16);
 
 				_portalCaches.put(name, portalCache);
 			}
@@ -1704,12 +1830,23 @@ public class TableMapperTest {
 		}
 
 		@Override
+		public PortalCacheManager
+			<? extends Serializable, ? extends Serializable> getCacheManager() {
+
+			return null;
+		}
+
+		public Map<String, PortalCache<?, ?>> getPortalCaches() {
+			return _portalCaches;
+		}
+
+		@Override
 		public void removeCache(String name) {
 			_portalCaches.remove(name);
 		}
 
-		private Map<String, PortalCache<?, ?>> _portalCaches =
-			new HashMap<String, PortalCache<?, ?>>();
+		private final Map<String, PortalCache<?, ?>> _portalCaches =
+			new HashMap<>();
 
 	}
 
@@ -1839,10 +1976,10 @@ public class TableMapperTest {
 			_associationClassPKs[index] = associationClassPK;
 		}
 
-		private String[] _associationClassNames = new String[4];
-		private Object[] _associationClassPKs = new Object[4];
-		private Object[] _classPKs = new Object[4];
-		private boolean[] _markers = new boolean[4];
+		private final String[] _associationClassNames = new String[4];
+		private final Object[] _associationClassPKs = new Object[4];
+		private final Object[] _classPKs = new Object[4];
+		private final boolean[] _markers = new boolean[4];
 
 	}
 
@@ -1883,7 +2020,7 @@ public class TableMapperTest {
 			_tableMapper = tableMapper;
 		}
 
-		private Map<String, Object[]> _records = new
+		private final Map<String, Object[]> _records = new
 			HashMap<String, Object[]>();
 		private TableMapper<?, ?> _tableMapper;
 

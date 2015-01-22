@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,30 +14,27 @@
 
 package com.liferay.portal.lar;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.service.LayoutLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalCallbackAwareExecutionTestListener;
-import com.liferay.portal.util.LayoutTestUtil;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.test.LayoutTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
 
-import org.junit.runner.RunWith;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
 /**
  * @author Eduardo Garcia
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		TransactionalCallbackAwareExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-@Transactional
 public class LayoutPrototypePropagationTest
 	extends BasePrototypePropagationTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Override
 	protected void doSetUp() throws Exception {
@@ -45,14 +42,11 @@ public class LayoutPrototypePropagationTest
 
 		journalArticle = globalJournalArticle;
 
-		journalContentPortletId =
-			addJournalContentPortletToLayout(
-				TestPropsValues.getUserId(), layoutPrototypeLayout,
-				journalArticle, "column-1");
+		portletId = addPortletToLayout(
+			TestPropsValues.getUserId(), layoutPrototypeLayout, journalArticle,
+			"column-1");
 
-		layout = LayoutTestUtil.addLayout(
-			group.getGroupId(), ServiceTestUtil.randomString(), true,
-			layoutPrototype, true);
+		layout = LayoutTestUtil.addLayout(group, true, layoutPrototype, true);
 
 		layout = propagateChanges(layout);
 	}
@@ -61,7 +55,7 @@ public class LayoutPrototypePropagationTest
 	protected void setLinkEnabled(boolean linkEnabled) throws Exception {
 		layout.setLayoutPrototypeLinkEnabled(linkEnabled);
 
-		LayoutLocalServiceUtil.updateLayout(layout);
+		layout = LayoutLocalServiceUtil.updateLayout(layout);
 	}
 
 }

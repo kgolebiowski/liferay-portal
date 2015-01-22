@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -66,9 +66,6 @@ public class DoPrivilegedFactory
 
 		return AccessController.doPrivileged(
 			new BeanPrivilegedAction<T>(bean, interfaces));
-	}
-
-	public DoPrivilegedFactory() {
 	}
 
 	@Override
@@ -160,9 +157,10 @@ public class DoPrivilegedFactory
 
 	private static final String _BEAN_NAME_SUFFIX_PERSISTENCE = "Persistence";
 
-	private static Log _log = LogFactoryUtil.getLog(DoPrivilegedFactory.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		DoPrivilegedFactory.class);
 
-	private static Set<String> _earlyBeanReferenceNames = new HashSet<String>();
+	private static final Set<String> _earlyBeanReferenceNames = new HashSet<>();
 
 	private static class BeanPrivilegedAction <T>
 		implements PrivilegedAction<T> {
@@ -188,8 +186,8 @@ public class DoPrivilegedFactory
 			return _bean;
 		}
 
-		private T _bean;
-		private Class<?>[] _interfaces;
+		private final T _bean;
+		private final Class<?>[] _interfaces;
 
 	}
 

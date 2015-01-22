@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.memory.FinalizeAction;
 
+import java.lang.ref.Reference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -45,7 +46,7 @@ public class JCRSessionInvocationHandler
 	}
 
 	@Override
-	public void doFinalize() {
+	public void doFinalize(Reference<?> reference) {
 		for (Entry<String, Binary> entry : _binaries.entrySet()) {
 			Binary binary = entry.getValue();
 
@@ -90,10 +91,10 @@ public class JCRSessionInvocationHandler
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		JCRSessionInvocationHandler.class);
 
-	private Map<String, Binary> _binaries = new HashMap<String, Binary>();
-	private Session _session;
+	private final Map<String, Binary> _binaries = new HashMap<>();
+	private final Session _session;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,9 @@
 
 package com.liferay.portlet.journal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
@@ -34,11 +37,36 @@ import java.util.Date;
  * @see JournalArticle
  * @generated
  */
+@ProviderType
 public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 	Externalizable {
 	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof JournalArticleCacheModel)) {
+			return false;
+		}
+
+		JournalArticleCacheModel journalArticleCacheModel = (JournalArticleCacheModel)obj;
+
+		if (id == journalArticleCacheModel.id) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, id);
+	}
+
+	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(69);
+		StringBundler sb = new StringBundler(67);
 
 		sb.append("{uuid=");
 		sb.append(uuid);
@@ -78,12 +106,10 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 		sb.append(description);
 		sb.append(", content=");
 		sb.append(content);
-		sb.append(", type=");
-		sb.append(type);
-		sb.append(", structureId=");
-		sb.append(structureId);
-		sb.append(", templateId=");
-		sb.append(templateId);
+		sb.append(", DDMStructureKey=");
+		sb.append(DDMStructureKey);
+		sb.append(", DDMTemplateKey=");
+		sb.append(DDMTemplateKey);
 		sb.append(", layoutUuid=");
 		sb.append(layoutUuid);
 		sb.append(", displayDate=");
@@ -199,25 +225,18 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 			journalArticleImpl.setContent(content);
 		}
 
-		if (type == null) {
-			journalArticleImpl.setType(StringPool.BLANK);
+		if (DDMStructureKey == null) {
+			journalArticleImpl.setDDMStructureKey(StringPool.BLANK);
 		}
 		else {
-			journalArticleImpl.setType(type);
+			journalArticleImpl.setDDMStructureKey(DDMStructureKey);
 		}
 
-		if (structureId == null) {
-			journalArticleImpl.setStructureId(StringPool.BLANK);
+		if (DDMTemplateKey == null) {
+			journalArticleImpl.setDDMTemplateKey(StringPool.BLANK);
 		}
 		else {
-			journalArticleImpl.setStructureId(structureId);
-		}
-
-		if (templateId == null) {
-			journalArticleImpl.setTemplateId(StringPool.BLANK);
-		}
-		else {
-			journalArticleImpl.setTemplateId(templateId);
+			journalArticleImpl.setDDMTemplateKey(DDMTemplateKey);
 		}
 
 		if (layoutUuid == null) {
@@ -278,11 +297,16 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 
 		journalArticleImpl.resetOriginalValues();
 
+		journalArticleImpl.setDefaultLanguageId(_defaultLanguageId);
+
+		journalArticleImpl.setDocument(_document);
+
 		return journalArticleImpl;
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
 		uuid = objectInput.readUTF();
 		id = objectInput.readLong();
 		resourcePrimKey = objectInput.readLong();
@@ -302,9 +326,8 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 		urlTitle = objectInput.readUTF();
 		description = objectInput.readUTF();
 		content = objectInput.readUTF();
-		type = objectInput.readUTF();
-		structureId = objectInput.readUTF();
-		templateId = objectInput.readUTF();
+		DDMStructureKey = objectInput.readUTF();
+		DDMTemplateKey = objectInput.readUTF();
 		layoutUuid = objectInput.readUTF();
 		displayDate = objectInput.readLong();
 		expirationDate = objectInput.readLong();
@@ -317,6 +340,9 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 		statusByUserId = objectInput.readLong();
 		statusByUserName = objectInput.readUTF();
 		statusDate = objectInput.readLong();
+
+		_defaultLanguageId = (java.lang.String)objectInput.readObject();
+		_document = (com.liferay.portal.kernel.xml.Document)objectInput.readObject();
 	}
 
 	@Override
@@ -392,25 +418,18 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 			objectOutput.writeUTF(content);
 		}
 
-		if (type == null) {
+		if (DDMStructureKey == null) {
 			objectOutput.writeUTF(StringPool.BLANK);
 		}
 		else {
-			objectOutput.writeUTF(type);
+			objectOutput.writeUTF(DDMStructureKey);
 		}
 
-		if (structureId == null) {
+		if (DDMTemplateKey == null) {
 			objectOutput.writeUTF(StringPool.BLANK);
 		}
 		else {
-			objectOutput.writeUTF(structureId);
-		}
-
-		if (templateId == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
-		}
-		else {
-			objectOutput.writeUTF(templateId);
+			objectOutput.writeUTF(DDMTemplateKey);
 		}
 
 		if (layoutUuid == null) {
@@ -445,6 +464,9 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 		}
 
 		objectOutput.writeLong(statusDate);
+
+		objectOutput.writeObject(_defaultLanguageId);
+		objectOutput.writeObject(_document);
 	}
 
 	public String uuid;
@@ -466,9 +488,8 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 	public String urlTitle;
 	public String description;
 	public String content;
-	public String type;
-	public String structureId;
-	public String templateId;
+	public String DDMStructureKey;
+	public String DDMTemplateKey;
 	public String layoutUuid;
 	public long displayDate;
 	public long expirationDate;
@@ -481,4 +502,6 @@ public class JournalArticleCacheModel implements CacheModel<JournalArticle>,
 	public long statusByUserId;
 	public String statusByUserName;
 	public long statusDate;
+	public java.lang.String _defaultLanguageId;
+	public com.liferay.portal.kernel.xml.Document _document;
 }

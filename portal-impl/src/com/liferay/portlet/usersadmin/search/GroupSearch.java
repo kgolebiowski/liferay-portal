@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -39,8 +39,10 @@ import javax.portlet.PortletURL;
  */
 public class GroupSearch extends SearchContainer<Group> {
 
-	static List<String> headerNames = new ArrayList<String>();
-	static Map<String, String> orderableHeaders = new HashMap<String, String>();
+	public static final String EMPTY_RESULTS_MESSAGE = "no-sites-were-found";
+
+	public static List<String> headerNames = new ArrayList<>();
+	public static Map<String, String> orderableHeaders = new HashMap<>();
 
 	static {
 		headerNames.add("name");
@@ -49,8 +51,6 @@ public class GroupSearch extends SearchContainer<Group> {
 		orderableHeaders.put("name", "name");
 		orderableHeaders.put("type", "type");
 	}
-
-	public static final String EMPTY_RESULTS_MESSAGE = "no-sites-were-found";
 
 	public GroupSearch(PortletRequest portletRequest, PortletURL iteratorURL) {
 		super(
@@ -91,7 +91,7 @@ public class GroupSearch extends SearchContainer<Group> {
 					PortletKeys.USERS_ADMIN, "groups-order-by-type", "asc");
 			}
 
-			OrderByComparator orderByComparator =
+			OrderByComparator<Group> orderByComparator =
 				UsersAdminUtil.getGroupOrderByComparator(
 					orderByCol, orderByType);
 
@@ -105,6 +105,6 @@ public class GroupSearch extends SearchContainer<Group> {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(GroupSearch.class);
+	private static final Log _log = LogFactoryUtil.getLog(GroupSearch.class);
 
 }

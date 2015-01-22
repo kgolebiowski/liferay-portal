@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -47,7 +47,7 @@ public abstract class BasePreferencesImpl implements Serializable {
 	}
 
 	public Map<String, String[]> getMap() {
-		Map<String, String[]> map = new HashMap<String, String[]>();
+		Map<String, String[]> map = new HashMap<>();
 
 		Map<String, Preference> preferences = getPreferences();
 
@@ -92,7 +92,7 @@ public abstract class BasePreferencesImpl implements Serializable {
 			values = preference.getValues();
 		}
 
-		if (ArrayUtil.isNotEmpty(values)) {
+		if (!isNull(values)) {
 			return getActualValue(values[0]);
 		}
 		else {
@@ -115,7 +115,7 @@ public abstract class BasePreferencesImpl implements Serializable {
 			values = preference.getValues();
 		}
 
-		if (ArrayUtil.isNotEmpty(values)) {
+		if (!isNull(values)) {
 			return getActualValues(values);
 		}
 		else {
@@ -141,7 +141,7 @@ public abstract class BasePreferencesImpl implements Serializable {
 	}
 
 	public void reset() {
-		_modifiedPreferences = new ConcurrentHashMap<String, Preference>();
+		_modifiedPreferences = new ConcurrentHashMap<>();
 	}
 
 	public abstract void reset(String key) throws ReadOnlyException;
@@ -250,7 +250,7 @@ public abstract class BasePreferencesImpl implements Serializable {
 
 	protected Map<String, Preference> getModifiedPreferences() {
 		if (_modifiedPreferences == null) {
-			_modifiedPreferences = new ConcurrentHashMap<String, Preference>(
+			_modifiedPreferences = new ConcurrentHashMap<>(
 				_originalPreferences);
 		}
 
@@ -296,6 +296,16 @@ public abstract class BasePreferencesImpl implements Serializable {
 		return xmlSafeValues;
 	}
 
+	protected boolean isNull(String[] values) {
+		if (ArrayUtil.isEmpty(values) ||
+			((values.length == 1) && (getActualValue(values[0]) == null))) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	protected String toXML() {
 		if ((_modifiedPreferences == null) && (_originalXML != null)) {
 			return _originalXML;
@@ -329,9 +339,9 @@ public abstract class BasePreferencesImpl implements Serializable {
 	private static final String _NULL_VALUE = "NULL_VALUE";
 
 	private Map<String, Preference> _modifiedPreferences;
-	private Map<String, Preference> _originalPreferences;
-	private String _originalXML;
-	private long _ownerId;
-	private int _ownerType;
+	private final Map<String, Preference> _originalPreferences;
+	private final String _originalXML;
+	private final long _ownerId;
+	private final int _ownerType;
 
 }

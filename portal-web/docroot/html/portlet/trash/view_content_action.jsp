@@ -1,7 +1,6 @@
-
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,14 +17,6 @@
 <%@ include file="/html/portlet/trash/init.jsp" %>
 
 <%
-SearchContainer searchContainer = (SearchContainer)request.getAttribute("liferay-ui:search:searchContainer");
-
-String redirect = ParamUtil.getString(request, "redirect");
-
-if (searchContainer != null) {
-	redirect = searchContainer.getIteratorURL().toString();
-}
-
 ResultRow row = (ResultRow)request.getAttribute(WebKeys.SEARCH_CONTAINER_RESULT_ROW);
 
 TrashRenderer trashRenderer = null;
@@ -40,27 +31,26 @@ else {
 TrashHandler trashHandler = TrashHandlerRegistryUtil.getTrashHandler(trashRenderer.getClassName());
 %>
 
-<liferay-ui:icon-menu>
+<liferay-ui:icon-menu icon="<%= StringPool.BLANK %>" message="<%= StringPool.BLANK %>">
 	<c:if test="<%= trashHandler.isMovable() %>">
 		<portlet:renderURL var="moveURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
 			<portlet:param name="struts_action" value="/trash/view_container_model" />
 			<portlet:param name="redirect" value="<%= currentURL %>" />
 			<portlet:param name="className" value="<%= trashRenderer.getClassName() %>" />
 			<portlet:param name="classPK" value="<%= String.valueOf(trashRenderer.getClassPK()) %>" />
-			<portlet:param name="containerModelClassName" value="<%= trashHandler.getContainerModelClassName() %>" />
+			<portlet:param name="containerModelClassName" value="<%= trashHandler.getRootContainerModelClassName() %>" />
+			<portlet:param name="containerModelId" value="<%= String.valueOf(trashHandler.getRootContainerModelId(trashRenderer.getClassPK())) %>" />
+			<portlet:param name="rootContainerModelMovable" value="<%= String.valueOf(trashHandler.isRootContainerModelMovable()) %>" />
 		</portlet:renderURL>
 
 		<%
-		Map<String, Object> data = new HashMap<String, Object>();
-
-		data.put("uri", moveURL);
+		String taglibOnClick = renderResponse.getNamespace() + "restoreDialog('" + moveURL + "')";
 		%>
 
 		<liferay-ui:icon
-			cssClass="trash-restore-link"
-			data="<%= data %>"
-			image="undo"
+			iconCssClass="icon-undo"
 			message="restore"
+			onClick="<%= taglibOnClick %>"
 			url="javascript:;"
 		/>
 	</c:if>

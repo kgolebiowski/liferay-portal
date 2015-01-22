@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -99,22 +99,41 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 					<c:choose>
 						<c:when test="<%= TrashUtil.isInTrash(className, classPK) %>">
-							<div class="alert alert-block">
+							<div class="alert alert-warning">
 								<liferay-ui:message key="commenting-is-disabled-because-this-entry-is-in-the-recycle-bin" />
 							</div>
 						</c:when>
 						<c:otherwise>
 							<c:choose>
 								<c:when test="<%= messagesCount == 1 %>">
-									<liferay-ui:message key="no-comments-yet" /> <a href="<%= taglibPostReplyURL %>"><liferay-ui:message key="be-the-first" /></a>
+									<c:choose>
+										<c:when test="<%= themeDisplay.isSignedIn() || !SSOUtil.isLoginRedirectRequired(themeDisplay.getCompanyId()) %>">
+											<liferay-ui:message key="no-comments-yet" /> <a href="<%= taglibPostReplyURL %>"><liferay-ui:message key="be-the-first" /></a>
+										</c:when>
+										<c:otherwise>
+											<liferay-ui:message key="no-comments-yet" /> <a href="<%= themeDisplay.getURLSignIn() %>"><liferay-ui:message key="please-sign-in-to-comment" /></a>
+										</c:otherwise>
+									</c:choose>
 								</c:when>
 								<c:otherwise>
-									<liferay-ui:icon
-										image="reply"
-										label="<%= true %>"
-										message="add-comment"
-										url="<%= taglibPostReplyURL %>"
-									/>
+									<c:choose>
+										<c:when test="<%= themeDisplay.isSignedIn() || !SSOUtil.isLoginRedirectRequired(themeDisplay.getCompanyId()) %>">
+											<liferay-ui:icon
+												iconCssClass="icon-reply"
+												label="<%= true %>"
+												message="add-comment"
+												url="<%= taglibPostReplyURL %>"
+											/>
+										</c:when>
+										<c:otherwise>
+											<liferay-ui:icon
+												iconCssClass="icon-reply"
+												label="<%= true %>"
+												message="please-sign-in-to-comment"
+												url="<%= themeDisplay.getURLSignIn() %>"
+											/>
+										</c:otherwise>
+									</c:choose>
 								</c:otherwise>
 							</c:choose>
 						</c:otherwise>
@@ -131,7 +150,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							<c:when test="<%= subscribed %>">
 								<liferay-ui:icon
 									cssClass="subscribe-link"
-									image="unsubscribe"
+									iconCssClass="icon-remove-sign"
 									label="<%= true %>"
 									message="unsubscribe-from-comments"
 									url="<%= subscriptionURL %>"
@@ -140,7 +159,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							<c:otherwise>
 								<liferay-ui:icon
 									cssClass="subscribe-link"
-									image="subscribe"
+									iconCssClass="icon-ok-sign"
 									label="<%= true %>"
 									message="subscribe-to-comments"
 									url="<%= subscriptionURL %>"
@@ -152,17 +171,17 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 					<aui:input name="emailAddress" type="hidden" />
 
 					<div id="<%= randomNamespace %>postReplyForm<%= i %>" style="display: none;">
-						<aui:input id='<%= randomNamespace + "postReplyBody" + i %>' label="comment" name='<%= "postReplyBody" + i %>' style='<%= "height: " + ModelHintsConstants.TEXTAREA_DISPLAY_HEIGHT + "px; max-width: " + ModelHintsConstants.TEXTAREA_DISPLAY_WIDTH + "px;" %>' type="textarea" wrap="soft" />
+						<aui:input id='<%= randomNamespace + "postReplyBody" + i %>' label="comment" name='<%= "postReplyBody" + i %>' type="textarea" wrap="soft" wrapperCssClass="lfr-textarea-container" />
 
 						<%
-						String postReplyButtonLabel = LanguageUtil.get(pageContext, "reply");
+						String postReplyButtonLabel = LanguageUtil.get(request, "reply");
 
 						if (!themeDisplay.isSignedIn()) {
-							postReplyButtonLabel = LanguageUtil.get(pageContext, "reply-as");
+							postReplyButtonLabel = LanguageUtil.get(request, "reply-as");
 						}
 
 						if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, MBDiscussion.class.getName()) && !strutsAction.contains("workflow")) {
-							postReplyButtonLabel = LanguageUtil.get(pageContext, "submit-for-publication");
+							postReplyButtonLabel = LanguageUtil.get(request, "submit-for-publication");
 						}
 						%>
 
@@ -187,7 +206,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 				<a name="<%= randomNamespace %>messages_top"></a>
 
 				<c:if test="<%= treeWalker != null %>">
-				<table class="tree-walker table table-bordered table-hover table-striped">
+				<table class="table table-bordered table-hover table-striped tree-walker">
 					<thead class="table-columns">
 					<tr>
 						<th class="table-header" colspan="2">
@@ -294,15 +313,15 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							</div>
 
 							<aui:row fluid="<%= true %>">
-								<aui:col cssClass="lfr-discussion-details" width="25">
+								<aui:col cssClass="lfr-discussion-details" width="<%= 25 %>">
 									<liferay-ui:user-display
-										displayStyle="<%= 2 %>"
+										displayStyle="2"
 										userId="<%= message.getUserId() %>"
 										userName="<%= HtmlUtil.escape(message.getUserName()) %>"
 									/>
 								</aui:col>
 
-								<aui:col cssClass="lfr-discussion-body" width="75">
+								<aui:col cssClass="lfr-discussion-body" width="<%= 75 %>">
 									<c:if test="<%= (message != null) && !message.isApproved() %>">
 										<aui:model-context bean="<%= message %>" model="<%= MBMessage.class %>" />
 
@@ -314,9 +333,11 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 									<div class="lfr-discussion-message">
 
 										<%
-										String msgBody = BBCodeTranslatorUtil.getHTML(message.getBody());
+										String msgBody = message.getBody();
 
-										msgBody = StringUtil.replace(msgBody, "@theme_images_path@/emoticons", themeDisplay.getPathThemeImages() + "/emoticons");
+										if (message.isFormatBBCode()) {
+											msgBody = MBUtil.getBBCodeHTML(msgBody, themeDisplay.getPathThemeImages());
+										}
 										%>
 
 										<%= msgBody %>
@@ -348,12 +369,24 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 														String taglibPostReplyURL = "javascript:" + randomNamespace + "showForm('" + randomNamespace + "postReplyForm" + i + "', '" + namespace + randomNamespace + "postReplyBody" + i + "'); " + randomNamespace + "hideForm('" + randomNamespace + "editForm" + i + "', '" + namespace + randomNamespace + "editReplyBody" + i + "', '" + HtmlUtil.escapeJS(message.getBody()) + "');";
 														%>
 
-														<liferay-ui:icon
-															image="reply"
-															label="<%= true %>"
-															message="post-reply"
-															url="<%= taglibPostReplyURL %>"
-														/>
+														<c:choose>
+															<c:when test="<%= themeDisplay.isSignedIn() || !SSOUtil.isLoginRedirectRequired(themeDisplay.getCompanyId()) %>">
+																<liferay-ui:icon
+																	iconCssClass="icon-reply"
+																	label="<%= true %>"
+																	message="post-reply"
+																	url="<%= taglibPostReplyURL %>"
+																/>
+															</c:when>
+															<c:otherwise>
+																<liferay-ui:icon
+																	iconCssClass="icon-reply"
+																	label="<%= true %>"
+																	message="please-sign-in-to-reply"
+																	url="<%= themeDisplay.getURLSignIn() %>"
+																/>
+															</c:otherwise>
+														</c:choose>
 													</li>
 												</c:if>
 
@@ -365,10 +398,11 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 													<li class="lfr-discussion-top-link">
 														<liferay-ui:icon
-															image="top"
+															iconCssClass="icon-long-arrow-up"
 															label="<%= true %>"
+															message="top"
 															url="<%= taglibTopURL %>"
-															/>
+														/>
 													</li>
 
 													<c:if test="<%= MBDiscussionPermission.contains(permissionChecker, company.getCompanyId(), scopeGroupId, permissionClassName, permissionClassPK, message.getMessageId(), message.getUserId(), ActionKeys.UPDATE_DISCUSSION) %>">
@@ -379,8 +413,9 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 														<li class="lfr-discussion-edit">
 															<liferay-ui:icon
-																image="edit"
+																iconCssClass="icon-edit"
 																label="<%= true %>"
+																message="edit"
 																url="<%= taglibEditURL %>"
 															/>
 														</li>
@@ -407,15 +442,15 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							</aui:row>
 
 							<aui:row cssClass="lfr-discussion-form-container" fluid="<%= true %>">
-								<div class="lfr-discussion-form lfr-discussion-form-reply span12" id="<%= randomNamespace %>postReplyForm<%= i %>" style='<%= "display: none; max-width: " + ModelHintsConstants.TEXTAREA_DISPLAY_WIDTH + "px;" %>'>
+								<div class="col-md-12 lfr-discussion-form lfr-discussion-form-reply" id="<%= randomNamespace %>postReplyForm<%= i %>" style='<%= "display: none; max-width: " + ModelHintsConstants.TEXTAREA_DISPLAY_WIDTH + "px;" %>'>
 
 									<liferay-ui:user-display
-										displayStyle="<%= 2 %>"
+										displayStyle="2"
 										userId="<%= user.getUserId() %>"
 										userName="<%= HtmlUtil.escape(PortalUtil.getUserName(user.getUserId(), StringPool.BLANK)) %>"
 									/>
 
-									<aui:input id='<%= randomNamespace + "postReplyBody" + i %>' label="" name='<%= "postReplyBody" + i %>' style='<%= "height: " + ModelHintsConstants.TEXTAREA_DISPLAY_HEIGHT + "px;" %>' type="textarea" wrap="soft" />
+									<aui:input id='<%= randomNamespace + "postReplyBody" + i %>' label="" name='<%= "postReplyBody" + i %>' style='<%= "height: " + ModelHintsConstants.TEXTAREA_DISPLAY_HEIGHT + "px;" %>' title="reply-body" type="textarea" wrap="soft" />
 
 									<aui:button-row>
 										<aui:button cssClass="btn-comment btn-primary" id='<%= namespace + randomNamespace + "postReplyButton" + i %>' onClick='<%= randomNamespace + "postReply(" + i + ");" %>' value='<%= themeDisplay.isSignedIn() ? "reply" : "reply-as" %>' />
@@ -429,20 +464,20 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 								</div>
 
 								<c:if test="<%= !hideControls && MBDiscussionPermission.contains(permissionChecker, company.getCompanyId(), scopeGroupId, permissionClassName, permissionClassPK, message.getMessageId(), message.getUserId(), ActionKeys.UPDATE_DISCUSSION) %>">
-									<div class="lfr-discussion-form lfr-discussion-form-edit span12" id="<%= randomNamespace %>editForm<%= i %>" style='<%= "display: none; max-width: " + ModelHintsConstants.TEXTAREA_DISPLAY_WIDTH + "px;" %>'>
-										<aui:input id='<%= randomNamespace + "editReplyBody" + i %>' label="" name='<%= "editReplyBody" + i %>' style='<%= "height: " + ModelHintsConstants.TEXTAREA_DISPLAY_HEIGHT + "px;" %>' type="textarea" value="<%= message.getBody() %>" wrap="soft" />
+									<div class="col-md-12 lfr-discussion-form lfr-discussion-form-edit" id="<%= randomNamespace %>editForm<%= i %>" style='<%= "display: none; max-width: " + ModelHintsConstants.TEXTAREA_DISPLAY_WIDTH + "px;" %>'>
+										<aui:input id='<%= randomNamespace + "editReplyBody" + i %>' label="" name='<%= "editReplyBody" + i %>' style='<%= "height: " + ModelHintsConstants.TEXTAREA_DISPLAY_HEIGHT + "px;" %>' title="reply-body" type="textarea" value="<%= message.getBody() %>" wrap="soft" />
 
 										<%
 										boolean pending = message.isPending();
 
-										String publishButtonLabel = LanguageUtil.get(pageContext, "publish");
+										String publishButtonLabel = LanguageUtil.get(request, "publish");
 
 										if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, MBDiscussion.class.getName())) {
 											if (pending) {
 												publishButtonLabel = "save";
 											}
 											else {
-												publishButtonLabel = LanguageUtil.get(pageContext, "submit-for-publication");
+												publishButtonLabel = LanguageUtil.get(request, "submit-for-publication");
 											}
 										}
 										%>
@@ -463,7 +498,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 							<div class="lfr-discussion-posted-on">
 								<c:choose>
 									<c:when test="<%= message.getParentMessageId() == rootMessage.getMessageId() %>">
-										<%= LanguageUtil.format(pageContext, "posted-on-x", dateFormatDateTime.format(message.getModifiedDate()), false) %>
+										<%= LanguageUtil.format(request, "posted-on-x", dateFormatDateTime.format(message.getModifiedDate()), false) %>
 									</c:when>
 									<c:otherwise>
 
@@ -483,7 +518,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 											<span id="lfr-discussion-reply-user-info">
 												<div class="lfr-discussion-reply-user-avatar">
-													<img alt="<%= parentMessage.getUserName() %>" class="user-status-avatar-image" src="<%= UserConstants.getPortraitURL(themeDisplay.getPathImage(), male, portraitId, userUuid) %>" width="30" />
+													<img alt="<%= HtmlUtil.escapeAttribute(parentMessage.getUserName()) %>" class="user-status-avatar-image" src="<%= UserConstants.getPortraitURL(themeDisplay.getPathImage(), male, portraitId, userUuid) %>" width="30" />
 												</div>
 
 												<div class="lfr-discussion-reply-user-name">
@@ -508,7 +543,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 										sb.append("</a>");
 										%>
 
-										<%= LanguageUtil.format(pageContext, "posted-on-x-in-reply-to-x", new Object[] {dateFormatDateTime.format(message.getModifiedDate()), sb.toString()}, false) %>
+										<%= LanguageUtil.format(request, "posted-on-x-in-reply-to-x", new Object[] {dateFormatDateTime.format(message.getModifiedDate()), sb.toString()}, false) %>
 									</c:otherwise>
 								</c:choose>
 							</div>
@@ -538,16 +573,16 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 	<aui:script>
 		function <%= randomNamespace %>hideForm(rowId, textAreaId, textAreaValue) {
-			document.getElementById(rowId).style.display = "none";
+			document.getElementById(rowId).style.display = 'none';
 			document.getElementById(textAreaId).value = textAreaValue;
 		}
 
 		function <%= randomNamespace %>scrollIntoView(messageId) {
-			document.getElementById("<%= randomNamespace %>messageScroll" + messageId).scrollIntoView();
+			document.getElementById('<%= randomNamespace %>messageScroll' + messageId).scrollIntoView();
 		}
 
 		function <%= randomNamespace %>showForm(rowId, textAreaId) {
-			document.getElementById(rowId).style.display = "block";
+			document.getElementById(rowId).style.display = 'block';
 			document.getElementById(textAreaId).focus();
 		}
 
@@ -593,7 +628,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 					function(event) {
 						var A = AUI();
 
-						<portlet:namespace />showStatusMessage('success', '<%= UnicodeLanguageUtil.get(pageContext, "your-request-processed-successfully") %>');
+						<portlet:namespace />showStatusMessage('success', '<%= UnicodeLanguageUtil.get(request, "your-request-processed-successfully") %>');
 
 						location.hash = '#' + A.one('#<portlet:namespace />randomNamespace').val() + 'message_' + response.messageId;
 					}
@@ -635,7 +670,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 								width: 770
 							},
 							id: '<%= namespace %>signInDialog',
-							title: '<%= UnicodeLanguageUtil.get(pageContext, "sign-in") %>',
+							title: '<%= UnicodeLanguageUtil.get(request, "sign-in") %>',
 							uri: '<%= loginURL.toString() %>'
 						}
 					);
@@ -662,7 +697,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 				A.io.request(
 					form.attr('action'),
 					{
-						dataType: 'json',
+						dataType: 'JSON',
 						form: {
 							id: form
 						},
@@ -671,7 +706,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 								Util.toggleDisabled(commentButtonList, false);
 							},
 							failure: function(event, id, obj) {
-								<portlet:namespace />showStatusMessage('error', '<%= UnicodeLanguageUtil.get(pageContext, "your-request-failed-to-complete") %>');
+								<portlet:namespace />showStatusMessage('error', '<%= UnicodeLanguageUtil.get(request, "your-request-failed-to-complete") %>');
 							},
 							start: function() {
 								Util.toggleDisabled(commentButtonList, true);
@@ -692,19 +727,19 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 									Liferay.fire('<%= portletDisplay.getId() %>:messagePosted', response);
 								}
 								else {
-									var errorKey = '<%= UnicodeLanguageUtil.get(pageContext, "your-request-failed-to-complete") %>';
+									var errorKey = '<%= UnicodeLanguageUtil.get(request, "your-request-failed-to-complete") %>';
 
 									if (exception.indexOf('MessageBodyException') > -1) {
-										errorKey = '<%= UnicodeLanguageUtil.get(pageContext, "please-enter-a-valid-message") %>';
+										errorKey = '<%= UnicodeLanguageUtil.get(request, "please-enter-a-valid-message") %>';
 									}
 									else if (exception.indexOf('NoSuchMessageException') > -1) {
-										errorKey = '<%= UnicodeLanguageUtil.get(pageContext, "the-message-could-not-be-found") %>';
+										errorKey = '<%= UnicodeLanguageUtil.get(request, "the-message-could-not-be-found") %>';
 									}
 									else if (exception.indexOf('PrincipalException') > -1) {
-										errorKey = '<%= UnicodeLanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %>';
+										errorKey = '<%= UnicodeLanguageUtil.get(request, "you-do-not-have-the-required-permissions") %>';
 									}
 									else if (exception.indexOf('RequiredMessageException') > -1) {
-										errorKey = '<%= UnicodeLanguageUtil.get(pageContext, "you-cannot-delete-a-root-message-that-has-more-than-one-immediate-reply") %>';
+										errorKey = '<%= UnicodeLanguageUtil.get(request, "you-cannot-delete-a-root-message-that-has-more-than-one-immediate-reply") %>';
 									}
 
 									<portlet:namespace />showStatusMessage('error', errorKey);
@@ -725,7 +760,7 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 				var messageContainer = A.one('#<portlet:namespace />discussion-status-messages');
 
-				messageContainer.removeClass('alert-error').removeClass('alert-success');
+				messageContainer.removeClass('alert-danger').removeClass('alert-success');
 
 				messageContainer.addClass('alert alert-' + type);
 
@@ -789,8 +824,8 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 
 		var popover = new A.Popover(
 			{
-				cssClass: 'lfr-discussion-reply',
 				constrain: true,
+				cssClass: 'lfr-discussion-reply',
 				position: 'top',
 				visible: false,
 				width: 400,
@@ -827,7 +862,6 @@ Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZo
 			},
 			'.lfr-discussion-parent-link'
 		);
-
 	</aui:script>
 </c:if>
 
@@ -839,7 +873,7 @@ private RatingsEntry getRatingsEntry(List<RatingsEntry> ratingEntries, long clas
 		}
 	}
 
-	return RatingsEntryUtil.create(0);
+	return null;
 }
 
 private RatingsStats getRatingsStats(List<RatingsStats> ratingsStatsList, long classPK) {

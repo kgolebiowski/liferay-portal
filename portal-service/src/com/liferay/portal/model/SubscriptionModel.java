@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -128,10 +127,9 @@ public interface SubscriptionModel extends AttachedModel, AuditedModel,
 	 * Returns the user uuid of this subscription.
 	 *
 	 * @return the user uuid of this subscription
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this subscription.
@@ -284,19 +282,19 @@ public interface SubscriptionModel extends AttachedModel, AuditedModel,
 	public Object clone();
 
 	@Override
-	public int compareTo(Subscription subscription);
+	public int compareTo(com.liferay.portal.model.Subscription subscription);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Subscription> toCacheModel();
+	public CacheModel<com.liferay.portal.model.Subscription> toCacheModel();
 
 	@Override
-	public Subscription toEscapedModel();
+	public com.liferay.portal.model.Subscription toEscapedModel();
 
 	@Override
-	public Subscription toUnescapedModel();
+	public com.liferay.portal.model.Subscription toUnescapedModel();
 
 	@Override
 	public String toString();

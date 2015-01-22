@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.dao.db;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -27,6 +29,7 @@ import java.util.Arrays;
  * @author Peter Shin
  * @author Shuyang Zhou
  */
+@ProviderType
 public class IndexMetadata extends Index implements Comparable<IndexMetadata> {
 
 	public IndexMetadata(
@@ -167,8 +170,8 @@ public class IndexMetadata extends Index implements Comparable<IndexMetadata> {
 		return _createSQL;
 	}
 
-	private String[] _columnNames;
-	private String _createSQL;
-	private String _dropSQL;
+	private final String[] _columnNames;
+	private final String _createSQL;
+	private final String _dropSQL;
 
 }

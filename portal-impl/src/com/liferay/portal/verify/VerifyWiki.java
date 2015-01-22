@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,17 @@
 
 package com.liferay.portal.verify;
 
+import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portlet.wiki.model.WikiPage;
+import com.liferay.portlet.wiki.model.WikiPageResource;
 import com.liferay.portlet.wiki.service.WikiPageLocalServiceUtil;
+import com.liferay.portlet.wiki.service.WikiPageResourceLocalServiceUtil;
+import com.liferay.portlet.wiki.util.comparator.PageVersionComparator;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -28,6 +34,57 @@ public class VerifyWiki extends VerifyProcess {
 
 	@Override
 	protected void doVerify() throws Exception {
+		verifyCreateDate();
+		verifyNoAssetPages();
+	}
+
+	protected void verifyCreateDate() throws Exception {
+		ActionableDynamicQuery actionableDynamicQuery =
+			WikiPageResourceLocalServiceUtil.getActionableDynamicQuery();
+
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod() {
+
+				@Override
+				public void performAction(Object object) {
+					WikiPageResource pageResource = (WikiPageResource)object;
+
+					verifyCreateDate(pageResource);
+				}
+
+			});
+
+		actionableDynamicQuery.performActions();
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Create dates verified for pages");
+		}
+	}
+
+	protected void verifyCreateDate(WikiPageResource pageResource) {
+		List<WikiPage> pages = WikiPageLocalServiceUtil.getPages(
+			pageResource.getNodeId(), pageResource.getTitle(),
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new PageVersionComparator(true));
+
+		if (pages.size() <= 1) {
+			return;
+		}
+
+		WikiPage firstPage = pages.get(0);
+
+		Date createDate = firstPage.getCreateDate();
+
+		for (WikiPage page : pages) {
+			if (!createDate.equals(page.getCreateDate())) {
+				page.setCreateDate(createDate);
+
+				WikiPageLocalServiceUtil.updateWikiPage(page);
+			}
+		}
+	}
+
+	protected void verifyNoAssetPages() throws Exception {
 		List<WikiPage> pages = WikiPageLocalServiceUtil.getNoAssetPages();
 
 		if (_log.isDebugEnabled()) {
@@ -53,6 +110,6 @@ public class VerifyWiki extends VerifyProcess {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(VerifyWiki.class);
+	private static final Log _log = LogFactoryUtil.getLog(VerifyWiki.class);
 
 }

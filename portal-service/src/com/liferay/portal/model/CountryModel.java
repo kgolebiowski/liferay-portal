@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -242,19 +242,19 @@ public interface CountryModel extends BaseModel<Country>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(Country country);
+	public int compareTo(com.liferay.portal.model.Country country);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<Country> toCacheModel();
+	public CacheModel<com.liferay.portal.model.Country> toCacheModel();
 
 	@Override
-	public Country toEscapedModel();
+	public com.liferay.portal.model.Country toEscapedModel();
 
 	@Override
-	public Country toUnescapedModel();
+	public com.liferay.portal.model.Country toUnescapedModel();
 
 	@Override
 	public String toString();

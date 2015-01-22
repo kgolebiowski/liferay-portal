@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -209,10 +209,11 @@ public abstract class BaseSandboxHandler implements SandboxHandler {
 
 	protected abstract String getPluginType();
 
-	private static Log _log = LogFactoryUtil.getLog(BaseSandboxHandler.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseSandboxHandler.class);
 
-	private Deployer _deployer;
+	private final Deployer _deployer;
 	private File _engineHostDir;
-	private String _pluginType;
+	private final String _pluginType;
 
 }

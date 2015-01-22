@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -56,10 +56,10 @@ public class MergeLayoutPrototypesThreadLocal {
 		setInProgress(false);
 	}
 
-	private static ThreadLocal<Boolean> _inProgress =
-		new AutoResetThreadLocal<Boolean>(
+	private static final ThreadLocal<Boolean> _inProgress =
+		new AutoResetThreadLocal<>(
 			MergeLayoutPrototypesThreadLocal.class + "._inProgress", false);
-	private static ThreadLocal<Set<MethodKey>> _mergeComplete =
+	private static final ThreadLocal<Set<MethodKey>> _mergeComplete =
 		new AutoResetThreadLocal<Set<MethodKey>>(
 			MergeLayoutPrototypesThreadLocal.class + "._mergeComplete",
 			new HashSet<MethodKey>());
@@ -69,6 +69,19 @@ public class MergeLayoutPrototypesThreadLocal {
 		public MethodKey(Method method, Object[] arguments) {
 			_method = method;
 			_arguments = arguments;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			MethodKey methodKey = (MethodKey)obj;
+
+			if (Validator.equals(_method, methodKey._method) &&
+				Arrays.equals(_arguments, methodKey._arguments)) {
+
+				return true;
+			}
+
+			return false;
 		}
 
 		@Override
@@ -87,19 +100,6 @@ public class MergeLayoutPrototypesThreadLocal {
 			}
 
 			return hashCode;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			MethodKey methodKey = (MethodKey)obj;
-
-			if (Validator.equals(_method, methodKey._method) &&
-				Arrays.equals(_arguments, methodKey._arguments)) {
-
-				return true;
-			}
-
-			return false;
 		}
 
 		private final Object[] _arguments;

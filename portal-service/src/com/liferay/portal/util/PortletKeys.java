@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,8 +19,6 @@ package com.liferay.portal.util;
  */
 public class PortletKeys {
 
-	public static final String ACTIVITIES = "116";
-
 	public static final String ADMIN = "9";
 
 	public static final String ADMIN_INSTANCE = "135";
@@ -35,11 +33,9 @@ public class PortletKeys {
 
 	public static final String ASSET_BROWSER = "172";
 
-	public static final String ASSET_CATEGORIES_NAVIGATION = "122";
+	public static final String ASSET_CATEGORIES_ADMIN = "147";
 
 	public static final String ASSET_PUBLISHER = "101";
-
-	public static final String ASSET_TAGS_NAVIGATION = "141";
 
 	public static final String BACKGROUND_TASK = "189";
 
@@ -49,21 +45,17 @@ public class PortletKeys {
 
 	public static final String BLOGS_AGGREGATOR = "115";
 
-	public static final String BOOKMARKS = "28";
-
 	public static final String BREADCRUMB = "73";
 
 	public static final String CALENDAR = "8";
 
 	public static final String CHAT = "1_WAR_chatportlet";
 
+	public static final String COMMENTS = "196";
+
 	public static final String CONTROL_PANEL_HOME = "190";
 
 	public static final String CONTROL_PANEL_MENU = "160";
-
-	public static final String CURRENCY_CONVERTER = "16";
-
-	public static final String DICTIONARY = "23";
 
 	public static final String DIRECTORY = "11";
 
@@ -71,7 +63,12 @@ public class PortletKeys {
 
 	public static final String DOCUMENT_LIBRARY = "20";
 
+	public static final String DOCUMENT_LIBRARY_ADMIN = "199";
+
 	public static final String DOCUMENT_LIBRARY_DISPLAY = "110";
+
+	public static final String DOCUMENT_SELECTOR =
+		"200_WAR_documentselectorweb";
 
 	public static final String DYNAMIC_DATA_LIST_DISPLAY = "169";
 
@@ -93,17 +90,9 @@ public class PortletKeys {
 
 	public static final String HIGHEST_RATED_ASSETS = "194";
 
-	public static final String IFRAME = "48";
-
 	public static final String IMAGE_UPLOADER = "195";
 
-	public static final String INVITATION = "100";
-
 	public static final String JOURNAL = "15";
-
-	public static final String JOURNAL_CONTENT = "56";
-
-	public static final String JOURNAL_CONTENT_LIST = "62";
 
 	public static final String JOURNAL_CONTENT_SEARCH = "77";
 
@@ -152,7 +141,8 @@ public class PortletKeys {
 
 	public static final String NAVIGATION = "71";
 
-	public static final String NESTED_PORTLETS = "118";
+	public static final String NESTED_PORTLETS =
+		"com_liferay_nested_portlets_web_portlet_NestedPortletsPortlet";
 
 	public static final String PAGE_COMMENTS = "107";
 
@@ -161,10 +151,6 @@ public class PortletKeys {
 	public static final String PASSWORD_POLICIES_ADMIN = "129";
 
 	public static final String PLUGINS_ADMIN = "132";
-
-	public static final String POLLS = "25";
-
-	public static final String POLLS_DISPLAY = "59";
 
 	public static final String PORTAL = "90";
 
@@ -206,8 +192,6 @@ public class PortletKeys {
 
 	public static final String ROLES_ADMIN = "128";
 
-	public static final String RSS = "39";
-
 	public static final String SEARCH = "3";
 
 	public static final String SHOPPING = "34";
@@ -240,24 +224,7 @@ public class PortletKeys {
 
 	public static final String STOCKS = "12";
 
-	public static final String TAGS_ADMIN = "99";
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #ASSET_CATEGORIES_NAVIGATION}
-	 */
-	@Deprecated
-	public static final String TAGS_CATEGORIES_NAVIGATION =
-		ASSET_CATEGORIES_NAVIGATION;
-
-	public static final String TAGS_CLOUD = "148";
-
 	public static final String TAGS_COMPILER = "103";
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #ASSET_TAGS_NAVIGATION}
-	 */
-	@Deprecated
-	public static final String TAGS_ENTRIES_NAVIGATION = ASSET_TAGS_NAVIGATION;
 
 	public static final String TRANSLATOR = "26";
 

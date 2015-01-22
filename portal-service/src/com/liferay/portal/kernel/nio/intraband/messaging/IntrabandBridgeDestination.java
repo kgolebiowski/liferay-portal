@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -56,9 +56,8 @@ public class IntrabandBridgeDestination extends DestinationWrapper {
 
 		message.setDestinationName(getName());
 
-		MessageRoutingBag messageRoutingBag =
-			(MessageRoutingBag)message.get(
-				MessageRoutingBag.MESSAGE_ROUTING_BAG);
+		MessageRoutingBag messageRoutingBag = (MessageRoutingBag)message.get(
+			MessageRoutingBag.MESSAGE_ROUTING_BAG);
 
 		if (messageRoutingBag == null) {
 			messageRoutingBag = new MessageRoutingBag(message, true);

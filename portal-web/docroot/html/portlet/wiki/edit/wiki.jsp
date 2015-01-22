@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -32,9 +32,9 @@ boolean showSyntaxHelp = ((toggleValue != null) && toggleValue.equals("block"));
 <div align="right">
 	<liferay-ui:toggle
 		defaultShowContent="<%= false %>"
-		hideMessage='<%= LanguageUtil.get(pageContext, "hide-syntax-help") + " &raquo;" %>'
+		hideMessage='<%= LanguageUtil.get(request, "hide-syntax-help") + " &raquo;" %>'
 		id="<%= toggleId %>"
-		showMessage='<%= "&laquo; " + LanguageUtil.get(pageContext, "show-syntax-help") %>'
+		showMessage='<%= "&laquo; " + LanguageUtil.get(request, "show-syntax-help") %>'
 	/>
 </div>
 
@@ -48,6 +48,7 @@ boolean showSyntaxHelp = ((toggleValue != null) && toggleValue.equals("block"));
 			<c:when test='<%= format.equals("creole") %>'>
 				<liferay-ui:input-editor
 					configParams="<%= configParams %>"
+					contents="<%= content %>"
 					editorImpl="<%= EDITOR_WYSIWYG_IMPL_KEY %>"
 					fileBrowserParams="<%= fileBrowserParams %>"
 					toolbarSet="creole"
@@ -57,6 +58,7 @@ boolean showSyntaxHelp = ((toggleValue != null) && toggleValue.equals("block"));
 			<c:otherwise>
 				<liferay-ui:input-editor
 					configParams="<%= configParams %>"
+					contents="<%= content %>"
 					editorImpl="<%= EDITOR_SIMPLE_IMPL_KEY %>"
 					fileBrowserParams="<%= fileBrowserParams %>"
 					name="content"
@@ -80,48 +82,27 @@ boolean showSyntaxHelp = ((toggleValue != null) && toggleValue.equals("block"));
 	</aui:row>
 </div>
 
-<aui:script>
-	function <portlet:namespace />initEditor() {
-		return "<%= UnicodeFormatter.toString(content) %>";
-	}
-</aui:script>
+<aui:script sandbox="<%= true %>">
+	var CSS_EDITOR_WIDTH = 'col-md-8';
 
-<aui:script use="aui-base">
-	var CSS_EDITOR_WIDTH = 'span8';
-
-	var CSS_EDITOR_WIDTH_EXPANDED = 'span12';
+	var CSS_EDITOR_WIDTH_EXPANDED = 'col-md-12';
 
 	Liferay.on(
 		'toggle:stateChange',
 		function(event) {
-			var id = event.id;
-
-			if (id === '<%= toggleId %>') {
-				var state = event.state;
-
+			if (event.id === '<%= toggleId %>') {
 				var classSrc = CSS_EDITOR_WIDTH;
 				var classDest = CSS_EDITOR_WIDTH_EXPANDED;
 
-				var visible = (state === 1);
-
-				if (visible) {
+				if (event.state === 1) {
 					classSrc = CSS_EDITOR_WIDTH_EXPANDED;
 					classDest = CSS_EDITOR_WIDTH;
 				}
 
-				var editorContainer = A.one('#<portlet:namespace />wikiEditorContainer');
+				var editorContainer = $('#<portlet:namespace />wikiEditorContainer');
 
-				editorContainer.replaceClass(classSrc, classDest);
-
-				if (visible && A.UA.webkit) {
-					var editorFrame = editorContainer.one('iframe');
-
-					if (editorFrame) {
-						editorFrame.hide();
-
-						A.later(0, editorFrame, 'show');
-					}
-				}
+				editorContainer.addClass(classDest);
+				editorContainer.removeClass(classSrc);
 
 				var editorInstance = window['<portlet:namespace />editor'];
 

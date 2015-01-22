@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -31,37 +31,23 @@ boolean workflowAssetPreview = GetterUtil.getBoolean((Boolean)request.getAttribu
 JournalArticleDisplay articleDisplay = null;
 
 if (!workflowAssetPreview && article.isApproved()) {
-	String xmlRequest = PortletRequestUtil.toXML(renderRequest, renderResponse);
-
-	articleDisplay = JournalContentUtil.getDisplay(articleResource.getGroupId(), articleResource.getArticleId(), null, null, languageId, themeDisplay, 1, xmlRequest);
+	articleDisplay = JournalContentUtil.getDisplay(articleResource.getGroupId(), articleResource.getArticleId(), null, null, languageId, 1, new PortletRequestModel(renderRequest, renderResponse), themeDisplay);
 }
 else {
-	articleDisplay = JournalArticleLocalServiceUtil.getArticleDisplay(article, null, null, languageId, 1, null, themeDisplay);
+	articleDisplay = JournalArticleLocalServiceUtil.getArticleDisplay(article, null, null, languageId, 1, new PortletRequestModel(renderRequest, renderResponse), themeDisplay);
 }
 %>
 
 <c:if test="<%= articleDisplay.isSmallImage() %>">
-
-	<%
-	String src = StringPool.BLANK;
-
-	if (Validator.isNotNull(articleDisplay.getSmallImageURL())) {
-		src = articleDisplay.getSmallImageURL();
-	}
-	else {
-		src = themeDisplay.getPathImage() + "/journal/article?img_id=" + articleDisplay.getSmallImageId() + "&t=" + WebServerServletTokenUtil.getToken(articleDisplay.getSmallImageId()) ;
-	}
-	%>
-
 	<div class="asset-small-image">
 		<c:choose>
 			<c:when test="<%= Validator.isNotNull(viewURL) %>">
 				<a href="<%= viewURL %>">
-					<img alt="<%= HtmlUtil.escapeAttribute(articleDisplay.getTitle()) %>" class="asset-small-image" src="<%= HtmlUtil.escapeAttribute(src) %>" width="150" />
+					<img alt="<%= HtmlUtil.escapeAttribute(articleDisplay.getTitle()) %>" class="asset-small-image img-thumbnail" src="<%= HtmlUtil.escapeAttribute(articleDisplay.getArticleDisplayImageURL(themeDisplay)) %>" width="150" />
 				</a>
 			</c:when>
 			<c:otherwise>
-				<img alt="" class="asset-small-image" src="<%= HtmlUtil.escape(src) %>" width="150" />
+				<img alt="" class="asset-small-image img-thumbnail" src="<%= HtmlUtil.escapeAttribute(articleDisplay.getArticleDisplayImageURL(themeDisplay)) %>" width="150" />
 			</c:otherwise>
 		</c:choose>
 	</div>

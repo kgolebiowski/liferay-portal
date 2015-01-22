@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,30 +15,42 @@
 package com.liferay.portlet.messageboards.service.permission;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.kernel.staging.permission.StagingPermissionUtil;
+import com.liferay.portal.kernel.workflow.WorkflowInstance;
 import com.liferay.portal.kernel.workflow.permission.WorkflowPermissionUtil;
 import com.liferay.portal.security.auth.PrincipalException;
+import com.liferay.portal.security.permission.ActionKeys;
+import com.liferay.portal.security.permission.BaseModelPermissionChecker;
+import com.liferay.portal.security.permission.BaseModelPermissionCheckerUtil;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.ResourceActionsUtil;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portlet.messageboards.model.MBDiscussion;
 import com.liferay.portlet.messageboards.model.MBMessage;
 import com.liferay.portlet.messageboards.service.MBBanLocalServiceUtil;
+import com.liferay.portlet.messageboards.service.MBDiscussionLocalServiceUtil;
 import com.liferay.portlet.messageboards.service.MBMessageLocalServiceUtil;
 
 import java.util.List;
 
 /**
  * @author Charles May
+ * @author Roberto Díaz
  */
-public class MBDiscussionPermission {
+@OSGiBeanProperties(
+	property = {
+		"model.class.name=com.liferay.portlet.messageboards.model.MBDiscussion"
+	}
+)
+public class MBDiscussionPermission implements BaseModelPermissionChecker {
 
 	public static void check(
 			PermissionChecker permissionChecker, long companyId, long groupId,
 			String className, long classPK, long messageId, long ownerId,
 			String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (!contains(
 				permissionChecker, companyId, groupId, className, classPK,
@@ -51,7 +63,7 @@ public class MBDiscussionPermission {
 	public static void check(
 			PermissionChecker permissionChecker, long companyId, long groupId,
 			String className, long classPK, long ownerId, String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (!contains(
 				permissionChecker, companyId, groupId, className, classPK,
@@ -65,9 +77,15 @@ public class MBDiscussionPermission {
 			PermissionChecker permissionChecker, long companyId, long groupId,
 			String className, long classPK, long messageId, long ownerId,
 			String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		MBMessage message = MBMessageLocalServiceUtil.getMessage(messageId);
+
+		if (className.equals(WorkflowInstance.class.getName())) {
+			return permissionChecker.hasPermission(
+				message.getGroupId(), PortletKeys.WORKFLOW_DEFINITIONS,
+				message.getGroupId(), ActionKeys.VIEW);
+		}
 
 		if (PropsValues.DISCUSSION_COMMENTS_ALWAYS_EDITABLE_BY_OWNER &&
 			(permissionChecker.getUserId() == message.getUserId())) {
@@ -92,9 +110,8 @@ public class MBDiscussionPermission {
 	}
 
 	public static boolean contains(
-			PermissionChecker permissionChecker, long companyId, long groupId,
-			String className, long classPK, long ownerId, String actionId)
-		throws SystemException {
+		PermissionChecker permissionChecker, long companyId, long groupId,
+		String className, long classPK, long ownerId, String actionId) {
 
 		if (MBBanLocalServiceUtil.hasBan(
 				groupId, permissionChecker.getUserId())) {
@@ -124,8 +141,31 @@ public class MBDiscussionPermission {
 			return true;
 		}
 
+		hasPermission =
+			BaseModelPermissionCheckerUtil.containsBaseModelPermission(
+				permissionChecker, groupId, className, classPK, actionId);
+
+		if (hasPermission != null) {
+			return hasPermission.booleanValue();
+		}
+
 		return permissionChecker.hasPermission(
 			groupId, className, classPK, actionId);
+	}
+
+	@Override
+	public void checkBaseModel(
+			PermissionChecker permissionChecker, long groupId, long primaryKey,
+			String actionId)
+		throws PortalException {
+
+		MBDiscussion mbDiscussion =
+			MBDiscussionLocalServiceUtil.getMBDiscussion(primaryKey);
+
+		check(
+			permissionChecker, mbDiscussion.getCompanyId(), groupId,
+			mbDiscussion.getClassName(), mbDiscussion.getClassPK(), primaryKey,
+			actionId);
 	}
 
 }

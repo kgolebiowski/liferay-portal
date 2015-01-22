@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.security.xml.SecureXMLFactoryProviderUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +50,8 @@ import org.apache.log4j.xml.DOMConfigurator;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
+
+import org.xml.sax.XMLReader;
 
 /**
  * @author Brian Wing Shun Chan
@@ -113,7 +116,7 @@ public class Log4JUtil {
 		domConfigurator.doConfigure(
 			urlReader, LogManager.getLoggerRepository());
 
-		Set<String> currentLoggerNames = new HashSet<String>();
+		Set<String> currentLoggerNames = new HashSet<>();
 
 		Enumeration<Logger> enu = LogManager.getCurrentLoggers();
 
@@ -124,7 +127,15 @@ public class Log4JUtil {
 		}
 
 		try {
-			SAXReader saxReader = new SAXReader();
+			XMLReader xmlReader = null;
+
+			if (SecureXMLFactoryProviderUtil.getSecureXMLFactoryProvider()
+					!= null) {
+
+				xmlReader = SecureXMLFactoryProviderUtil.newXMLReader();
+			}
+
+			SAXReader saxReader = new SAXReader(xmlReader);
 
 			Reader reader = new StringReader(urlContent);
 
@@ -150,7 +161,7 @@ public class Log4JUtil {
 	}
 
 	public static Map<String, String> getCustomLogSettings() {
-		return new HashMap<String, String>(_customLogSettings);
+		return new HashMap<>(_customLogSettings);
 	}
 
 	public static String getOriginalLevel(String className) {
@@ -250,7 +261,7 @@ public class Log4JUtil {
 	}
 
 	private static String _getURLContent(URL url) {
-		Map<String, String> variables = new HashMap<String, String>();
+		Map<String, String> variables = new HashMap<>();
 
 		variables.put("@liferay.home@", _getLiferayHome());
 
@@ -291,26 +302,31 @@ public class Log4JUtil {
 			return urlContent;
 		}
 
-		int x = urlContent.indexOf("<appender name=\"FILE\"");
+		urlContent = _removeAppender(urlContent, "TEXT_FILE");
 
-		int y = urlContent.indexOf("</appender>", x);
+		return _removeAppender(urlContent, "XML_FILE");
+	}
+
+	private static String _removeAppender(String content, String appenderName) {
+		int x = content.indexOf("<appender name=\"" + appenderName + "\"");
+
+		int y = content.indexOf("</appender>", x);
 
 		if (y != -1) {
-			y = urlContent.indexOf("<", y + 1);
+			y = content.indexOf("<", y + 1);
 		}
 
 		if ((x != -1) && (y != -1)) {
-			urlContent = urlContent.substring(0, x) + urlContent.substring(y);
+			content = content.substring(0, x) + content.substring(y);
 		}
 
-		urlContent = StringUtil.replace(
-			urlContent, "<appender-ref ref=\"FILE\" />", StringPool.BLANK);
-
-		return urlContent;
+		return StringUtil.replace(
+			content, "<appender-ref ref=\"" + appenderName + "\" />",
+			StringPool.BLANK);
 	}
 
-	private static Map<String, String> _customLogSettings =
-		new ConcurrentHashMap<String, String>();
+	private static final Map<String, String> _customLogSettings =
+		new ConcurrentHashMap<>();
 	private static String _liferayHome;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,10 +18,10 @@ import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.model.AttachedModel;
 import com.liferay.portal.model.BaseModel;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.LocalizedModel;
 import com.liferay.portal.model.StagedGroupedModel;
 import com.liferay.portal.service.ServiceContext;
 
@@ -48,7 +48,7 @@ import java.util.Map;
  */
 @ProviderType
 public interface DDMTemplateModel extends AttachedModel, BaseModel<DDMTemplate>,
-	StagedGroupedModel {
+	LocalizedModel, StagedGroupedModel {
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
@@ -152,10 +152,9 @@ public interface DDMTemplateModel extends AttachedModel, BaseModel<DDMTemplate>,
 	 * Returns the user uuid of this d d m template.
 	 *
 	 * @return the user uuid of this d d m template
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this d d m template.
@@ -257,11 +256,24 @@ public interface DDMTemplateModel extends AttachedModel, BaseModel<DDMTemplate>,
 	public void setClassPK(long classPK);
 
 	/**
+	 * Returns the source class name ID of this d d m template.
+	 *
+	 * @return the source class name ID of this d d m template
+	 */
+	public long getSourceClassNameId();
+
+	/**
+	 * Sets the source class name ID of this d d m template.
+	 *
+	 * @param sourceClassNameId the source class name ID of this d d m template
+	 */
+	public void setSourceClassNameId(long sourceClassNameId);
+
+	/**
 	 * Returns the template key of this d d m template.
 	 *
 	 * @return the template key of this d d m template
 	 */
-	@AutoEscape
 	public String getTemplateKey();
 
 	/**
@@ -270,6 +282,21 @@ public interface DDMTemplateModel extends AttachedModel, BaseModel<DDMTemplate>,
 	 * @param templateKey the template key of this d d m template
 	 */
 	public void setTemplateKey(String templateKey);
+
+	/**
+	 * Returns the version of this d d m template.
+	 *
+	 * @return the version of this d d m template
+	 */
+	@AutoEscape
+	public String getVersion();
+
+	/**
+	 * Sets the version of this d d m template.
+	 *
+	 * @param version the version of this d d m template
+	 */
+	public void setVersion(String version);
 
 	/**
 	 * Returns the name of this d d m template.
@@ -635,12 +662,16 @@ public interface DDMTemplateModel extends AttachedModel, BaseModel<DDMTemplate>,
 	@Override
 	public void setExpandoBridgeAttributes(ServiceContext serviceContext);
 
+	@Override
 	public String[] getAvailableLanguageIds();
 
+	@Override
 	public String getDefaultLanguageId();
 
+	@Override
 	public void prepareLocalizedFieldsForImport() throws LocaleException;
 
+	@Override
 	public void prepareLocalizedFieldsForImport(Locale defaultImportLocale)
 		throws LocaleException;
 
@@ -648,19 +679,20 @@ public interface DDMTemplateModel extends AttachedModel, BaseModel<DDMTemplate>,
 	public Object clone();
 
 	@Override
-	public int compareTo(DDMTemplate ddmTemplate);
+	public int compareTo(
+		com.liferay.portlet.dynamicdatamapping.model.DDMTemplate ddmTemplate);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<DDMTemplate> toCacheModel();
+	public CacheModel<com.liferay.portlet.dynamicdatamapping.model.DDMTemplate> toCacheModel();
 
 	@Override
-	public DDMTemplate toEscapedModel();
+	public com.liferay.portlet.dynamicdatamapping.model.DDMTemplate toEscapedModel();
 
 	@Override
-	public DDMTemplate toUnescapedModel();
+	public com.liferay.portlet.dynamicdatamapping.model.DDMTemplate toUnescapedModel();
 
 	@Override
 	public String toString();

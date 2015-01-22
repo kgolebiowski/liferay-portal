@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,12 +16,14 @@ package com.liferay.portal.kernel.portlet;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -34,13 +36,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.GenericPortlet;
 import javax.portlet.MimeResponse;
-import javax.portlet.PortletConfig;
 import javax.portlet.PortletException;
 import javax.portlet.PortletMode;
 import javax.portlet.PortletRequest;
@@ -50,6 +52,7 @@ import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 import javax.portlet.WindowState;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -63,6 +66,8 @@ public class LiferayPortlet extends GenericPortlet {
 
 		addProcessActionSuccessMessage = GetterUtil.getBoolean(
 			getInitParameter("add-process-action-success-action"), true);
+		alwaysSendRedirect = GetterUtil.getBoolean(
+			getInitParameter("always-send-redirect"));
 	}
 
 	@Override
@@ -83,13 +88,16 @@ public class LiferayPortlet extends GenericPortlet {
 				return;
 			}
 
-			if (!SessionMessages.isEmpty(actionRequest)) {
-				return;
+			boolean emptySessionMessages = SessionMessages.isEmpty(
+				actionRequest);
+
+			if (emptySessionMessages) {
+				addSuccessMessage(actionRequest, actionResponse);
 			}
 
-			addSuccessMessage(actionRequest, actionResponse);
-
-			sendRedirect(actionRequest, actionResponse);
+			if (emptySessionMessages || isAlwaysSendRedirect()) {
+				sendRedirect(actionRequest, actionResponse);
+			}
 		}
 		catch (PortletException pe) {
 			Throwable cause = pe.getCause();
@@ -109,6 +117,18 @@ public class LiferayPortlet extends GenericPortlet {
 		throws IOException, PortletException {
 
 		if (!isProcessResourceRequest(resourceRequest)) {
+			return;
+		}
+
+		if (!callResourceMethod(resourceRequest, resourceResponse)) {
+			return;
+		}
+
+		if (!SessionErrors.isEmpty(resourceRequest)) {
+			return;
+		}
+
+		if (!SessionMessages.isEmpty(resourceRequest)) {
 			return;
 		}
 
@@ -152,6 +172,52 @@ public class LiferayPortlet extends GenericPortlet {
 		catch (NoSuchMethodException nsme) {
 			try {
 				super.processAction(actionRequest, actionResponse);
+
+				return true;
+			}
+			catch (Exception e) {
+				throw new PortletException(nsme);
+			}
+		}
+		catch (InvocationTargetException ite) {
+			Throwable cause = ite.getCause();
+
+			if (cause != null) {
+				throw new PortletException(cause);
+			}
+			else {
+				throw new PortletException(ite);
+			}
+		}
+		catch (Exception e) {
+			throw new PortletException(e);
+		}
+	}
+
+	protected boolean callResourceMethod(
+			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
+		throws PortletException {
+
+		String actionName = ParamUtil.getString(
+			resourceRequest, ActionRequest.ACTION_NAME);
+
+		if (Validator.isNull(actionName) ||
+			actionName.equals("callResourceMethod") ||
+			actionName.equals("serveResource")) {
+
+			return false;
+		}
+
+		try {
+			Method method = getResourceMethod(actionName);
+
+			method.invoke(this, resourceRequest, resourceResponse);
+
+			return true;
+		}
+		catch (NoSuchMethodException nsme) {
+			try {
+				super.serveResource(resourceRequest, resourceResponse);
 
 				return true;
 			}
@@ -292,6 +358,17 @@ public class LiferayPortlet extends GenericPortlet {
 		return method;
 	}
 
+	protected String getJSONContentType(PortletRequest portletRequest) {
+		HttpServletRequest request = PortalUtil.getHttpServletRequest(
+			portletRequest);
+
+		if (BrowserSnifferUtil.isIe(request)) {
+			return ContentTypes.TEXT_HTML;
+		}
+
+		return ContentTypes.APPLICATION_JSON;
+	}
+
 	protected String getRedirect(
 		ActionRequest actionRequest, ActionResponse actionResponse) {
 
@@ -304,6 +381,25 @@ public class LiferayPortlet extends GenericPortlet {
 		return redirect;
 	}
 
+	protected Method getResourceMethod(String actionName)
+		throws NoSuchMethodException {
+
+		Method method = _resourceMethods.get(actionName);
+
+		if (method != null) {
+			return method;
+		}
+
+		Class<?> clazz = getClass();
+
+		method = clazz.getMethod(
+			actionName, ResourceRequest.class, ResourceResponse.class);
+
+		_resourceMethods.put(actionName, method);
+
+		return method;
+	}
+
 	@Override
 	protected String getTitle(RenderRequest renderRequest) {
 		try {
@@ -312,6 +408,10 @@ public class LiferayPortlet extends GenericPortlet {
 		catch (Exception e) {
 			return super.getTitle(renderRequest);
 		}
+	}
+
+	protected boolean isAlwaysSendRedirect() {
+		return alwaysSendRedirect;
 	}
 
 	protected boolean isProcessActionRequest(ActionRequest actionRequest) {
@@ -333,6 +433,10 @@ public class LiferayPortlet extends GenericPortlet {
 	}
 
 	protected boolean isSessionErrorException(Throwable cause) {
+		if (_log.isDebugEnabled()) {
+			_log.debug(cause, cause);
+		}
+
 		if (cause instanceof PortalException) {
 			return true;
 		}
@@ -352,28 +456,25 @@ public class LiferayPortlet extends GenericPortlet {
 	}
 
 	protected String translate(PortletRequest portletRequest, String key) {
-		PortletConfig portletConfig =
-			(PortletConfig)portletRequest.getAttribute(
-				JavaConstants.JAVAX_PORTLET_CONFIG);
-
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		return LanguageUtil.get(portletConfig, themeDisplay.getLocale(), key);
+		ResourceBundle resourceBundle = getResourceBundle(
+			themeDisplay.getLocale());
+
+		return LanguageUtil.get(resourceBundle, key);
 	}
 
 	protected String translate(
 		PortletRequest portletRequest, String key, Object... arguments) {
 
-		PortletConfig portletConfig =
-			(PortletConfig)portletRequest.getAttribute(
-				JavaConstants.JAVAX_PORTLET_CONFIG);
-
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		return LanguageUtil.format(
-			portletConfig, themeDisplay.getLocale(), key, arguments);
+		ResourceBundle resourceBundle = getResourceBundle(
+			themeDisplay.getLocale());
+
+		return LanguageUtil.format(resourceBundle, key, arguments);
 	}
 
 	protected void writeJSON(
@@ -384,7 +485,7 @@ public class LiferayPortlet extends GenericPortlet {
 		HttpServletResponse response = PortalUtil.getHttpServletResponse(
 			actionResponse);
 
-		response.setContentType(ContentTypes.APPLICATION_JSON);
+		response.setContentType(getJSONContentType(portletRequest));
 
 		ServletResponseUtil.write(response, json.toString());
 
@@ -396,7 +497,7 @@ public class LiferayPortlet extends GenericPortlet {
 			Object json)
 		throws IOException {
 
-		mimeResponse.setContentType(ContentTypes.APPLICATION_JSON);
+		mimeResponse.setContentType(getJSONContentType(portletRequest));
 
 		PortletResponseUtil.write(mimeResponse, json.toString());
 
@@ -404,10 +505,15 @@ public class LiferayPortlet extends GenericPortlet {
 	}
 
 	protected boolean addProcessActionSuccessMessage;
+	protected boolean alwaysSendRedirect;
 
 	private static final boolean _PROCESS_PORTLET_REQUEST = true;
 
-	private Map<String, Method> _actionMethods =
-		new ConcurrentHashMap<String, Method>();
+	private static final Log _log = LogFactoryUtil.getLog(LiferayPortlet.class);
+
+	private final Map<String, Method> _actionMethods =
+		new ConcurrentHashMap<>();
+	private final Map<String, Method> _resourceMethods =
+		new ConcurrentHashMap<>();
 
 }

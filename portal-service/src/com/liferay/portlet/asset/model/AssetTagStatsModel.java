@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -165,19 +165,20 @@ public interface AssetTagStatsModel extends BaseModel<AssetTagStats>, TypedModel
 	public Object clone();
 
 	@Override
-	public int compareTo(AssetTagStats assetTagStats);
+	public int compareTo(
+		com.liferay.portlet.asset.model.AssetTagStats assetTagStats);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<AssetTagStats> toCacheModel();
+	public CacheModel<com.liferay.portlet.asset.model.AssetTagStats> toCacheModel();
 
 	@Override
-	public AssetTagStats toEscapedModel();
+	public com.liferay.portlet.asset.model.AssetTagStats toEscapedModel();
 
 	@Override
-	public AssetTagStats toUnescapedModel();
+	public com.liferay.portlet.asset.model.AssetTagStats toUnescapedModel();
 
 	@Override
 	public String toString();

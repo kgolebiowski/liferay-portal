@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,74 +15,65 @@
 package com.liferay.portal.service.persistence;
 
 import com.liferay.portal.NoSuchResourceBlockException;
-import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.ResourceBlock;
 import com.liferay.portal.model.impl.ResourceBlockModelImpl;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.service.persistence.BasePersistence;
-import com.liferay.portal.service.persistence.PersistenceExecutionTestListener;
-import com.liferay.portal.test.LiferayPersistenceIntegrationJUnitTestRunner;
-import com.liferay.portal.test.persistence.TransactionalPersistenceAdvice;
+import com.liferay.portal.service.ResourceBlockLocalServiceUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.PersistenceTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.util.test.RandomTestUtil;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Brian Wing Shun Chan
+ * @generated
  */
-@ExecutionTestListeners(listeners =  {
-	PersistenceExecutionTestListener.class})
-@RunWith(LiferayPersistenceIntegrationJUnitTestRunner.class)
 public class ResourceBlockPersistenceTest {
+	@Rule
+	public final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
+			PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(Propagation.REQUIRED));
+
 	@After
 	public void tearDown() throws Exception {
-		Map<Serializable, BasePersistence<?>> basePersistences = _transactionalPersistenceAdvice.getBasePersistences();
+		Iterator<ResourceBlock> iterator = _resourceBlocks.iterator();
 
-		Set<Serializable> primaryKeys = basePersistences.keySet();
+		while (iterator.hasNext()) {
+			_persistence.remove(iterator.next());
 
-		for (Serializable primaryKey : primaryKeys) {
-			BasePersistence<?> basePersistence = basePersistences.get(primaryKey);
-
-			try {
-				basePersistence.remove(primaryKey);
-			}
-			catch (Exception e) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("The model with primary key " + primaryKey +
-						" was already deleted");
-				}
-			}
+			iterator.remove();
 		}
-
-		_transactionalPersistenceAdvice.reset();
 	}
 
 	@Test
 	public void testCreate() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ResourceBlock resourceBlock = _persistence.create(pk);
 
@@ -109,23 +100,23 @@ public class ResourceBlockPersistenceTest {
 
 	@Test
 	public void testUpdateExisting() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ResourceBlock newResourceBlock = _persistence.create(pk);
 
-		newResourceBlock.setMvccVersion(ServiceTestUtil.nextLong());
+		newResourceBlock.setMvccVersion(RandomTestUtil.nextLong());
 
-		newResourceBlock.setCompanyId(ServiceTestUtil.nextLong());
+		newResourceBlock.setCompanyId(RandomTestUtil.nextLong());
 
-		newResourceBlock.setGroupId(ServiceTestUtil.nextLong());
+		newResourceBlock.setGroupId(RandomTestUtil.nextLong());
 
-		newResourceBlock.setName(ServiceTestUtil.randomString());
+		newResourceBlock.setName(RandomTestUtil.randomString());
 
-		newResourceBlock.setPermissionsHash(ServiceTestUtil.randomString());
+		newResourceBlock.setPermissionsHash(RandomTestUtil.randomString());
 
-		newResourceBlock.setReferenceCount(ServiceTestUtil.nextLong());
+		newResourceBlock.setReferenceCount(RandomTestUtil.nextLong());
 
-		_persistence.update(newResourceBlock);
+		_resourceBlocks.add(_persistence.update(newResourceBlock));
 
 		ResourceBlock existingResourceBlock = _persistence.findByPrimaryKey(newResourceBlock.getPrimaryKey());
 
@@ -146,6 +137,50 @@ public class ResourceBlockPersistenceTest {
 	}
 
 	@Test
+	public void testCountByC_N() {
+		try {
+			_persistence.countByC_N(RandomTestUtil.nextLong(), StringPool.BLANK);
+
+			_persistence.countByC_N(0L, StringPool.NULL);
+
+			_persistence.countByC_N(0L, (String)null);
+		}
+		catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testCountByC_G_N() {
+		try {
+			_persistence.countByC_G_N(RandomTestUtil.nextLong(),
+				RandomTestUtil.nextLong(), StringPool.BLANK);
+
+			_persistence.countByC_G_N(0L, 0L, StringPool.NULL);
+
+			_persistence.countByC_G_N(0L, 0L, (String)null);
+		}
+		catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testCountByC_G_N_P() {
+		try {
+			_persistence.countByC_G_N_P(RandomTestUtil.nextLong(),
+				RandomTestUtil.nextLong(), StringPool.BLANK, StringPool.BLANK);
+
+			_persistence.countByC_G_N_P(0L, 0L, StringPool.NULL, StringPool.NULL);
+
+			_persistence.countByC_G_N_P(0L, 0L, (String)null, (String)null);
+		}
+		catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
 	public void testFindByPrimaryKeyExisting() throws Exception {
 		ResourceBlock newResourceBlock = addResourceBlock();
 
@@ -156,7 +191,7 @@ public class ResourceBlockPersistenceTest {
 
 	@Test
 	public void testFindByPrimaryKeyMissing() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		try {
 			_persistence.findByPrimaryKey(pk);
@@ -179,7 +214,7 @@ public class ResourceBlockPersistenceTest {
 		}
 	}
 
-	protected OrderByComparator getOrderByComparator() {
+	protected OrderByComparator<ResourceBlock> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create("ResourceBlock",
 			"mvccVersion", true, "resourceBlockId", true, "companyId", true,
 			"groupId", true, "name", true, "permissionsHash", true,
@@ -197,7 +232,7 @@ public class ResourceBlockPersistenceTest {
 
 	@Test
 	public void testFetchByPrimaryKeyMissing() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ResourceBlock missingResourceBlock = _persistence.fetchByPrimaryKey(pk);
 
@@ -205,19 +240,103 @@ public class ResourceBlockPersistenceTest {
 	}
 
 	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
+		throws Exception {
+		ResourceBlock newResourceBlock1 = addResourceBlock();
+		ResourceBlock newResourceBlock2 = addResourceBlock();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newResourceBlock1.getPrimaryKey());
+		primaryKeys.add(newResourceBlock2.getPrimaryKey());
+
+		Map<Serializable, ResourceBlock> resourceBlocks = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(2, resourceBlocks.size());
+		Assert.assertEquals(newResourceBlock1,
+			resourceBlocks.get(newResourceBlock1.getPrimaryKey()));
+		Assert.assertEquals(newResourceBlock2,
+			resourceBlocks.get(newResourceBlock2.getPrimaryKey()));
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
+		throws Exception {
+		long pk1 = RandomTestUtil.nextLong();
+
+		long pk2 = RandomTestUtil.nextLong();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(pk1);
+		primaryKeys.add(pk2);
+
+		Map<Serializable, ResourceBlock> resourceBlocks = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertTrue(resourceBlocks.isEmpty());
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
+		throws Exception {
+		ResourceBlock newResourceBlock = addResourceBlock();
+
+		long pk = RandomTestUtil.nextLong();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newResourceBlock.getPrimaryKey());
+		primaryKeys.add(pk);
+
+		Map<Serializable, ResourceBlock> resourceBlocks = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(1, resourceBlocks.size());
+		Assert.assertEquals(newResourceBlock,
+			resourceBlocks.get(newResourceBlock.getPrimaryKey()));
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
+		throws Exception {
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		Map<Serializable, ResourceBlock> resourceBlocks = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertTrue(resourceBlocks.isEmpty());
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithOnePrimaryKey()
+		throws Exception {
+		ResourceBlock newResourceBlock = addResourceBlock();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newResourceBlock.getPrimaryKey());
+
+		Map<Serializable, ResourceBlock> resourceBlocks = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(1, resourceBlocks.size());
+		Assert.assertEquals(newResourceBlock,
+			resourceBlocks.get(newResourceBlock.getPrimaryKey()));
+	}
+
+	@Test
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = new ResourceBlockActionableDynamicQuery() {
+		ActionableDynamicQuery actionableDynamicQuery = ResourceBlockLocalServiceUtil.getActionableDynamicQuery();
+
+		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod() {
 				@Override
-				protected void performAction(Object object) {
+				public void performAction(Object object) {
 					ResourceBlock resourceBlock = (ResourceBlock)object;
 
 					Assert.assertNotNull(resourceBlock);
 
 					count.increment();
 				}
-			};
+			});
 
 		actionableDynamicQuery.performActions();
 
@@ -250,7 +369,7 @@ public class ResourceBlockPersistenceTest {
 				ResourceBlock.class.getClassLoader());
 
 		dynamicQuery.add(RestrictionsFactoryUtil.eq("resourceBlockId",
-				ServiceTestUtil.nextLong()));
+				RandomTestUtil.nextLong()));
 
 		List<ResourceBlock> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -291,7 +410,7 @@ public class ResourceBlockPersistenceTest {
 				"resourceBlockId"));
 
 		dynamicQuery.add(RestrictionsFactoryUtil.in("resourceBlockId",
-				new Object[] { ServiceTestUtil.nextLong() }));
+				new Object[] { RandomTestUtil.nextLong() }));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -323,28 +442,27 @@ public class ResourceBlockPersistenceTest {
 	}
 
 	protected ResourceBlock addResourceBlock() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ResourceBlock resourceBlock = _persistence.create(pk);
 
-		resourceBlock.setMvccVersion(ServiceTestUtil.nextLong());
+		resourceBlock.setMvccVersion(RandomTestUtil.nextLong());
 
-		resourceBlock.setCompanyId(ServiceTestUtil.nextLong());
+		resourceBlock.setCompanyId(RandomTestUtil.nextLong());
 
-		resourceBlock.setGroupId(ServiceTestUtil.nextLong());
+		resourceBlock.setGroupId(RandomTestUtil.nextLong());
 
-		resourceBlock.setName(ServiceTestUtil.randomString());
+		resourceBlock.setName(RandomTestUtil.randomString());
 
-		resourceBlock.setPermissionsHash(ServiceTestUtil.randomString());
+		resourceBlock.setPermissionsHash(RandomTestUtil.randomString());
 
-		resourceBlock.setReferenceCount(ServiceTestUtil.nextLong());
+		resourceBlock.setReferenceCount(RandomTestUtil.nextLong());
 
-		_persistence.update(resourceBlock);
+		_resourceBlocks.add(_persistence.update(resourceBlock));
 
 		return resourceBlock;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ResourceBlockPersistenceTest.class);
-	private ResourceBlockPersistence _persistence = (ResourceBlockPersistence)PortalBeanLocatorUtil.locate(ResourceBlockPersistence.class.getName());
-	private TransactionalPersistenceAdvice _transactionalPersistenceAdvice = (TransactionalPersistenceAdvice)PortalBeanLocatorUtil.locate(TransactionalPersistenceAdvice.class.getName());
+	private List<ResourceBlock> _resourceBlocks = new ArrayList<ResourceBlock>();
+	private ResourceBlockPersistence _persistence = ResourceBlockUtil.getPersistence();
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -90,9 +90,9 @@ public class RequestStatistics implements Statistics {
 	}
 
 	private String _description;
-	private CountStatistics _errorStatistics;
-	private String _name;
-	private AverageStatistics _successStatistics;
-	private CountStatistics _timeoutStatistics;
+	private final CountStatistics _errorStatistics;
+	private final String _name;
+	private final AverageStatistics _successStatistics;
+	private final CountStatistics _timeoutStatistics;
 
 }

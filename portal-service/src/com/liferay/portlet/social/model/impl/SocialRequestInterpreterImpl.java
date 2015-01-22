@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -79,8 +79,8 @@ public class SocialRequestInterpreterImpl implements SocialRequestInterpreter {
 		return _requestInterpreter.processRejection(request, themeDisplay);
 	}
 
-	private Set<String> _classNames = new HashSet<String>();
-	private String _portletId;
-	private SocialRequestInterpreter _requestInterpreter;
+	private final Set<String> _classNames = new HashSet<>();
+	private final String _portletId;
+	private final SocialRequestInterpreter _requestInterpreter;
 
 }

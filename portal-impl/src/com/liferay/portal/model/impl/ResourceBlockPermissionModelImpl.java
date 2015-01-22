@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.model.impl;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -46,6 +48,7 @@ import java.util.Map;
  * @see com.liferay.portal.model.ResourceBlockPermissionModel
  * @generated
  */
+@ProviderType
 public class ResourceBlockPermissionModelImpl extends BaseModelImpl<ResourceBlockPermission>
 	implements ResourceBlockPermissionModel {
 	/*
@@ -77,9 +80,9 @@ public class ResourceBlockPermissionModelImpl extends BaseModelImpl<ResourceBloc
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portal.model.ResourceBlockPermission"),
 			true);
-	public static long RESOURCEBLOCKID_COLUMN_BITMASK = 1L;
-	public static long ROLEID_COLUMN_BITMASK = 2L;
-	public static long RESOURCEBLOCKPERMISSIONID_COLUMN_BITMASK = 4L;
+	public static final long RESOURCEBLOCKID_COLUMN_BITMASK = 1L;
+	public static final long ROLEID_COLUMN_BITMASK = 2L;
+	public static final long RESOURCEBLOCKPERMISSIONID_COLUMN_BITMASK = 4L;
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(com.liferay.portal.util.PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.ResourceBlockPermission"));
 
@@ -420,8 +423,8 @@ public class ResourceBlockPermissionModelImpl extends BaseModelImpl<ResourceBloc
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = ResourceBlockPermission.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = ResourceBlockPermission.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			ResourceBlockPermission.class
 		};
 	private long _mvccVersion;

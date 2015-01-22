@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -364,20 +364,20 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 		return delay;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ClassLoaderAggregateProperties.class);
 
-	private CompositeConfiguration _baseCompositeConfiguration =
+	private final CompositeConfiguration _baseCompositeConfiguration =
 		new CompositeConfiguration();
 	private boolean _baseConfigurationLoaded;
-	private ClassLoader _classLoader;
-	private String _companyId;
-	private String _componentName;
-	private CompositeConfiguration _globalCompositeConfiguration =
+	private final ClassLoader _classLoader;
+	private final String _companyId;
+	private final String _componentName;
+	private final CompositeConfiguration _globalCompositeConfiguration =
 		new CompositeConfiguration();
-	private List<String> _loadedSources = new ArrayList<String>();
-	private Configuration _prefixedSystemConfiguration;
-	private SystemConfiguration _systemConfiguration =
+	private final List<String> _loadedSources = new ArrayList<>();
+	private final Configuration _prefixedSystemConfiguration;
+	private final SystemConfiguration _systemConfiguration =
 		new SystemConfiguration();
 
 }

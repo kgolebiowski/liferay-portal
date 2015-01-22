@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -99,7 +99,7 @@ public class CASFilter extends BasePortalFilter {
 		Cas20ProxyTicketValidator cas20ProxyTicketValidator =
 			new Cas20ProxyTicketValidator(serverUrl);
 
-		Map<String, String> parameters = new HashMap<String, String>();
+		Map<String, String> parameters = new HashMap<>();
 
 		parameters.put("serverName", serverName);
 		parameters.put("casServerUrlPrefix", serverUrl);
@@ -206,9 +206,9 @@ public class CASFilter extends BasePortalFilter {
 		processFilter(CASFilter.class, request, response, filterChain);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(CASFilter.class);
+	private static final Log _log = LogFactoryUtil.getLog(CASFilter.class);
 
-	private static Map<Long, TicketValidator> _ticketValidators =
-		new ConcurrentHashMap<Long, TicketValidator>();
+	private static final Map<Long, TicketValidator> _ticketValidators =
+		new ConcurrentHashMap<>();
 
 }

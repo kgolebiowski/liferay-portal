@@ -9,6 +9,8 @@ liferaySelenium.${selenium}(
 <#if seleniumBuilderContext.getSeleniumParameterCount(selenium) gte 1>
 	<#if
 		(selenium = "assertConfirmation") ||
+		(selenium = "assertConsoleTextNotPresent") ||
+		(selenium = "assertConsoleTextPresent") ||
 		(selenium = "assertLocation") ||
 		(selenium = "assertTextNotPresent") ||
 		(selenium = "assertTextPresent") ||
@@ -17,6 +19,8 @@ liferaySelenium.${selenium}(
 		(selenium = "waitForTextPresent")
 	>
 		value1
+	<#elseif selenium = "assertJavaScriptErrors">
+		ignoreJavaScriptError
 	<#elseif seleniumElement.attributeValue("argument1")??>
 		<#assign argument1 = seleniumElement.attributeValue("argument1")>
 

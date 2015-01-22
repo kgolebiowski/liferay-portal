@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,14 +28,14 @@ import javax.portlet.PortletURL;
  */
 public class TeamSearch extends SearchContainer<Role> {
 
-	static List<String> headerNames = new ArrayList<String>();
+	public static final String EMPTY_RESULTS_MESSAGE = "no-teams-were-found";
+
+	public static List<String> headerNames = new ArrayList<>();
 
 	static {
 		headerNames.add("name");
 		headerNames.add("description");
 	}
-
-	public static final String EMPTY_RESULTS_MESSAGE = "no-teams-were-found";
 
 	public TeamSearch(PortletRequest portletRequest, PortletURL iteratorURL) {
 		super(

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Role;
 import com.liferay.portal.model.RoleConstants;
@@ -36,11 +35,10 @@ public class UserGroupRoleServiceImpl extends UserGroupRoleServiceBaseImpl {
 
 	@Override
 	public void addUserGroupRoles(long userId, long groupId, long[] roleIds)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		List<UserGroupRole> organizationUserGroupRoles =
-			new ArrayList<UserGroupRole>();
-		List<UserGroupRole> siteUserGroupRoles = new ArrayList<UserGroupRole>();
+		List<UserGroupRole> organizationUserGroupRoles = new ArrayList<>();
+		List<UserGroupRole> siteUserGroupRoles = new ArrayList<>();
 
 		Group group = groupLocalService.getGroup(groupId);
 
@@ -87,12 +85,12 @@ public class UserGroupRoleServiceImpl extends UserGroupRoleServiceBaseImpl {
 
 	@Override
 	public void addUserGroupRoles(long[] userIds, long groupId, long roleId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		UserGroupRolePermissionUtil.check(
 			getPermissionChecker(), groupId, roleId);
 
-		List<UserGroupRole> userGroupRoles = new ArrayList<UserGroupRole>();
+		List<UserGroupRole> userGroupRoles = new ArrayList<>();
 
 		for (long userId : userIds) {
 			UserGroupRolePK userGroupRolePK = new UserGroupRolePK(
@@ -130,12 +128,11 @@ public class UserGroupRoleServiceImpl extends UserGroupRoleServiceBaseImpl {
 
 	@Override
 	public void deleteUserGroupRoles(long userId, long groupId, long[] roleIds)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		List<UserGroupRole> filteredOrganizationUserGroupRoles =
-			new ArrayList<UserGroupRole>();
-		List<UserGroupRole> filteredSiteUserGroupRoles =
-			new ArrayList<UserGroupRole>();
+			new ArrayList<>();
+		List<UserGroupRole> filteredSiteUserGroupRoles = new ArrayList<>();
 
 		Group group = groupLocalService.getGroup(groupId);
 
@@ -199,13 +196,12 @@ public class UserGroupRoleServiceImpl extends UserGroupRoleServiceBaseImpl {
 
 	@Override
 	public void deleteUserGroupRoles(long[] userIds, long groupId, long roleId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		UserGroupRolePermissionUtil.check(
 			getPermissionChecker(), groupId, roleId);
 
-		List<UserGroupRole> filteredUserGroupRoles =
-			new ArrayList<UserGroupRole>();
+		List<UserGroupRole> filteredUserGroupRoles = new ArrayList<>();
 
 		Role role = rolePersistence.findByPrimaryKey(roleId);
 

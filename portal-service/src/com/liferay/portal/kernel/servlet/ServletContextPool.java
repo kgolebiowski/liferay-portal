@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -56,7 +56,7 @@ public class ServletContextPool {
 	}
 
 	private ServletContextPool() {
-		_servletContexts = new ConcurrentHashMap<String, ServletContext>();
+		_servletContexts = new ConcurrentHashMap<>();
 	}
 
 	private boolean _containsKey(String servletContextName) {
@@ -118,10 +118,12 @@ public class ServletContextPool {
 		return servletContext;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ServletContextPool.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ServletContextPool.class);
 
-	private static ServletContextPool _instance = new ServletContextPool();
+	private static final ServletContextPool _instance =
+		new ServletContextPool();
 
-	private Map<String, ServletContext> _servletContexts;
+	private final Map<String, ServletContext> _servletContexts;
 
 }

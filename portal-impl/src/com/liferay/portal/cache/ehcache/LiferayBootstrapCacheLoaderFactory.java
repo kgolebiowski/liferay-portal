@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,7 @@
 
 package com.liferay.portal.cache.ehcache;
 
+import com.liferay.portal.cache.bootstrap.EhcacheStreamBootstrapCacheLoaderFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.InstanceFactory;
@@ -61,9 +62,9 @@ public class LiferayBootstrapCacheLoaderFactory<T extends BootstrapCacheLoader>
 			properties);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayBootstrapCacheLoaderFactory.class);
 
-	private BootstrapCacheLoaderFactory<T> _bootstrapCacheLoaderFactory;
+	private final BootstrapCacheLoaderFactory<T> _bootstrapCacheLoaderFactory;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,25 +18,26 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.process.ClassPathUtil;
 import com.liferay.portal.kernel.resiliency.mpi.MPIHelperUtil;
 import com.liferay.portal.kernel.resiliency.spi.MockSPI;
-import com.liferay.portal.kernel.resiliency.spi.SPI;
-import com.liferay.portal.kernel.resiliency.spi.SPIConfiguration;
+import com.liferay.portal.kernel.resiliency.spi.MockSPIProvider;
 import com.liferay.portal.kernel.resiliency.spi.SPIUtil;
 import com.liferay.portal.kernel.resiliency.spi.provider.SPIProvider;
+import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
-import com.liferay.portal.kernel.test.NewClassLoaderJUnitTestRunner;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
+import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.util.PropsImpl;
+import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.File;
 import java.io.IOException;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 import java.net.MalformedURLException;
@@ -60,19 +61,17 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.mock.web.MockServletContext;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(NewClassLoaderJUnitTestRunner.class)
 public class SPIClassPathContextListenerTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -148,7 +147,7 @@ public class SPIClassPathContextListenerTest {
 
 		// Mock lookup
 
-		final Map<String, URL> resources = new HashMap<String, URL>();
+		final Map<String, URL> resources = new HashMap<>();
 
 		final String driverClassName = "TestDriver";
 
@@ -156,19 +155,31 @@ public class SPIClassPathContextListenerTest {
 		putResource(
 			resources, _portalServiceJarFile, PortalException.class.getName());
 
-		PropsUtil.setProps(
-			new PropsImpl() {
+		final Method getMethod = Props.class.getMethod("get", String.class);
 
-				@Override
-				public String get(String key) {
-					if (key.equals(PropsKeys.JDBC_DEFAULT_DRIVER_CLASS_NAME)) {
-						return driverClassName;
+		PropsUtil.setProps(
+			(Props)ProxyUtil.newProxyInstance(
+				Props.class.getClassLoader(), new Class<?>[] {Props.class},
+				new InvocationHandler() {
+
+					@Override
+					public Object invoke(
+						Object proxy, Method method, Object[] args) {
+
+						if (getMethod.equals(method)) {
+							if (args[0].equals(
+									PropsKeys.JDBC_DEFAULT_DRIVER_CLASS_NAME)) {
+
+								return driverClassName;
+							}
+
+							return StringPool.BLANK;
+						}
+
+						throw new UnsupportedOperationException();
 					}
 
-					return super.get(key);
-				}
-
-			});
+				}));
 
 		PortalClassLoaderUtil.setClassLoader(new ClassLoader() {
 
@@ -194,81 +205,85 @@ public class SPIClassPathContextListenerTest {
 	}
 
 	@Test
-	public void testClassPathGeneration() throws Exception {
-
-		// With log
-
-		List<LogRecord> logRecords = JDKLoggerTestUtil.configureJDKLogger(
+	public void testClassPathGeneration() {
+		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
 			SPIClassPathContextListener.class.getName(), Level.FINE);
 
-		_mockServletContext.addInitParameter(
-			"spiProviderClassName", "InvalidSPIProvider");
-
-		SPIClassPathContextListener spiClassPathContextListener =
-			new SPIClassPathContextListener();
-
-		spiClassPathContextListener.contextInitialized(
-			new ServletContextEvent(_mockServletContext));
-
-		StringBundler sb = new StringBundler();
-
-		sb.append(_jarFile.getAbsolutePath());
-		sb.append(File.pathSeparator);
-		sb.append(_global1JarFile.getAbsolutePath());
-		sb.append(File.pathSeparator);
-		sb.append(_portalServiceJarFile.getAbsolutePath());
-		sb.append(File.pathSeparator);
-		sb.append(_global2JarFile.getAbsolutePath());
-		sb.append(File.pathSeparator);
-		sb.append(_jdbcDriverJarFile.getAbsolutePath());
-		sb.append(File.pathSeparator);
-		sb.append(_extJarFile.getAbsolutePath());
-		sb.append(File.pathSeparator);
-		sb.append(_CONTEXT_PATH);
-		sb.append("/WEB-INF/classes");
-
-		String spiClassPath = sb.toString();
-
-		Assert.assertEquals(
-			spiClassPath, SPIClassPathContextListener.SPI_CLASS_PATH);
-		Assert.assertEquals(2, logRecords.size());
-
-		LogRecord logRecord = logRecords.get(0);
-
-		Assert.assertEquals(
-			"SPI class path " + spiClassPath, logRecord.getMessage());
-
-		logRecord = logRecords.get(1);
-
-		Assert.assertEquals(
-			"Unable to create SPI provider with name InvalidSPIProvider",
-			logRecord.getMessage());
-
-		// Without log
-
-		logRecords = JDKLoggerTestUtil.configureJDKLogger(
-			SPIClassPathContextListener.class.getName(), Level.OFF);
-
-		Field field = ReflectionUtil.getDeclaredField(SPIUtil.class, "_spi");
-
-		field.set(null, new MockSPI());
-
 		try {
+
+			// With log
+
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
+
+			_mockServletContext.addInitParameter(
+				"spiProviderClassName", "InvalidSPIProvider");
+
+			SPIClassPathContextListener spiClassPathContextListener =
+				new SPIClassPathContextListener();
+
 			spiClassPathContextListener.contextInitialized(
 				new ServletContextEvent(_mockServletContext));
+
+			StringBundler sb = new StringBundler();
+
+			sb.append(_jarFile.getAbsolutePath());
+			sb.append(File.pathSeparator);
+			sb.append(_global1JarFile.getAbsolutePath());
+			sb.append(File.pathSeparator);
+			sb.append(_portalServiceJarFile.getAbsolutePath());
+			sb.append(File.pathSeparator);
+			sb.append(_global2JarFile.getAbsolutePath());
+			sb.append(File.pathSeparator);
+			sb.append(_jdbcDriverJarFile.getAbsolutePath());
+			sb.append(File.pathSeparator);
+			sb.append(_extJarFile.getAbsolutePath());
+			sb.append(File.pathSeparator);
+			sb.append(_CONTEXT_PATH);
+			sb.append("/WEB-INF/classes");
+
+			String spiClassPath = sb.toString();
+
+			Assert.assertEquals(
+				spiClassPath, SPIClassPathContextListener.SPI_CLASS_PATH);
+			Assert.assertEquals(2, logRecords.size());
+
+			LogRecord logRecord = logRecords.get(0);
+
+			Assert.assertEquals(
+				"SPI class path " + spiClassPath, logRecord.getMessage());
+
+			logRecord = logRecords.get(1);
+
+			Assert.assertEquals(
+				"Unable to create SPI provider with name InvalidSPIProvider",
+				logRecord.getMessage());
+
+			// Without log
+
+			logRecords = captureHandler.resetLogLevel(Level.OFF);
+
+			ReflectionTestUtil.setFieldValue(
+				SPIUtil.class, "_spi", new MockSPI());
+
+			try {
+				spiClassPathContextListener.contextInitialized(
+					new ServletContextEvent(_mockServletContext));
+			}
+			finally {
+				ReflectionTestUtil.setFieldValue(SPIUtil.class, "_spi", null);
+			}
+
+			Assert.assertEquals(
+				spiClassPath, SPIClassPathContextListener.SPI_CLASS_PATH);
+			Assert.assertTrue(logRecords.isEmpty());
 		}
 		finally {
-			field.set(null, null);
+			captureHandler.close();
 		}
-
-		Assert.assertEquals(
-			spiClassPath, SPIClassPathContextListener.SPI_CLASS_PATH);
-		Assert.assertTrue(logRecords.isEmpty());
 	}
 
 	@Test
 	public void testLoadClassDirectly() throws Exception {
-
 		String jvmClassPath = ClassPathUtil.getJVMClassPath(false);
 
 		URL[] urls = ClassPathUtil.getClassPathURLs(jvmClassPath);
@@ -284,17 +299,15 @@ public class SPIClassPathContextListenerTest {
 		Assert.assertNotSame(TestClass.class, clazz);
 		Assert.assertEquals(TestClass.class.getName(), clazz.getName());
 		Assert.assertSame(childClassLoader, clazz.getClassLoader());
-
-		Method findLoadedClassMethod = ReflectionUtil.getDeclaredMethod(
-			ClassLoader.class, "findLoadedClass", String.class);
-
 		Assert.assertSame(
 			clazz,
-			findLoadedClassMethod.invoke(
-				childClassLoader, TestClass.class.getName()));
+			ReflectionTestUtil.invoke(
+				childClassLoader, "findLoadedClass",
+				new Class<?>[] {String.class}, TestClass.class.getName()));
 		Assert.assertNull(
-			findLoadedClassMethod.invoke(
-				parentClassLoader, TestClass.class.getName()));
+			ReflectionTestUtil.invoke(
+				parentClassLoader, "findLoadedClass",
+				new Class<?>[] {String.class}, TestClass.class.getName()));
 		Assert.assertSame(
 			clazz,
 			SPIClassPathContextListener.loadClassDirectly(
@@ -322,7 +335,7 @@ public class SPIClassPathContextListenerTest {
 	}
 
 	@Test
-	public void testRegistration() throws Exception {
+	public void testRegistration() {
 
 		// Register
 
@@ -349,21 +362,28 @@ public class SPIClassPathContextListenerTest {
 
 		// Duplicate register
 
-		List<LogRecord> logRecords = JDKLoggerTestUtil.configureJDKLogger(
+		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
 			SPIClassPathContextListener.class.getName(), Level.SEVERE);
 
-		spiClassPathContextListener.contextInitialized(
-			new ServletContextEvent(_mockServletContext));
+		try {
+			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
-		Assert.assertEquals(1, logRecords.size());
+			spiClassPathContextListener.contextInitialized(
+				new ServletContextEvent(_mockServletContext));
 
-		LogRecord logRecord = logRecords.get(0);
+			Assert.assertEquals(1, logRecords.size());
 
-		Assert.assertEquals(
-			"Duplicate SPI provider " + spiProviderReference.get() +
-				" is already registered in servlet context " +
-					_mockServletContext.getContextPath(),
-			logRecord.getMessage());
+			LogRecord logRecord = logRecords.get(0);
+
+			Assert.assertEquals(
+				"Duplicate SPI provider " + spiProviderReference.get() +
+					" is already registered in servlet context " +
+						_mockServletContext.getContextPath(),
+				logRecord.getMessage());
+		}
+		finally {
+			captureHandler.close();
+		}
 
 		// Unregister
 
@@ -387,30 +407,35 @@ public class SPIClassPathContextListenerTest {
 
 		Assert.assertTrue(spiProviders.isEmpty());
 
+		// Register from SPI
+
+		_mockServletContext.addInitParameter(
+			"spiProviderClassName", MockSPIProvider.class.getName());
+
+		ReflectionTestUtil.setFieldValue(SPIUtil.class, "_spi", new MockSPI());
+
+		try {
+			spiClassPathContextListener.contextInitialized(
+				new ServletContextEvent(_mockServletContext));
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(SPIUtil.class, "_spi", null);
+		}
+
+		spiProviderReference = SPIClassPathContextListener.spiProviderReference;
+
+		Assert.assertNotNull(spiProviderReference.get());
+
+		spiProviders = MPIHelperUtil.getSPIProviders();
+
+		Assert.assertEquals(1, spiProviders.size());
+		Assert.assertSame(spiProviderReference.get(), spiProviders.get(0));
+
 		embeddedLibDir.delete();
 	}
 
-	public static class MockSPIProvider implements SPIProvider {
-
-		@Override
-		public SPI createSPI(SPIConfiguration spiConfiguration) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public String getName() {
-			return MockSPIProvider.class.getName();
-		}
-
-		@Override
-		public String toString() {
-			return MockSPIProvider.class.getName();
-		}
-
-	}
-
 	protected void deleteFile(File file) {
-		Queue<File> fileQueue = new LinkedList<File>();
+		Queue<File> fileQueue = new LinkedList<>();
 
 		fileQueue.offer(file);
 
@@ -492,15 +517,16 @@ public class SPIClassPathContextListenerTest {
 		}
 	}
 
-	private static String _CONTEXT_PATH = System.getProperty("java.io.tmpdir");
+	private static final String _CONTEXT_PATH = System.getProperty(
+		"java.io.tmpdir");
 
-	private static String _EMBEDDED_LIB_DIR_NAME = "/embeddedLib";
+	private static final String _EMBEDDED_LIB_DIR_NAME = "/embeddedLib";
 
-	private static String _EMBEDDED_LIB_EXT_DIR_NAME = "/embeddedLib/ext";
+	private static final String _EMBEDDED_LIB_EXT_DIR_NAME = "/embeddedLib/ext";
 
-	private static String _GLOBAL_LIB_1_DIR_NAME = "/globalLib1";
+	private static final String _GLOBAL_LIB_1_DIR_NAME = "/globalLib1";
 
-	private static String _GLOBAL_LIB_2_DIR_NAME = "/globalLib2";
+	private static final String _GLOBAL_LIB_2_DIR_NAME = "/globalLib2";
 
 	private File _extJarFile;
 	private File _global1JarFile;
@@ -508,18 +534,19 @@ public class SPIClassPathContextListenerTest {
 	private File _jarFile;
 	private File _jdbcDriverJarFile;
 
-	private MockServletContext _mockServletContext = new MockServletContext() {
+	private final MockServletContext _mockServletContext =
+		new MockServletContext() {
 
-		{
-			addInitParameter("spiEmbeddedLibDir", _EMBEDDED_LIB_DIR_NAME);
-		}
+			{
+				addInitParameter("spiEmbeddedLibDir", _EMBEDDED_LIB_DIR_NAME);
+			}
 
-		@Override
-		public String getRealPath(String path) {
-			return _CONTEXT_PATH;
-		}
+			@Override
+			public String getRealPath(String path) {
+				return _CONTEXT_PATH;
+			}
 
-	};
+		};
 
 	private File _portalServiceJarFile;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -165,19 +165,20 @@ public interface ExpandoTableModel extends BaseModel<ExpandoTable>, TypedModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(ExpandoTable expandoTable);
+	public int compareTo(
+		com.liferay.portlet.expando.model.ExpandoTable expandoTable);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<ExpandoTable> toCacheModel();
+	public CacheModel<com.liferay.portlet.expando.model.ExpandoTable> toCacheModel();
 
 	@Override
-	public ExpandoTable toEscapedModel();
+	public com.liferay.portlet.expando.model.ExpandoTable toEscapedModel();
 
 	@Override
-	public ExpandoTable toUnescapedModel();
+	public com.liferay.portlet.expando.model.ExpandoTable toUnescapedModel();
 
 	@Override
 	public String toString();

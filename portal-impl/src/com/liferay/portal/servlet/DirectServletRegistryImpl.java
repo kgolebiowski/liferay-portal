@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -203,14 +203,14 @@ public class DirectServletRegistryImpl implements DirectServletRegistry {
 		file.setLastModified(System.currentTimeMillis());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DirectServletRegistryImpl.class);
 
-	private Map<String, Long> _dependantTimestamps =
-		new ConcurrentHashMap<String, Long>();
+	private final Map<String, Long> _dependantTimestamps =
+		new ConcurrentHashMap<>();
 	private boolean _reloadDependants = true;
-	private Map<String, ServletInfo> _servletInfos =
-		new ConcurrentHashMap<String, ServletInfo>();
+	private final Map<String, ServletInfo> _servletInfos =
+		new ConcurrentHashMap<>();
 
 	private class ServletInfo {
 

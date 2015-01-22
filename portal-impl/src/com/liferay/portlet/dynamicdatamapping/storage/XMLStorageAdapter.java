@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -54,6 +54,11 @@ import java.util.Map;
 public class XMLStorageAdapter extends BaseStorageAdapter {
 
 	@Override
+	public String getStorageType() {
+		return StorageType.XML.toString();
+	}
+
+	@Override
 	protected long doCreate(
 			long companyId, long ddmStructureId, Fields fields,
 			ServiceContext serviceContext)
@@ -101,7 +106,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 	@Override
 	protected List<Fields> doGetFieldsListByClasses(
 			long ddmStructureId, long[] classPKs, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception {
 
 		return _doQuery(
@@ -111,7 +116,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 	@Override
 	protected List<Fields> doGetFieldsListByDDMStructure(
 			long ddmStructureId, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception {
 
 		return _doQuery(ddmStructureId, fieldNames, null, orderByComparator);
@@ -128,7 +133,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 	@Override
 	protected List<Fields> doQuery(
 			long ddmStructureId, List<String> fieldNames, Condition condition,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception {
 
 		return _doQuery(
@@ -153,7 +158,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 			DDMContent ddmContent = DDMContentLocalServiceUtil.getContent(
 				classPK);
 
-			Document document = SAXReaderUtil.read(ddmContent.getXml());
+			Document document = SAXReaderUtil.read(ddmContent.getData());
 
 			if ((conditionXPath == null) ||
 				((conditionXPath != null) &&
@@ -180,16 +185,16 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 			fields = DDMUtil.mergeFields(fields, getFields(classPK));
 		}
 
-		ddmContent.setXml(DDMXMLUtil.getXML(fields));
+		ddmContent.setData(DDMXMLUtil.getXML(fields));
 
 		DDMContentLocalServiceUtil.updateContent(
 			ddmContent.getPrimaryKey(), ddmContent.getName(),
-			ddmContent.getDescription(), ddmContent.getXml(), serviceContext);
+			ddmContent.getDescription(), ddmContent.getData(), serviceContext);
 	}
 
 	private List<Fields> _doQuery(
 			long ddmStructureId, List<String> fieldNames, Condition condition,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws Exception {
 
 		return _doQuery(
@@ -201,7 +206,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 			long ddmStructureId, long[] classPKs, List<String> fieldNames)
 		throws Exception {
 
-		Map<Long, Fields> fieldsMap = new HashMap<Long, Fields>();
+		Map<Long, Fields> fieldsMap = new HashMap<>();
 
 		List<Fields> fieldsList = _doQuery(
 			ddmStructureId, classPKs, fieldNames, null, null);
@@ -217,10 +222,10 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 
 	private List<Fields> _doQuery(
 			long ddmStructureId, long[] classPKs, List<String> fieldNames,
-			Condition condition, OrderByComparator orderByComparator)
+			Condition condition, OrderByComparator<Fields> orderByComparator)
 		throws Exception {
 
-		List<Fields> fieldsList = new ArrayList<Fields>();
+		List<Fields> fieldsList = new ArrayList<>();
 
 		XPath conditionXPath = null;
 
@@ -236,7 +241,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 				classPK);
 
 			Fields fields = DDMXMLUtil.getFields(
-				ddmStructure, conditionXPath, ddmContent.getXml(), fieldNames);
+				ddmStructure, conditionXPath, ddmContent.getData(), fieldNames);
 
 			fieldsList.add(fields);
 		}
@@ -249,7 +254,7 @@ public class XMLStorageAdapter extends BaseStorageAdapter {
 	}
 
 	private long[] _getStructureClassPKs(long ddmStructureId) throws Exception {
-		List<Long> classPKs = new ArrayList<Long>();
+		List<Long> classPKs = new ArrayList<>();
 
 		List<DDMStorageLink> ddmStorageLinks =
 			DDMStorageLinkLocalServiceUtil.getStructureStorageLinks(

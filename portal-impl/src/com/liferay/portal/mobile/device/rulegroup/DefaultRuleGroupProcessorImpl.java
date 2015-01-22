@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,6 @@ package com.liferay.portal.mobile.device.rulegroup;
 
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.mobile.device.rulegroup.RuleGroupProcessor;
@@ -43,9 +42,7 @@ import java.util.Map;
 public class DefaultRuleGroupProcessorImpl implements RuleGroupProcessor {
 
 	@Override
-	public MDRRuleGroupInstance evaluateRuleGroups(ThemeDisplay themeDisplay)
-		throws SystemException {
-
+	public MDRRuleGroupInstance evaluateRuleGroups(ThemeDisplay themeDisplay) {
 		Layout layout = themeDisplay.getLayout();
 
 		MDRRuleGroupInstance mdrRuleGroupInstance = evaluateRuleGroupInstances(
@@ -128,8 +125,7 @@ public class DefaultRuleGroupProcessorImpl implements RuleGroupProcessor {
 	}
 
 	protected MDRRuleGroupInstance evaluateRuleGroupInstances(
-			String className, long classPK, ThemeDisplay themeDisplay)
-		throws SystemException {
+		String className, long classPK, ThemeDisplay themeDisplay) {
 
 		List<MDRRuleGroupInstance> mdrRuleGroupInstances =
 			_mdrRuleGroupInstanceLocalService.getRuleGroupInstances(
@@ -166,7 +162,7 @@ public class DefaultRuleGroupProcessorImpl implements RuleGroupProcessor {
 		return null;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DefaultRuleGroupProcessorImpl.class);
 
 	@BeanReference(type = MDRRuleGroupInstanceLocalService.class)
@@ -175,7 +171,6 @@ public class DefaultRuleGroupProcessorImpl implements RuleGroupProcessor {
 	@BeanReference(type = MDRRuleGroupLocalService.class)
 	private MDRRuleGroupLocalService _mdrRuleGroupLocalService;
 
-	private Map<String, RuleHandler> _ruleHandlers =
-		new HashMap<String, RuleHandler>();
+	private final Map<String, RuleHandler> _ruleHandlers = new HashMap<>();
 
 }

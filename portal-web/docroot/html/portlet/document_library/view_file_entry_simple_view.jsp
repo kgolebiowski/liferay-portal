@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,18 +21,16 @@ FileEntry fileEntry = (FileEntry)request.getAttribute(WebKeys.DOCUMENT_LIBRARY_F
 
 FileVersion fileVersion = fileEntry.getFileVersion();
 
-boolean hasAudio = AudioProcessorUtil.hasAudio(fileVersion);
-boolean hasImages = ImageProcessorUtil.hasImages(fileVersion);
-boolean hasPDFImages = PDFProcessorUtil.hasImages(fileVersion);
-boolean hasVideo = VideoProcessorUtil.hasVideo(fileVersion);
-
-boolean showImageContainer = false;
+DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayContextProviderUtil.getDLViewFileVersionDisplayContext(request, response, fileVersion);
 %>
 
 <div class="view">
 	<div class="body-row">
 		<aui:model-context bean="<%= fileVersion %>" model="<%= DLFileVersion.class %>" />
 
-		<%@ include file="/html/portlet/document_library/view_file_entry_preview.jspf" %>
+		<%
+		dlViewFileVersionDisplayContext.renderPreview(request, response);
+		%>
+
 	</div>
 </div>

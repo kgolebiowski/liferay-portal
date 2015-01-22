@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,10 +14,12 @@
 
 package com.liferay.portal.events;
 
-import com.liferay.portal.cache.ehcache.EhcacheStreamBootstrapCacheLoader;
+import com.liferay.portal.cache.bootstrap.ClusterLinkBootstrapLoaderHelperUtil;
+import com.liferay.portal.fabric.server.FabricServerUtil;
 import com.liferay.portal.jericho.CachedLoggerProvider;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
+import com.liferay.portal.kernel.cluster.ClusterLinkUtil;
 import com.liferay.portal.kernel.cluster.ClusterMasterExecutorUtil;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.SimpleAction;
@@ -29,9 +31,9 @@ import com.liferay.portal.kernel.messaging.sender.MessageSender;
 import com.liferay.portal.kernel.messaging.sender.SynchronousMessageSender;
 import com.liferay.portal.kernel.nio.intraband.Intraband;
 import com.liferay.portal.kernel.nio.intraband.SystemDataType;
-import com.liferay.portal.kernel.nio.intraband.cache.PortalCacheDatagramReceiveHandler;
 import com.liferay.portal.kernel.nio.intraband.mailbox.MailboxDatagramReceiveHandler;
 import com.liferay.portal.kernel.nio.intraband.messaging.MessageDatagramReceiveHandler;
+import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxyDatagramReceiveHandler;
 import com.liferay.portal.kernel.nio.intraband.rpc.RPCDatagramReceiveHandler;
 import com.liferay.portal.kernel.resiliency.mpi.MPIHelperUtil;
 import com.liferay.portal.kernel.resiliency.spi.SPIUtil;
@@ -40,7 +42,6 @@ import com.liferay.portal.kernel.resiliency.spi.agent.annotation.DistributedRegi
 import com.liferay.portal.kernel.resiliency.spi.agent.annotation.MatchType;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelperUtil;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
-import com.liferay.portal.kernel.servlet.JspFactorySwapper;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.plugin.PluginPackageIndexer;
@@ -48,8 +49,10 @@ import com.liferay.portal.security.lang.DoPrivilegedUtil;
 import com.liferay.portal.service.BackgroundTaskLocalServiceUtil;
 import com.liferay.portal.service.LockLocalServiceUtil;
 import com.liferay.portal.tools.DBUpgrader;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.messageboards.util.MBMessageIndexer;
+import com.liferay.taglib.servlet.JspFactorySwapper;
 
 import javax.portlet.MimeResponse;
 import javax.portlet.PortletRequest;
@@ -108,10 +111,17 @@ public class StartupAction extends SimpleAction {
 			new MessageDatagramReceiveHandler(messageBus));
 
 		intraband.registerDatagramReceiveHandler(
-			SystemDataType.PORTAL_CACHE.getValue(),
-			new PortalCacheDatagramReceiveHandler());
+			SystemDataType.PROXY.getValue(),
+			new IntrabandProxyDatagramReceiveHandler());
+
 		intraband.registerDatagramReceiveHandler(
 			SystemDataType.RPC.getValue(), new RPCDatagramReceiveHandler());
+
+		// Portal fabric
+
+		if (PropsValues.PORTAL_FABRIC_ENABLED) {
+			FabricServerUtil.start();
+		}
 
 		// Shutdown hook
 
@@ -178,6 +188,10 @@ public class StartupAction extends SimpleAction {
 			DoPrivilegedUtil.wrap(messageSender),
 			DoPrivilegedUtil.wrap(synchronousMessageSender));
 
+		// Cluster link
+
+		ClusterLinkUtil.initialize();
+
 		// Cluster executor
 
 		ClusterExecutorUtil.initialize();
@@ -188,7 +202,7 @@ public class StartupAction extends SimpleAction {
 
 		// Ehache bootstrap
 
-		EhcacheStreamBootstrapCacheLoader.start();
+		ClusterLinkBootstrapLoaderHelperUtil.start();
 
 		// Scheduler
 
@@ -221,6 +235,6 @@ public class StartupAction extends SimpleAction {
 		CachedLoggerProvider.install();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(StartupAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(StartupAction.class);
 
 }

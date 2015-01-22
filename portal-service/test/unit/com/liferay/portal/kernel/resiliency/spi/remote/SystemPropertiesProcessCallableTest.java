@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,8 +30,8 @@ import org.junit.Test;
 public class SystemPropertiesProcessCallableTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Test
 	public void testSystemPropertiesProcessCallable() {
@@ -41,7 +41,7 @@ public class SystemPropertiesProcessCallableTest {
 
 		System.setProperties(newProperties);
 
-		Map<String, String> propertiesMap = new HashMap<String, String>();
+		Map<String, String> propertiesMap = new HashMap<>();
 
 		propertiesMap.put("key1", "value1");
 		propertiesMap.put("key2", "value2");

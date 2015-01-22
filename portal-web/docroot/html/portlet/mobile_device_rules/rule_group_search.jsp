@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,6 +28,6 @@ RuleGroupDisplayTerms displayTerms = (RuleGroupDisplayTerms)searchContainer.getD
 	id="toggle_id_mobile_device_rules_rule_group_search"
 >
 	<aui:fieldset>
-		<aui:input label="name" name="<%= displayTerms.NAME %>" size="20" type="text" value="<%= displayTerms.getName() %>" />
+		<aui:input label="name" name="<%= RuleGroupDisplayTerms.NAME %>" size="20" type="text" value="<%= displayTerms.getName() %>" />
 	</aui:fieldset>
 </liferay-ui:search-toggle>

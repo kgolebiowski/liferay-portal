@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -140,26 +140,26 @@ public class UpgradeTableBuilder {
 			indexesFile = new File("../sql/indexes.sql");
 		}
 
-		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
-			new InputStreamReader(new FileInputStream(indexesFile)));
+		try (UnsyncBufferedReader unsyncBufferedReader =
+				new UnsyncBufferedReader(new InputStreamReader(
+					new FileInputStream(indexesFile)))) {
 
-		String line = null;
+			String line = null;
 
-		while ((line = unsyncBufferedReader.readLine()) != null) {
-			if (line.contains(" on " + tableName + " (") ||
-				line.contains(" on " + tableName + "_ (")) {
+			while ((line = unsyncBufferedReader.readLine()) != null) {
+				if (line.contains(" on " + tableName + " (") ||
+					line.contains(" on " + tableName + "_ (")) {
 
-				String sql = line.trim();
+					String sql = line.trim();
 
-				if (sql.endsWith(";")) {
-					sql = sql.substring(0, sql.length() - 1);
+					if (sql.endsWith(";")) {
+						sql = sql.substring(0, sql.length() - 1);
+					}
+
+					addIndexes.add(sql);
 				}
-
-				addIndexes.add(sql);
 			}
 		}
-
-		unsyncBufferedReader.close();
 
 		return addIndexes.toArray(new String[addIndexes.size()]);
 	}

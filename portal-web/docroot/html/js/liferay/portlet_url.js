@@ -52,12 +52,12 @@ AUI.add(
 			};
 
 			if (!basePortletURL) {
-				instance.options.basePortletURL = themeDisplay.getPathContext() + themeDisplay.getPathMain() + '/portal/layout?p_l_id=' + themeDisplay.getPlid();
+				instance.options.basePortletURL = themeDisplay.getPathMain() + '/portal/layout?p_l_id=' + themeDisplay.getPlid();
 			}
 
 			A.each(
 				params,
-				function(item, index, collection) {
+				function(item, index) {
 					if (Lang.isValue(item)) {
 						if (instance._isReservedParam(index)) {
 							instance.reservedParams[index] = item;
@@ -157,10 +157,23 @@ AUI.add(
 				return instance;
 			},
 
+			setParameters: function(parameters) {
+				var instance = this;
+
+				A.each(
+					parameters,
+					function(item, index) {
+						instance.setParameter(index, item);
+					}
+				);
+
+				return instance;
+			},
+
 			setPlid: function(plid) {
 				var instance = this;
 
-				instance.reservedParams.p_l_id =  plid;
+				instance.reservedParams.p_l_id = plid;
 
 				return instance;
 			},
@@ -233,7 +246,7 @@ AUI.add(
 
 				A.each(
 					reservedParams,
-					function(item, index, collection) {
+					function(item, index) {
 						if (Lang.isValue(item)) {
 							resultURL.setParameter(index, item);
 						}
@@ -242,7 +255,7 @@ AUI.add(
 
 				A.each(
 					instance.params,
-					function(item, index, collection) {
+					function(item, index) {
 						if (Lang.isValue(item)) {
 							resultURL.setParameter(namespacePrefix + index, item);
 						}
@@ -256,7 +269,7 @@ AUI.add(
 				var value = resultURL.toString();
 
 				if (options.escapeXML) {
-					value = Util.escapeHTML(value);
+					value = Lang.String.escapeHTML(value);
 				}
 
 				return value;
@@ -269,7 +282,7 @@ AUI.add(
 
 				A.each(
 					instance.reservedParams,
-					function(item, index, collection) {
+					function(item, index) {
 						if (index === paramName) {
 							result = true;
 						}
@@ -310,7 +323,7 @@ AUI.add(
 					portletURL.setParameter('modelResource', modelResource);
 					portletURL.setParameter('modelResourceDescription', modelResourceDescription);
 					portletURL.setParameter('resourcePrimKey', resourcePrimKey);
-					portletURL.setPortletId(86);
+					portletURL.setPortletId(Liferay.PortletKeys.PORTLET_CONFIGURATION);
 					portletURL.setWindowState('MAXIMIZED');
 
 					return portletURL;

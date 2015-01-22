@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.journal.model.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portlet.journal.model.JournalContentSearch;
 import com.liferay.portlet.journal.service.JournalContentSearchLocalServiceUtil;
@@ -31,6 +31,7 @@ import com.liferay.portlet.journal.service.JournalContentSearchLocalServiceUtil;
  * @see com.liferay.portlet.journal.model.JournalContentSearch
  * @generated
  */
+@ProviderType
 public abstract class JournalContentSearchBaseImpl
 	extends JournalContentSearchModelImpl implements JournalContentSearch {
 	/*
@@ -39,7 +40,7 @@ public abstract class JournalContentSearchBaseImpl
 	 * Never modify or reference this class directly. All methods that expect a journal content search model instance should use the {@link JournalContentSearch} interface instead.
 	 */
 	@Override
-	public void persist() throws SystemException {
+	public void persist() {
 		if (this.isNew()) {
 			JournalContentSearchLocalServiceUtil.addJournalContentSearch(this);
 		}

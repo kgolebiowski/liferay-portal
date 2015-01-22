@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -60,7 +60,7 @@ public class VersionableName
 		}
 
 		if (_versions == null) {
-			_versions = new TreeSet<String>();
+			_versions = new TreeSet<>();
 		}
 
 		_versions.add(version);
@@ -126,7 +126,7 @@ public class VersionableName
 		return sb.toString();
 	}
 
-	private String _name;
+	private final String _name;
 	private Set<String> _versions;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,7 +20,8 @@ import com.liferay.portal.kernel.workflow.WorkflowTask;
 /**
  * @author Shuyang Zhou
  */
-public class WorkflowTaskNameComparator extends OrderByComparator {
+public class WorkflowTaskNameComparator
+	extends OrderByComparator<WorkflowTask> {
 
 	public WorkflowTaskNameComparator(
 		boolean ascending, String orderByAsc, String orderByDesc,
@@ -33,10 +34,7 @@ public class WorkflowTaskNameComparator extends OrderByComparator {
 	}
 
 	@Override
-	public int compare(Object obj1, Object obj2) {
-		WorkflowTask workflowTask1 = (WorkflowTask)obj1;
-		WorkflowTask workflowTask2 = (WorkflowTask)obj2;
-
+	public int compare(WorkflowTask workflowTask1, WorkflowTask workflowTask2) {
 		String name1 = workflowTask1.getName();
 		String name2 = workflowTask2.getName();
 
@@ -77,9 +75,9 @@ public class WorkflowTaskNameComparator extends OrderByComparator {
 		return _ascending;
 	}
 
-	private boolean _ascending;
-	private String _orderByAsc;
-	private String _orderByDesc;
-	private String[] _orderByFields;
+	private final boolean _ascending;
+	private final String _orderByAsc;
+	private final String _orderByDesc;
+	private final String[] _orderByFields;
 
 }

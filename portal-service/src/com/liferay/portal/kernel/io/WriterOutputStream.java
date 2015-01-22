@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -60,9 +60,14 @@ public class WriterOutputStream extends OutputStream {
 		boolean autoFlush) {
 
 		if (outputBufferSize <= 0) {
-			throw new IllegalArgumentException(
-				"Output buffer size " + outputBufferSize +
-					" must be a positive number");
+			if (autoFlush) {
+				outputBufferSize = _DEFAULT_OUTPUT_BUFFER_SIZE;
+			}
+			else {
+				throw new IllegalArgumentException(
+					"Output buffer size " + outputBufferSize +
+						" must be a positive number");
+			}
 		}
 
 		if (charsetName == null) {
@@ -89,21 +94,16 @@ public class WriterOutputStream extends OutputStream {
 	public void close() throws IOException {
 		_doDecode(_inputByteBuffer, true);
 
-		flush();
+		_flushBuffer();
 
 		_writer.close();
 	}
 
 	@Override
 	public void flush() throws IOException {
-		if (_outputCharBuffer.position() > 0) {
-			_writer.write(
-				_outputCharBuffer.array(), 0, _outputCharBuffer.position());
+		_flushBuffer();
 
-			_writer.flush();
-
-			_outputCharBuffer.rewind();
-		}
+		_writer.flush();
 	}
 
 	public String getEncoding() {
@@ -161,11 +161,11 @@ public class WriterOutputStream extends OutputStream {
 				inputByteBuffer, _outputCharBuffer, endOfInput);
 
 			if (coderResult.isOverflow()) {
-				flush();
+				_flushBuffer();
 			}
 			else if (coderResult.isUnderflow()) {
 				if (_autoFlush) {
-					flush();
+					_flushBuffer();
 				}
 
 				break;
@@ -176,13 +176,22 @@ public class WriterOutputStream extends OutputStream {
 		}
 	}
 
+	private void _flushBuffer() throws IOException {
+		if (_outputCharBuffer.position() > 0) {
+			_writer.write(
+				_outputCharBuffer.array(), 0, _outputCharBuffer.position());
+
+			_outputCharBuffer.rewind();
+		}
+	}
+
 	private static final int _DEFAULT_OUTPUT_BUFFER_SIZE = 8192;
 
-	private boolean _autoFlush;
-	private CharsetDecoder _charsetDecoder;
-	private String _charsetName;
-	private ByteBuffer _inputByteBuffer;
-	private CharBuffer _outputCharBuffer;
-	private Writer _writer;
+	private final boolean _autoFlush;
+	private final CharsetDecoder _charsetDecoder;
+	private final String _charsetName;
+	private final ByteBuffer _inputByteBuffer;
+	private final CharBuffer _outputCharBuffer;
+	private final Writer _writer;
 
 }

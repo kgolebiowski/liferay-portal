@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,7 +30,7 @@ public class NGramHolder {
 		List<String> grams = _nGrams.get(key);
 
 		if (grams == null) {
-			grams = new ArrayList<String>();
+			grams = new ArrayList<>();
 
 			_nGrams.put(key, grams);
 		}
@@ -58,9 +58,8 @@ public class NGramHolder {
 		return _nGramStarts;
 	}
 
-	private Map<String, String> _nGramEnds = new HashMap<String, String>();
-	private Map<String, List<String>> _nGrams =
-		new HashMap<String, List<String>>();
-	private Map<String, String> _nGramStarts = new HashMap<String, String>();
+	private final Map<String, String> _nGramEnds = new HashMap<>();
+	private final Map<String, List<String>> _nGrams = new HashMap<>();
+	private final Map<String, String> _nGramStarts = new HashMap<>();
 
 }

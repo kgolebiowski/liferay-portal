@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermissio
 import com.liferay.portal.kernel.security.pacl.permission.PortalSocketPermission;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import java.net.URL;
 
@@ -66,6 +67,10 @@ public class HttpUtil {
 		return getHttp().decodeURL(url);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #decodeURL(String)}
+	 */
+	@Deprecated
 	public static String decodeURL(String url, boolean unescapeSpaces) {
 		return getHttp().decodeURL(url, unescapeSpaces);
 	}
@@ -270,6 +275,10 @@ public class HttpUtil {
 		return getHttp().setParameter(url, name, value);
 	}
 
+	public static String shortenURL(String url, int count) {
+		return getHttp().shortenURL(url, count);
+	}
+
 	public static byte[] URLtoByteArray(Http.Options options)
 		throws IOException {
 
@@ -290,6 +299,30 @@ public class HttpUtil {
 		PortalSocketPermission.checkConnect(location);
 
 		return getHttp().URLtoByteArray(location, post);
+	}
+
+	public static InputStream URLtoInputStream(Http.Options options)
+		throws IOException {
+
+		PortalSocketPermission.checkConnect(options);
+
+		return getHttp().URLtoInputStream(options);
+	}
+
+	public static InputStream URLtoInputStream(String location)
+		throws IOException {
+
+		PortalSocketPermission.checkConnect(location);
+
+		return getHttp().URLtoInputStream(location);
+	}
+
+	public static InputStream URLtoInputStream(String location, boolean post)
+		throws IOException {
+
+		PortalSocketPermission.checkConnect(location);
+
+		return getHttp().URLtoInputStream(location, post);
 	}
 
 	public static String URLtoString(Http.Options options) throws IOException {

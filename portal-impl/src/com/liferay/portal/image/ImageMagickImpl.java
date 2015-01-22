@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -201,7 +201,7 @@ public class ImageMagickImpl implements ImageMagick {
 	}
 
 	protected LinkedList<String> getResourceLimits() {
-		LinkedList<String> resourceLimits = new LinkedList<String>();
+		LinkedList<String> resourceLimits = new LinkedList<>();
 
 		if (_resourceLimitsProperties == null) {
 			return resourceLimits;
@@ -241,9 +241,10 @@ public class ImageMagickImpl implements ImageMagick {
 		return _processExecutor;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ImageMagickImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ImageMagickImpl.class);
 
-	private static ImageMagickImpl _instance = new ImageMagickImpl();
+	private static final ImageMagickImpl _instance = new ImageMagickImpl();
 
 	private String _globalSearchPath;
 	private volatile ProcessExecutor _processExecutor;

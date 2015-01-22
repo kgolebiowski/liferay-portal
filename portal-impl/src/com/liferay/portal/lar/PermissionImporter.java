@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -54,6 +54,10 @@ import java.util.Map;
  * @author Douglas Wong
  */
 public class PermissionImporter {
+
+	public static PermissionImporter getInstance() {
+		return _instance;
+	}
 
 	protected Role checkRole(
 			LayoutCache layoutCache, long companyId, long groupId, long userId,
@@ -128,7 +132,7 @@ public class PermissionImporter {
 	}
 
 	protected List<String> getActions(Element element) {
-		List<String> actions = new ArrayList<String>();
+		List<String> actions = new ArrayList<>();
 
 		List<Element> actionKeyElements = element.elements("action-key");
 
@@ -145,7 +149,7 @@ public class PermissionImporter {
 			Element permissionsElement, boolean portletActions)
 		throws Exception {
 
-		Map<Long, String[]> roleIdsToActionIds = new HashMap<Long, String[]>();
+		Map<Long, String[]> roleIdsToActionIds = new HashMap<>();
 
 		List<Element> roleElements = permissionsElement.elements("role");
 
@@ -224,7 +228,7 @@ public class PermissionImporter {
 			long resourcePK = GetterUtil.getLong(
 				portletDataElement.attributeValue("resource-pk"));
 
-			List<KeyValuePair> permissions = new ArrayList<KeyValuePair>();
+			List<KeyValuePair> permissions = new ArrayList<>();
 
 			List<Element> permissionsElements = portletDataElement.elements(
 				"permissions");
@@ -243,5 +247,11 @@ public class PermissionImporter {
 				resourceName, resourcePK, permissions);
 		}
 	}
+
+	private PermissionImporter() {
+	}
+
+	private static final PermissionImporter _instance =
+		new PermissionImporter();
 
 }

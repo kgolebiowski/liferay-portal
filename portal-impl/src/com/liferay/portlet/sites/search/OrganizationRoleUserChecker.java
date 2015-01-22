@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -92,10 +92,10 @@ public class OrganizationRoleUserChecker extends RowChecker {
 		return super.isDisabled(obj);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		OrganizationRoleUserChecker.class);
 
-	private Organization _organization;
-	private Role _role;
+	private final Organization _organization;
+	private final Role _role;
 
 }

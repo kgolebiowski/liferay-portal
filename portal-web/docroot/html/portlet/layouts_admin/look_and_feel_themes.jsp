@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,8 +17,8 @@
 <%@ include file="/html/portlet/layouts_admin/init.jsp" %>
 
 <%
-Layout selLayout = (Layout)request.getAttribute("edit_pages.jsp-selLayout");
-LayoutSet selLayoutSet = (LayoutSet)request.getAttribute("edit_pages.jsp-selLayoutSet");
+Layout selLayout = layoutsAdminDisplayContext.getSelLayout();
+LayoutSet selLayoutSet = layoutsAdminDisplayContext.getSelLayoutSet();
 
 List<Theme> themes = (List<Theme>)request.getAttribute("edit_pages.jsp-themes");
 List<ColorScheme> colorSchemes = (List<ColorScheme>)request.getAttribute("edit_pages.jsp-colorSchemes");
@@ -35,7 +35,7 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 		<legend><liferay-ui:message key="current-theme" /></legend>
 
 		<div>
-			<img alt="<%= HtmlUtil.escapeAttribute(selTheme.getName()) %>" class="img-polaroid theme-screenshot" onclick="<portlet:namespace /><%= device %>selectTheme('SelTheme', false);" src="<%= themeDisplay.getCDNBaseURL() %><%= HtmlUtil.escapeAttribute(selTheme.getStaticResourcePath()) %><%= HtmlUtil.escapeAttribute(selTheme.getImagesPath()) %>/thumbnail.png" title="<%= HtmlUtil.escapeAttribute(selTheme.getName()) %>" />
+			<img alt="<%= HtmlUtil.escapeAttribute(selTheme.getName()) %>" class="img-thumbnail theme-screenshot" onclick="<portlet:namespace /><%= device %>selectTheme('SelTheme', false);" src="<%= themeDisplay.getCDNBaseURL() %><%= HtmlUtil.escapeAttribute(selTheme.getStaticResourcePath()) %><%= HtmlUtil.escapeAttribute(selTheme.getImagesPath()) %>/thumbnail.png" title="<%= HtmlUtil.escapeAttribute(selTheme.getName()) %>" />
 
 			<div class="theme-details">
 				<c:choose>
@@ -105,9 +105,9 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 		<c:if test="<%= editable %>">
 			<c:if test="<%= !colorSchemes.isEmpty() || !configurableSettings.isEmpty() %>">
 				<c:if test="<%= !colorSchemes.isEmpty() %>">
-					<liferay-ui:panel collapsible="<%= true %>" extended="<%= false %>" id='<%= device + "layoutsAdminLookAndFeelColorsPanel" %>' persistState="<%= true %>" title='<%= LanguageUtil.format(pageContext, "color-schemes-x", colorSchemes.size()) %>'>
+					<liferay-ui:panel collapsible="<%= true %>" extended="<%= false %>" id='<%= device + "layoutsAdminLookAndFeelColorsPanel" %>' persistState="<%= true %>" title='<%= LanguageUtil.format(request, "color-schemes-x", colorSchemes.size()) %>'>
 						<aui:fieldset cssCclass="color-schemes">
-							<div class="lfr-theme-list unstyled">
+							<div class="lfr-theme-list list-unstyled">
 
 								<%
 								for (int i = 0; i < colorSchemes.size(); i++) {
@@ -198,7 +198,7 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 		<div class="float-container lfr-available-themes" id="<%= device %>availableThemes">
 			<legend>
 				<span class="header-title">
-					<%= LanguageUtil.format(pageContext, "available-themes-x", (themes.size() - 1), false) %>
+					<%= LanguageUtil.format(request, "available-themes-x", (themes.size() - 1), false) %>
 				</span>
 
 				<c:if test="<%= permissionChecker.isOmniadmin() && PortletLocalServiceUtil.hasPortlet(themeDisplay.getCompanyId(), PortletKeys.MARKETPLACE_STORE) && PrefsPropsUtil.getBoolean(PropsKeys.AUTO_DEPLOY_ENABLED, PropsValues.AUTO_DEPLOY_ENABLED) %>">
@@ -214,7 +214,7 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 						iconCssClass="icon-inbox"
 						id="installMore"
 						label="<%= true %>"
-						linkCssClass="btn"
+						linkCssClass="btn btn-default"
 						message="install-more"
 						url='<%= HttpUtil.removeParameter(marketplaceURL.toString(), "controlPanelCategory") %>'
 					/>
@@ -222,7 +222,7 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 			</legend>
 
 			<c:if test="<%= themes.size() > 1 %>">
-				<ul class="lfr-theme-list unstyled">
+				<ul class="lfr-theme-list list-unstyled">
 
 					<%
 					for (int i = 0; i < themes.size(); i++) {
@@ -251,26 +251,22 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 </div>
 
 <c:if test="<%= editable %>">
-	<aui:script use="aui-base">
-		var availableThemes = A.one('#<%= device %>availableThemes');
-		var colorSchemePanel = A.one('#<%= device %>layoutsAdminLookAndFeelColorsPanel');
-		var lookAndFeelForm = A.one('#<%= device %>LookAndFeel');
+	<aui:script sandbox="<%= true %>">
+		var colorSchemePanel = $('#<%= device %>layoutsAdminLookAndFeelColorsPanel');
 
 		var toggleDisabled = function(disabled) {
-			colorSchemePanel.all('input[name=<portlet:namespace /><%= device %>ColorSchemeId]').set('disabled', disabled);
+			colorSchemePanel.find('input[name=<portlet:namespace /><%= device %>ColorSchemeId]').prop('disabled', disabled);
 		};
 
-		if (colorSchemePanel) {
-			if (availableThemes) {
-				availableThemes.all('input[name=<portlet:namespace /><%= device %>ThemeId]').on(
-					'change',
-					function() {
-						toggleDisabled(true);
-					}
-				);
-			}
+		if (colorSchemePanel.length) {
+			$('#<%= device %>availableThemes').find('input[name=<portlet:namespace /><%= device %>ThemeId]').on(
+				'change',
+				function() {
+					toggleDisabled(true);
+				}
+			);
 
-			lookAndFeelForm.one('#<portlet:namespace /><%= device %>SelTheme').on(
+			$('#<%= device %>LookAndFeel').find('#<portlet:namespace /><%= device %>SelTheme').on(
 				'change',
 				function() {
 					toggleDisabled(false);
@@ -280,55 +276,20 @@ Map<String, ThemeSetting> configurableSettings = selTheme.getConfigurableSetting
 	</aui:script>
 
 	<aui:script>
-		Liferay.provide(
-			window,
-			'<portlet:namespace /><%= device %>selectColorScheme',
-			function(id) {
-				var A = AUI();
+		function <portlet:namespace /><%= device %>selectColorScheme(id) {
+			var colorSchemeInput = AUI.$(id);
 
-				var colorSchemeInput = A.one(id);
-
-				if (!colorSchemeInput.get('disabled')) {
-					colorSchemeInput.set('checked', true);
-				}
-			},
-			['aui-base']
-		);
-
-		Liferay.provide(
-			window,
-			'<portlet:namespace /><%= device %>selectTheme',
-			function(themeId, colorSchemesDisabled) {
-				var A = AUI();
-
-				A.one('#<portlet:namespace /><%= device %>' + themeId).set('checked', true);
-
-				var colorSchemePanel = A.one('#<%= device %>layoutsAdminLookAndFeelColorsPanel');
-
-				if (colorSchemePanel) {
-					colorSchemePanel.all('input[name=<portlet:namespace /><%= device %>ColorSchemeId]').set('disabled', colorSchemesDisabled);
-				}
-			},
-			['aui-base']
-		);
-	</aui:script>
-</c:if>
-
-<c:if test="<%= editable && permissionChecker.isOmniadmin() && PrefsPropsUtil.getBoolean(PropsKeys.AUTO_DEPLOY_ENABLED, PropsValues.AUTO_DEPLOY_ENABLED) %>">
-	<aui:script use="aui-base">
-		if (window.parent) {
-			var installMoreLink = A.one('#<portlet:namespace />installMore');
-
-			if (installMoreLink) {
-				installMoreLink.on(
-					'click',
-					function(event) {
-						event.preventDefault();
-
-						window.parent.location = installMoreLink.attr('href');
-					}
-				);
+			if (!colorSchemeInput.prop('disabled')) {
+				colorSchemeInput.prop('checked', true);
 			}
+		}
+
+		function <portlet:namespace /><%= device %>selectTheme(themeId, colorSchemesDisabled) {
+			var $ = AUI.$;
+
+			$('#<portlet:namespace /><%= device %>' + themeId).prop('checked', true);
+
+			$('#<%= device %>layoutsAdminLookAndFeelColorsPanel').find('input[name=<portlet:namespace /><%= device %>ColorSchemeId]').prop('disabled', colorSchemesDisabled);
 		}
 	</aui:script>
 </c:if>

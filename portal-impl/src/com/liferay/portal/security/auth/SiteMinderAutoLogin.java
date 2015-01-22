@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,7 +21,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.CompanyConstants;
 import com.liferay.portal.model.User;
-import com.liferay.portal.security.ldap.PortalLDAPImporterUtil;
+import com.liferay.portal.security.exportimport.UserImporterUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PrefsPropsUtil;
@@ -45,7 +45,10 @@ public class SiteMinderAutoLogin extends BaseAutoLogin {
 
 		long companyId = company.getCompanyId();
 
-		if (!AuthSettingsUtil.isSiteMinderEnabled(companyId)) {
+		if (!PrefsPropsUtil.getBoolean(
+				companyId, PropsKeys.SITEMINDER_AUTH_ENABLED,
+				PropsValues.SITEMINDER_AUTH_ENABLED)) {
+
 			return null;
 		}
 
@@ -68,11 +71,11 @@ public class SiteMinderAutoLogin extends BaseAutoLogin {
 
 			try {
 				if (authType.equals(CompanyConstants.AUTH_TYPE_EA)) {
-					user = PortalLDAPImporterUtil.importLDAPUser(
+					user = UserImporterUtil.importUser(
 						companyId, siteMinderUserHeader, StringPool.BLANK);
 				}
 				else {
-					user = PortalLDAPImporterUtil.importLDAPUser(
+					user = UserImporterUtil.importUser(
 						companyId, StringPool.BLANK, siteMinderUserHeader);
 				}
 			}
@@ -90,6 +93,8 @@ public class SiteMinderAutoLogin extends BaseAutoLogin {
 					companyId, siteMinderUserHeader);
 			}
 		}
+
+		addRedirect(request);
 
 		String[] credentials = new String[3];
 

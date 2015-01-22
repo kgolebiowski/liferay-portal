@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -60,7 +60,7 @@ public class TemplateManagerUtil {
 
 		Map<String, TemplateManager> templateManagers = _getTemplateManagers();
 
-		supportedLanguageTypes = new HashSet<String>();
+		supportedLanguageTypes = new HashSet<>();
 
 		for (String templateManagerName : templateManagers.keySet()) {
 			String content = PropsUtil.get(
@@ -189,9 +189,9 @@ public class TemplateManagerUtil {
 		return _templateManagers;
 	}
 
-	private static Map<String, Set<String>> _supportedLanguageTypes =
-		new ConcurrentHashMap<String, Set<String>>();
-	private static Map<String, TemplateManager> _templateManagers =
-		new ConcurrentHashMap<String, TemplateManager>();
+	private static final Map<String, Set<String>> _supportedLanguageTypes =
+		new ConcurrentHashMap<>();
+	private static final Map<String, TemplateManager> _templateManagers =
+		new ConcurrentHashMap<>();
 
 }

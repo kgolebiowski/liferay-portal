@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -44,22 +44,18 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 <aui:form action="<%= portletURL.toString() %>" method="post" name="fm">
 
 	<%
-	DDMStructure ddmStructure = recordSet.getDDMStructure(formDDMTemplateId);
-
-	String languageId = LanguageUtil.getLanguageId(request);
-
-	Map<String, Map<String, String>> fieldsMap = ddmStructure.getFieldsMap(languageId);
-
 	List<String> headerNames = new ArrayList<String>();
 
-	for (Map<String, String> fields : fieldsMap.values()) {
-		if (GetterUtil.getBoolean(fields.get(FieldConstants.PRIVATE))) {
-			continue;
-		}
+	DDMStructure ddmStructure = recordSet.getDDMStructure(formDDMTemplateId);
 
-		String label = fields.get(FieldConstants.LABEL);
+	DDMForm ddmForm = ddmStructure.getFullHierarchyDDMForm();
 
-		headerNames.add(label);
+	List<DDMFormField> ddmFormfields = ddmForm.getDDMFormFields();
+
+	for (DDMFormField ddmFormField : ddmFormfields) {
+		LocalizedValue label = ddmFormField.getLabel();
+
+		headerNames.add(label.getString(locale));
 	}
 
 	if (hasUpdatePermission) {
@@ -72,11 +68,11 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 	%>
 
 	<liferay-ui:search-container
-		searchContainer='<%= new SearchContainer(renderRequest, new DisplayTerms(request), null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, portletURL, headerNames, LanguageUtil.format(pageContext, "no-x-records-were-found", HtmlUtil.escape(ddmStructure.getName(locale)), false)) %>'
+		searchContainer='<%= new SearchContainer(renderRequest, new DisplayTerms(request), null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, portletURL, headerNames, LanguageUtil.format(request, "no-x-records-were-found", HtmlUtil.escape(ddmStructure.getName(locale)), false)) %>'
 	>
 
 		<aui:nav-bar>
-			<aui:nav>
+			<aui:nav cssClass="navbar-nav" searchContainer="<%= searchContainer %>">
 				<c:if test="<%= showAddRecordButton %>">
 					<portlet:renderURL var="addRecordURL">
 						<portlet:param name="struts_action" value="/dynamic_data_lists/edit_record" />
@@ -85,11 +81,29 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 						<portlet:param name="formDDMTemplateId" value="<%= String.valueOf(formDDMTemplateId) %>" />
 					</portlet:renderURL>
 
-					<aui:nav-item href="<%= addRecordURL %>" iconCssClass="icon-plus" label='<%= LanguageUtil.format(pageContext, "add-x", HtmlUtil.escape(ddmStructure.getName(locale)), false) %>' />
+					<aui:nav-item href="<%= addRecordURL %>" iconCssClass="icon-plus" label='<%= LanguageUtil.format(request, "add-x", HtmlUtil.escape(ddmStructure.getName(locale)), false) %>' />
 				</c:if>
+
+				<portlet:resourceURL var="exportRecordSetURL">
+					<portlet:param name="struts_action" value="/dynamic_data_lists/export" />
+					<portlet:param name="recordSetId" value="<%= String.valueOf(recordSet.getRecordSetId()) %>" />
+				</portlet:resourceURL>
+
+				<%
+				StringBundler sb = new StringBundler(6);
+
+				sb.append("javascript:");
+				sb.append(renderResponse.getNamespace());
+				sb.append("exportRecordSet");
+				sb.append("('");
+				sb.append(exportRecordSetURL);
+				sb.append("');");
+				%>
+
+				<aui:nav-item href="<%= sb.toString() %>" iconCssClass="icon-arrow-down" label="export" />
 			</aui:nav>
 
-			<aui:nav-bar-search cssClass="pull-right" file="/html/portlet/dynamic_data_lists/record_search.jsp" searchContainer="<%= searchContainer %>" />
+			<aui:nav-bar-search file="/html/portlet/dynamic_data_lists/record_search.jsp" searchContainer="<%= searchContainer %>" />
 		</aui:nav-bar>
 
 		<liferay-ui:search-container-results>
@@ -108,7 +122,9 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 				recordVersion = record.getLatestRecordVersion();
 			}
 
-			Fields fieldsModel = StorageEngineUtil.getFields(recordVersion.getDDMStorageId());
+			DDMFormValues ddmFormValues = StorageEngineUtil.getDDMFormValues(recordVersion.getDDMStorageId());
+
+			Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap = ddmFormValues.getDDMFormFieldValuesMap();
 
 			ResultRow row = new ResultRow(record, record.getRecordId(), i);
 
@@ -126,10 +142,7 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 
 			// Columns
 
-			for (Map<String, String> fields : fieldsMap.values()) {
-				if (GetterUtil.getBoolean(fields.get(FieldConstants.PRIVATE))) {
-					continue;
-				}
+			for (DDMFormField ddmFormField : ddmFormfields) {
 			%>
 
 				<%@ include file="/html/portlet/dynamic_data_lists/record_row_value.jspf" %>
@@ -145,7 +158,7 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 
 			// Action
 
-			row.addJSP("right", SearchEntry.DEFAULT_VALIGN, "/html/portlet/dynamic_data_lists/record_action.jsp");
+			row.addJSP("/html/portlet/dynamic_data_lists/record_action.jsp", "entry-action");
 
 			// Add result row
 
@@ -156,6 +169,8 @@ portletURL.setParameter("recordSetId", String.valueOf(recordSet.getRecordSetId()
 		<liferay-ui:search-iterator />
 	</liferay-ui:search-container>
 </aui:form>
+
+<%@ include file="/html/portlet/dynamic_data_lists/export_record_set.jspf" %>
 
 <aui:script>
 	AUI().use('liferay-portlet-dynamic-data-lists');

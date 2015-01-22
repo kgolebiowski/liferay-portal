@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,10 @@
 
 package com.liferay.portlet.dynamicdatalists.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion;
+import com.liferay.portlet.dynamicdatalists.service.DDLRecordVersionLocalServiceUtil;
 
 /**
  * The extended model base implementation for the DDLRecordVersion service. Represents a row in the &quot;DDLRecordVersion&quot; database table, with each column mapped to a property of this class.
@@ -28,6 +31,7 @@ import com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion;
  * @see com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion
  * @generated
  */
+@ProviderType
 public abstract class DDLRecordVersionBaseImpl extends DDLRecordVersionModelImpl
 	implements DDLRecordVersion {
 	/*
@@ -35,4 +39,13 @@ public abstract class DDLRecordVersionBaseImpl extends DDLRecordVersionModelImpl
 	 *
 	 * Never modify or reference this class directly. All methods that expect a d d l record version model instance should use the {@link DDLRecordVersion} interface instead.
 	 */
+	@Override
+	public void persist() {
+		if (this.isNew()) {
+			DDLRecordVersionLocalServiceUtil.addDDLRecordVersion(this);
+		}
+		else {
+			DDLRecordVersionLocalServiceUtil.updateDDLRecordVersion(this);
+		}
+	}
 }

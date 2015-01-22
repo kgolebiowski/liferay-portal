@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -42,10 +42,7 @@ public class SpringHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error initializing Spring for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error initializing Spring for ", t);
 		}
 	}
 
@@ -58,10 +55,7 @@ public class SpringHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error uninitializing Spring for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error uninitializing Spring for ", t);
 		}
 	}
 
@@ -121,7 +115,7 @@ public class SpringHotDeployListener extends BaseHotDeployListener {
 		}
 	}
 
-	private static Map<String, ContextLoaderListener> _contextLoaderListeners =
-		new HashMap<String, ContextLoaderListener>();
+	private static final Map<String, ContextLoaderListener>
+		_contextLoaderListeners = new HashMap<>();
 
 }

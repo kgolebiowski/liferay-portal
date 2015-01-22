@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,15 +28,15 @@ import javax.portlet.PortletURL;
  */
 public class RuleGroupSearch extends SearchContainer<MDRRuleGroup> {
 
-	static List<String> headerNames = new ArrayList<String>();
+	public static final String EMPTY_RESULTS_MESSAGE =
+		"no-device-families-are-configured";
+
+	public static List<String> headerNames = new ArrayList<>();
 
 	static {
 		headerNames.add("name");
 		headerNames.add("description");
 	}
-
-	public static final String EMPTY_RESULTS_MESSAGE =
-		"no-device-families-are-configured";
 
 	public RuleGroupSearch(
 		PortletRequest portletRequest, PortletURL iteratorURL) {

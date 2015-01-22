@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -118,8 +118,8 @@ public class ServletContextPath extends FilesystemPath {
 		_useRootURI = userPath.startsWith(_rootURI.toString());
 	}
 
-	private URI _rootURI;
-	private ServletContext _servletContext;
-	private boolean _useRootURI;
+	private final URI _rootURI;
+	private final ServletContext _servletContext;
+	private final boolean _useRootURI;
 
 }

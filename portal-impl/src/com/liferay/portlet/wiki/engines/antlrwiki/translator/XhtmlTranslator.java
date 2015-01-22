@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -72,15 +72,7 @@ public class XhtmlTranslator extends XhtmlTranslationVisitor {
 
 		traverse(headingNode.getChildASTNodes());
 
-		append("<a class=\"hashlink\" href=\"");
-
-		if (_viewPageURL != null) {
-			append(_viewPageURL.toString());
-		}
-
-		append(StringPool.POUND);
-		append(markup);
-		append("\">#</a></h");
+		append("</h");
 		append(headingNode.getLevel());
 		append(">");
 	}
@@ -187,15 +179,13 @@ public class XhtmlTranslator extends XhtmlTranslationVisitor {
 	protected void appendTableOfContents(
 		TreeNode<HeadingNode> tableOfContents, int depth) {
 
-		append("<ol>");
-
 		List<TreeNode<HeadingNode>> treeNodes = tableOfContents.getChildNodes();
 
-		if (treeNodes == null) {
-			append("</ol>");
-
+		if ((treeNodes == null) || treeNodes.isEmpty()) {
 			return;
 		}
+
+		append("<ol>");
 
 		for (TreeNode<HeadingNode> treeNode : treeNodes) {
 			append("<li class=\"toc-level-");
@@ -305,7 +295,8 @@ public class XhtmlTranslator extends XhtmlTranslationVisitor {
 
 	private static final String _HEADING_ANCHOR_PREFIX = "section-";
 
-	private static Log _log = LogFactoryUtil.getLog(XhtmlTranslator.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		XhtmlTranslator.class);
 
 	private String _attachmentURLPrefix;
 	private PortletURL _editPageURL;

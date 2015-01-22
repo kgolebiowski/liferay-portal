@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,7 +17,6 @@ package com.liferay.portal.model;
 import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscape;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.service.ServiceContext;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
@@ -123,9 +122,8 @@ public interface UserTrackerModel extends BaseModel<UserTracker>, MVCCModel {
 	 * Returns the user uuid of this user tracker.
 	 *
 	 * @return the user uuid of this user tracker
-	 * @throws SystemException if a system exception occurred
 	 */
-	public String getUserUuid() throws SystemException;
+	public String getUserUuid();
 
 	/**
 	 * Sets the user uuid of this user tracker.
@@ -245,19 +243,19 @@ public interface UserTrackerModel extends BaseModel<UserTracker>, MVCCModel {
 	public Object clone();
 
 	@Override
-	public int compareTo(UserTracker userTracker);
+	public int compareTo(com.liferay.portal.model.UserTracker userTracker);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<UserTracker> toCacheModel();
+	public CacheModel<com.liferay.portal.model.UserTracker> toCacheModel();
 
 	@Override
-	public UserTracker toEscapedModel();
+	public com.liferay.portal.model.UserTracker toEscapedModel();
 
 	@Override
-	public UserTracker toUnescapedModel();
+	public com.liferay.portal.model.UserTracker toUnescapedModel();
 
 	@Override
 	public String toString();

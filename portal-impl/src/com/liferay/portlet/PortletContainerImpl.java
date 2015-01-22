@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -158,7 +157,7 @@ public class PortletContainerImpl implements PortletContainer {
 
 	protected long getScopeGroupId(
 			HttpServletRequest request, Layout layout, String portletId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		long scopeGroupId = 0;
 
@@ -277,9 +276,18 @@ public class PortletContainerImpl implements PortletContainer {
 
 		long scopeGroupId = PortalUtil.getScopeGroupId(
 			request, portlet.getPortletId());
-		long siteGroupId = PortalUtil.getSiteGroupId(scopeGroupId);
 
 		themeDisplay.setScopeGroupId(scopeGroupId);
+
+		long siteGroupId = 0;
+
+		if (layout.isTypeControlPanel()) {
+			siteGroupId = PortalUtil.getSiteGroupId(scopeGroupId);
+		}
+		else {
+			siteGroupId = PortalUtil.getSiteGroupId(layout.getGroupId());
+		}
+
 		themeDisplay.setSiteGroupId(siteGroupId);
 
 		if (user != null) {
@@ -547,8 +555,7 @@ public class PortletContainerImpl implements PortletContainer {
 			invokerPortlet.processEvent(eventRequestImpl, eventResponseImpl);
 
 			if (eventResponseImpl.isCalledSetRenderParameter()) {
-				Map<String, String[]> renderParameterMap =
-					new HashMap<String, String[]>();
+				Map<String, String[]> renderParameterMap = new HashMap<>();
 
 				renderParameterMap.putAll(
 					eventResponseImpl.getRenderParameterMap());
@@ -799,6 +806,7 @@ public class PortletContainerImpl implements PortletContainer {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(PortletContainerImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortletContainerImpl.class);
 
 }

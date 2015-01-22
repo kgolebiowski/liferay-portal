@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,13 +18,12 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.CompanyConstants;
 import com.liferay.portal.model.User;
-import com.liferay.portal.security.ldap.PortalLDAPImporterUtil;
+import com.liferay.portal.security.exportimport.UserImporterUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PrefsPropsUtil;
@@ -45,11 +44,11 @@ public class CASAutoLogin extends BaseAutoLogin {
 
 	/**
 	 * @deprecated As of 6.2.0, replaced by {@link
-	 *             PortalLDAPImporterUtil#importLDAPUser(long, String, String)}
+	 *             UserImporterUtil#importUser(long, String, String)}
 	 */
 	@Deprecated
 	protected User addUser(long companyId, String screenName) throws Exception {
-		return PortalLDAPImporterUtil.importLDAPUser(
+		return UserImporterUtil.importUser(
 			companyId, StringPool.BLANK, screenName);
 	}
 
@@ -122,11 +121,11 @@ public class CASAutoLogin extends BaseAutoLogin {
 
 			try {
 				if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
-					user = PortalLDAPImporterUtil.importLDAPUser(
+					user = UserImporterUtil.importUser(
 						companyId, StringPool.BLANK, login);
 				}
 				else {
-					user = PortalLDAPImporterUtil.importLDAPUser(
+					user = UserImporterUtil.importUser(
 						companyId, login, StringPool.BLANK);
 				}
 			}
@@ -145,12 +144,7 @@ public class CASAutoLogin extends BaseAutoLogin {
 			}
 		}
 
-		String redirect = ParamUtil.getString(request, "redirect");
-
-		if (Validator.isNotNull(redirect)) {
-			request.setAttribute(
-				AutoLogin.AUTO_LOGIN_REDIRECT_AND_CONTINUE, redirect);
-		}
+		addRedirect(request);
 
 		String[] credentials = new String[3];
 
@@ -161,6 +155,6 @@ public class CASAutoLogin extends BaseAutoLogin {
 		return credentials;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(CASAutoLogin.class);
+	private static final Log _log = LogFactoryUtil.getLog(CASAutoLogin.class);
 
 }

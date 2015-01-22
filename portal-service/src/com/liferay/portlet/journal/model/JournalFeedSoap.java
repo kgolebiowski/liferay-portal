@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.journal.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.List;
  * @see com.liferay.portlet.journal.service.http.JournalFeedServiceSoap
  * @generated
  */
+@ProviderType
 public class JournalFeedSoap implements Serializable {
 	public static JournalFeedSoap toSoapModel(JournalFeed model) {
 		JournalFeedSoap soapModel = new JournalFeedSoap();
@@ -42,10 +45,9 @@ public class JournalFeedSoap implements Serializable {
 		soapModel.setFeedId(model.getFeedId());
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
-		soapModel.setType(model.getType());
-		soapModel.setStructureId(model.getStructureId());
-		soapModel.setTemplateId(model.getTemplateId());
-		soapModel.setRendererTemplateId(model.getRendererTemplateId());
+		soapModel.setDDMStructureKey(model.getDDMStructureKey());
+		soapModel.setDDMTemplateKey(model.getDDMTemplateKey());
+		soapModel.setDDMRendererTemplateKey(model.getDDMRendererTemplateKey());
 		soapModel.setDelta(model.getDelta());
 		soapModel.setOrderByCol(model.getOrderByCol());
 		soapModel.setOrderByType(model.getOrderByType());
@@ -194,36 +196,28 @@ public class JournalFeedSoap implements Serializable {
 		_description = description;
 	}
 
-	public String getType() {
-		return _type;
+	public String getDDMStructureKey() {
+		return _DDMStructureKey;
 	}
 
-	public void setType(String type) {
-		_type = type;
+	public void setDDMStructureKey(String DDMStructureKey) {
+		_DDMStructureKey = DDMStructureKey;
 	}
 
-	public String getStructureId() {
-		return _structureId;
+	public String getDDMTemplateKey() {
+		return _DDMTemplateKey;
 	}
 
-	public void setStructureId(String structureId) {
-		_structureId = structureId;
+	public void setDDMTemplateKey(String DDMTemplateKey) {
+		_DDMTemplateKey = DDMTemplateKey;
 	}
 
-	public String getTemplateId() {
-		return _templateId;
+	public String getDDMRendererTemplateKey() {
+		return _DDMRendererTemplateKey;
 	}
 
-	public void setTemplateId(String templateId) {
-		_templateId = templateId;
-	}
-
-	public String getRendererTemplateId() {
-		return _rendererTemplateId;
-	}
-
-	public void setRendererTemplateId(String rendererTemplateId) {
-		_rendererTemplateId = rendererTemplateId;
+	public void setDDMRendererTemplateKey(String DDMRendererTemplateKey) {
+		_DDMRendererTemplateKey = DDMRendererTemplateKey;
 	}
 
 	public int getDelta() {
@@ -301,10 +295,9 @@ public class JournalFeedSoap implements Serializable {
 	private String _feedId;
 	private String _name;
 	private String _description;
-	private String _type;
-	private String _structureId;
-	private String _templateId;
-	private String _rendererTemplateId;
+	private String _DDMStructureKey;
+	private String _DDMTemplateKey;
+	private String _DDMRendererTemplateKey;
 	private int _delta;
 	private String _orderByCol;
 	private String _orderByType;

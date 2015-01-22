@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,11 @@
 
 package com.liferay.portal.spring.transaction;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.transaction.TransactionAttribute;
+import com.liferay.portal.kernel.transaction.TransactionLifecycleListener;
+import com.liferay.portal.kernel.transaction.TransactionStatus;
 import com.liferay.portal.kernel.util.AutoResetThreadLocal;
 
 import java.util.ArrayList;
@@ -24,7 +29,46 @@ import java.util.concurrent.Callable;
 /**
  * @author Shuyang Zhou
  */
-class TransactionCommitCallbackUtil {
+public class TransactionCommitCallbackUtil {
+
+	public static final TransactionLifecycleListener
+		TRANSACTION_LIFECYCLE_LISTENER = new TransactionLifecycleListener() {
+
+			@Override
+			public void created(
+				TransactionAttribute transactionAttribute,
+				TransactionStatus transactionStatus) {
+
+				pushCallbackList();
+			}
+
+			@Override
+			public void committed(
+				TransactionAttribute transactionAttribute,
+				TransactionStatus transactionStatus) {
+
+				List<Callable<?>> callables = popCallbackList();
+
+				for (Callable<?> callable : callables) {
+					try {
+						callable.call();
+					}
+					catch (Exception e) {
+						_log.error(
+							"Unable to execute transaction commit callback", e);
+					}
+				}
+			}
+
+			@Override
+			public void rollbacked(
+				TransactionAttribute transactionAttribute,
+				TransactionStatus transactionStatus, Throwable throwable) {
+
+				popCallbackList();
+			}
+
+		};
 
 	public static void registerCallback(Callable<?> callable) {
 		List<List<Callable<?>>> callbackListList =
@@ -48,7 +92,7 @@ class TransactionCommitCallbackUtil {
 			List<Callable<?>> callableList = callbackListList.get(index);
 
 			if (callableList == Collections.<Callable<?>>emptyList()) {
-				callableList = new ArrayList<Callable<?>>();
+				callableList = new ArrayList<>();
 
 				callbackListList.set(index, callableList);
 			}
@@ -71,7 +115,10 @@ class TransactionCommitCallbackUtil {
 		callbackListList.add(Collections.<Callable<?>>emptyList());
 	}
 
-	private static ThreadLocal<List<List<Callable<?>>>>
+	private static final Log _log = LogFactoryUtil.getLog(
+		TransactionCommitCallbackUtil.class);
+
+	private static final ThreadLocal<List<List<Callable<?>>>>
 		_callbackListListThreadLocal =
 			new AutoResetThreadLocal<List<List<Callable<?>>>>(
 				TransactionCommitCallbackUtil.class +
@@ -79,7 +126,7 @@ class TransactionCommitCallbackUtil {
 
 				@Override
 				protected List<List<Callable<?>>> initialValue() {
-					return new ArrayList<List<Callable<?>>>();
+					return new ArrayList<>();
 				}
 
 			};

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -88,9 +88,9 @@ public class NetlogonNetworkInfo extends NdrObject {
 		}
 	}
 
-	private byte[] _lmChallenge;
-	private byte[] _lmChallengeResponse;
-	private NetlogonIdentityInfo _netlogonIdentityInfo;
-	private byte[] _ntChallengeResponse;
+	private final byte[] _lmChallenge;
+	private final byte[] _lmChallengeResponse;
+	private final NetlogonIdentityInfo _netlogonIdentityInfo;
+	private final byte[] _ntChallengeResponse;
 
 }

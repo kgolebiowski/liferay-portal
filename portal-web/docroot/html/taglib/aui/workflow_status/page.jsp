@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,7 +49,7 @@
 
 				sb.append(StringPool.SPACE);
 				sb.append(StringPool.OPEN_PARENTHESIS);
-				sb.append(LanguageUtil.get(pageContext, HtmlUtil.escape(workflowStatus)));
+				sb.append(LanguageUtil.get(request, HtmlUtil.escape(workflowStatus)));
 				sb.append(StringPool.CLOSE_PARENTHESIS);
 
 				additionalText = sb.toString();
@@ -60,12 +60,12 @@
 	}
 	%>
 
-	<span class="<%= showIcon ? "workflow-status workflow-status-icon" : "workflow-status" %>">
+	<span class="<%= showIcon ? "icon-file-alt workflow-status" : "workflow-status" %>">
 		<c:if test="<%= showLabel %>">
 			<span class="workflow-label"><liferay-ui:message key="status" />:</span>
 		</c:if>
 
-		<strong class="label workflow-status-<%= WorkflowConstants.getStatusLabel(status) %> <%= WorkflowConstants.getStatusCssClass(status) %> workflow-value">
+		<strong class="label status workflow-status-<%= WorkflowConstants.getStatusLabel(status) %> <%= WorkflowConstants.getStatusCssClass(status) %> workflow-value">
 			<liferay-ui:message key="<%= statusMessage %>" /><%= additionalText %>
 		</strong>
 	</span>

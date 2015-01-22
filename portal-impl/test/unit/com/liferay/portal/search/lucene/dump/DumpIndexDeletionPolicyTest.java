@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -306,21 +306,17 @@ public class DumpIndexDeletionPolicyTest {
 			int totalHits)
 		throws Exception {
 
-		IndexReader indexReader = IndexReader.open(directory);
+		try (IndexReader indexReader = IndexReader.open(directory);
+			IndexSearcher indexSearcher = new IndexSearcher(indexReader)) {
 
-		IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+			Term term = new Term(fieldName, fieldValue);
 
-		Term term = new Term(fieldName, fieldValue);
+			TermQuery termQuery = new TermQuery(term);
 
-		TermQuery termQuery = new TermQuery(term);
+			TopDocs topDocs = indexSearcher.search(termQuery, 1);
 
-		TopDocs topDocs = indexSearcher.search(termQuery, 1);
-
-		Assert.assertEquals(totalHits, topDocs.totalHits);
-
-		indexSearcher.close();
-
-		indexReader.close();
+			Assert.assertEquals(totalHits, topDocs.totalHits);
+		}
 	}
 
 	private void _deleteDocument(String fieldName, String fieldValue)

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,6 +15,7 @@
 package com.liferay.portal.setup;
 
 import com.liferay.portal.dao.jdbc.util.DataSourceSwapper;
+import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.events.StartupAction;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
@@ -221,7 +222,7 @@ public class SetupWizardUtil {
 		}
 
 		_updateCompany(request);
-		_updateAdminUser(request, unicodeProperties);
+		_updateAdminUser(request, response, unicodeProperties);
 
 		_initPlugins();
 
@@ -366,7 +367,8 @@ public class SetupWizardUtil {
 	}
 
 	private static void _updateAdminUser(
-			HttpServletRequest request, UnicodeProperties unicodeProperties)
+			HttpServletRequest request, HttpServletResponse response,
+			UnicodeProperties unicodeProperties)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
@@ -416,8 +418,7 @@ public class SetupWizardUtil {
 
 		if (user != null) {
 			String greeting = LanguageUtil.format(
-				themeDisplay.getLocale(), "welcome-x",
-				StringPool.SPACE + fullName, false);
+				themeDisplay.getLocale(), "welcome-x", fullName, false);
 
 			Contact contact = user.getContact();
 
@@ -464,8 +465,8 @@ public class SetupWizardUtil {
 
 				if (testUser != null) {
 					UserLocalServiceUtil.updateStatus(
-						testUser.getUserId(),
-						WorkflowConstants.STATUS_INACTIVE);
+						testUser.getUserId(), WorkflowConstants.STATUS_INACTIVE,
+						new ServiceContext());
 				}
 			}
 		}
@@ -476,7 +477,12 @@ public class SetupWizardUtil {
 
 		session.setAttribute(WebKeys.EMAIL_ADDRESS, emailAddress);
 		session.setAttribute(WebKeys.SETUP_WIZARD_PASSWORD_UPDATED, true);
+		session.setAttribute(WebKeys.USER, user);
 		session.setAttribute(WebKeys.USER_ID, user.getUserId());
+
+		EventsProcessorUtil.process(
+			PropsKeys.LOGIN_EVENTS_POST, PropsValues.LOGIN_EVENTS_POST, request,
+			response);
 	}
 
 	private static void _updateCompany(HttpServletRequest request)
@@ -537,7 +543,8 @@ public class SetupWizardUtil {
 
 	private static final String _PROPERTIES_PREFIX = "properties--";
 
-	private static Log _log = LogFactoryUtil.getLog(SetupWizardUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SetupWizardUtil.class);
 
 	private static boolean _setupFinished = false;
 

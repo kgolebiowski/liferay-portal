@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,16 +14,21 @@
 
 package com.liferay.portal.kernel.search;
 
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Serializable;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Michael C. Han
@@ -33,6 +38,34 @@ public class QueryConfig implements Serializable {
 	public static final String LOCALE = "locale";
 
 	public static final String SEARCH_SUBFOLDERS = "search.subfolders";
+
+	public void addHighlightFieldNames(String... highlightFieldNames) {
+		Set<String> highlightFieldNamesSet = SetUtil.fromArray(
+			(String[])_attributes.get(_HIGHLIGHT_FIELD_NAMES));
+
+		highlightFieldNamesSet.addAll(Arrays.asList(highlightFieldNames));
+
+		_attributes.put(
+			_HIGHLIGHT_FIELD_NAMES,
+			highlightFieldNamesSet.toArray(
+				new String[highlightFieldNamesSet.size()]));
+	}
+
+	public void addSelectedFieldNames(String... selectedFieldNames) {
+		Set<String> selectedFieldNamesSet = SetUtil.fromArray(
+			(String[])_attributes.get(_SELECTED_FIELD_NAMES));
+
+		selectedFieldNamesSet.addAll(Arrays.asList(selectedFieldNames));
+
+		_attributes.put(
+			_SELECTED_FIELD_NAMES,
+			selectedFieldNamesSet.toArray(
+				new String[selectedFieldNamesSet.size()]));
+	}
+
+	public String getAlternateUidFieldName() {
+		return (String)_attributes.get(_ALTERNATE_UID_FIELD_NAME);
+	}
 
 	public Serializable getAttribute(String name) {
 		return _attributes.get(name);
@@ -48,6 +81,17 @@ public class QueryConfig implements Serializable {
 				PropsKeys.
 					INDEX_SEARCH_COLLATED_SPELL_CHECK_RESULT_SCORES_THRESHOLD),
 				_INDEX_SEARCH_COLLATED_SPELL_CHECK_RESULT_SCORES_THRESHOLD);
+	}
+
+	public String[] getHighlightFieldNames() {
+		String[] highlightFieldNames = (String[])_attributes.get(
+			_HIGHLIGHT_FIELD_NAMES);
+
+		if (highlightFieldNames != null) {
+			return highlightFieldNames;
+		}
+
+		return StringPool.EMPTY_ARRAY;
 	}
 
 	public int getHighlightFragmentSize() {
@@ -74,39 +118,89 @@ public class QueryConfig implements Serializable {
 
 	public int getQueryIndexingThreshold() {
 		return GetterUtil.getInteger(
-			_attributes.get(
-				PropsKeys.INDEX_SEARCH_QUERY_INDEXING_THRESHOLD),
-				_INDEX_SEARCH_QUERY_INDEXING_THRESHOLD);
+			_attributes.get(PropsKeys.INDEX_SEARCH_QUERY_INDEXING_THRESHOLD),
+			_INDEX_SEARCH_QUERY_INDEXING_THRESHOLD);
 	}
 
 	public int getQuerySuggestionMax() {
 		return GetterUtil.getInteger(
-			_attributes.get(
-				PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_MAX),
-				_INDEX_SEARCH_QUERY_SUGGESTION_MAX);
+			_attributes.get(PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_MAX),
+			_INDEX_SEARCH_QUERY_SUGGESTION_MAX);
 	}
 
 	public int getQuerySuggestionScoresThreshold() {
 		return GetterUtil.getInteger(
 			_attributes.get(
 				PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD),
-				_INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD);
+			_INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD);
 	}
 
 	public String[] getSelectedFieldNames() {
-		return (String[])_attributes.get(_SELECTED_FIELD_NAMES);
+		String[] selectedFieldNames = (String[])_attributes.get(
+			_SELECTED_FIELD_NAMES);
+
+		if (ArrayUtil.isEmpty(selectedFieldNames)) {
+			return StringPool.EMPTY_ARRAY;
+		}
+
+		return selectedFieldNames;
+	}
+
+	public String[] getSelectedIndexNames() {
+		String[] selectedIndexNames = (String[])_attributes.get(
+			_SELECTED_INDEX_NAMES);
+
+		if (ArrayUtil.isEmpty(selectedIndexNames)) {
+			return StringPool.EMPTY_ARRAY;
+		}
+
+		return selectedIndexNames;
+	}
+
+	public String[] getSelectedTypes() {
+		String[] selectedTypes = (String[])_attributes.get(_SELECTED_TYPES);
+
+		if (ArrayUtil.isEmpty(selectedTypes)) {
+			return StringPool.EMPTY_ARRAY;
+		}
+
+		return selectedTypes;
+	}
+
+	public boolean isAllFieldsSelected() {
+		String[] selectedFieldNames = getSelectedFieldNames();
+
+		if (ArrayUtil.isEmpty(selectedFieldNames)) {
+			return true;
+		}
+
+		if ((selectedFieldNames.length == 1) &&
+			selectedFieldNames[0].equals(Field.ANY)) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public boolean isCollatedSpellCheckResultEnabled() {
 		return GetterUtil.getBoolean(
 			_attributes.get(
 				PropsKeys.INDEX_SEARCH_COLLATED_SPELL_CHECK_RESULT_ENABLED),
-				_INDEX_SEARCH_COLLATED_SPELL_CHECK_RESULT_ENABLED);
+			_INDEX_SEARCH_COLLATED_SPELL_CHECK_RESULT_ENABLED);
 	}
 
 	public boolean isHighlightEnabled() {
 		return GetterUtil.getBoolean(
-			_attributes.get(PropsKeys.INDEX_SEARCH_HIGHLIGHT_ENABLED), false);
+			_attributes.get(PropsKeys.INDEX_SEARCH_HIGHLIGHT_ENABLED),
+			_INDEX_SEARCH_HIGHLIGHT_ENABLED);
+	}
+
+	public boolean isHighlightRequireFieldMatch() {
+		return GetterUtil.getBoolean(
+			_attributes.get(
+				PropsKeys.INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH),
+			_INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH);
 	}
 
 	public boolean isHitsProcessingEnabled() {
@@ -116,9 +210,8 @@ public class QueryConfig implements Serializable {
 
 	public boolean isQueryIndexingEnabled() {
 		return GetterUtil.getBoolean(
-			_attributes.get(
-				PropsKeys.INDEX_SEARCH_QUERY_INDEXING_ENABLED),
-				_INDEX_SEARCH_QUERY_INDEXING_ENABLED);
+			_attributes.get(PropsKeys.INDEX_SEARCH_QUERY_INDEXING_ENABLED),
+			_INDEX_SEARCH_QUERY_INDEXING_ENABLED);
 	}
 
 	public boolean isQuerySuggestionEnabled() {
@@ -139,6 +232,10 @@ public class QueryConfig implements Serializable {
 
 	public Serializable removeAttribute(String name) {
 		return _attributes.remove(name);
+	}
+
+	public void setAlternateUidFieldName(String name) {
+		_attributes.put(_ALTERNATE_UID_FIELD_NAME, name);
 	}
 
 	public void setAttribute(String name, Serializable value) {
@@ -172,10 +269,28 @@ public class QueryConfig implements Serializable {
 		}
 	}
 
+	public void setHighlightFieldNames(String... highlightFieldNames) {
+		_attributes.put(_HIGHLIGHT_FIELD_NAMES, highlightFieldNames);
+	}
+
 	public void setHighlightFragmentSize(int highlightFragmentSize) {
 		_attributes.put(
 			PropsKeys.INDEX_SEARCH_HIGHLIGHT_FRAGMENT_SIZE,
 			highlightFragmentSize);
+	}
+
+	public void setHighlightRequireFieldMatch(
+		boolean highlightRequireFieldMatch) {
+
+		if (_INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH) {
+			_attributes.put(
+				PropsKeys.INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH,
+				highlightRequireFieldMatch);
+		}
+		else {
+			_attributes.put(
+				PropsKeys.INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH, false);
+		}
 	}
 
 	public void setHighlightSnippetSize(int highlightSnippetSize) {
@@ -210,9 +325,10 @@ public class QueryConfig implements Serializable {
 
 	public void setQuerySuggestionScoresThreshold(
 		int querySuggestionScoresThreshold) {
-			_attributes.put(
-				PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD,
-				querySuggestionScoresThreshold);
+
+		_attributes.put(
+			PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD,
+			querySuggestionScoresThreshold);
 	}
 
 	public void setQuerySuggestionsMax(int querySuggestionMax) {
@@ -232,6 +348,19 @@ public class QueryConfig implements Serializable {
 		_attributes.put(_SELECTED_FIELD_NAMES, selectedFieldNames);
 	}
 
+	public void setSelectedIndexNames(String... selectedIndexNames) {
+		_attributes.put(_SELECTED_INDEX_NAMES, selectedIndexNames);
+	}
+
+	public void setSelectedTypes(String... selectedTypes) {
+		_attributes.put(_SELECTED_TYPES, selectedTypes);
+	}
+
+	private static final String _ALTERNATE_UID_FIELD_NAME =
+		"alternateUidFieldName";
+
+	private static final String _HIGHLIGHT_FIELD_NAMES = "highlightFieldNames";
+
 	private static final String _HITS_PROCESSING_ENABLED =
 		"hitsProcessingEnabled";
 
@@ -248,7 +377,7 @@ public class QueryConfig implements Serializable {
 				PropsUtil.get(
 					PropsKeys.
 						INDEX_SEARCH_COLLATED_SPELL_CHECK_RESULT_SCORES_THRESHOLD),
-					50);
+				50);
 
 	private static final boolean _INDEX_SEARCH_HIGHLIGHT_ENABLED =
 		GetterUtil.getBoolean(
@@ -257,6 +386,11 @@ public class QueryConfig implements Serializable {
 	private static final int _INDEX_SEARCH_HIGHLIGHT_FRAGMENT_SIZE =
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.INDEX_SEARCH_HIGHLIGHT_FRAGMENT_SIZE));
+
+	private static final boolean _INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH =
+		GetterUtil.getBoolean(
+			PropsUtil.get(
+				PropsKeys.INDEX_SEARCH_HIGHLIGHT_REQUIRE_FIELD_MATCH));
 
 	private static final int _INDEX_SEARCH_HIGHLIGHT_SNIPPET_SIZE =
 		GetterUtil.getInteger(
@@ -268,9 +402,7 @@ public class QueryConfig implements Serializable {
 
 	private static final int _INDEX_SEARCH_QUERY_INDEXING_THRESHOLD =
 		GetterUtil.getInteger(
-			PropsUtil.get(
-				PropsKeys.INDEX_SEARCH_QUERY_INDEXING_THRESHOLD),
-			50);
+			PropsUtil.get(PropsKeys.INDEX_SEARCH_QUERY_INDEXING_THRESHOLD), 50);
 
 	private static final boolean _INDEX_SEARCH_QUERY_SUGGESTION_ENABLED =
 		GetterUtil.getBoolean(
@@ -284,7 +416,8 @@ public class QueryConfig implements Serializable {
 	private static final int
 		_INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD = GetterUtil.getInteger(
 			PropsUtil.get(
-				PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD), 50);
+				PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_SCORES_THRESHOLD),
+			50);
 
 	private static final boolean _INDEX_SEARCH_SCORING_ENABLED =
 		GetterUtil.getBoolean(
@@ -292,7 +425,10 @@ public class QueryConfig implements Serializable {
 
 	private static final String _SELECTED_FIELD_NAMES = "selectedFieldNames";
 
-	private Map<String, Serializable> _attributes =
-		new HashMap<String, Serializable>();
+	private static final String _SELECTED_INDEX_NAMES = "selectedIndexNames";
+
+	private static final String _SELECTED_TYPES = "selectedTypes";
+
+	private final Map<String, Serializable> _attributes = new HashMap<>();
 
 }

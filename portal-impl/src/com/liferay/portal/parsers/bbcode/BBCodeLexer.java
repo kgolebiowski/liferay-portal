@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,11 +40,11 @@ public class BBCodeLexer {
 			_matcher.start(), _matcher.end());
 	}
 
-	private static Pattern _pattern = Pattern.compile(
-		"(?:\\[((?:[a-z]|\\*){1,16})(?:=([^\\x00-\\x1F\"'()<>\\[\\]]" +
-			"{1,2083}))?\\])|(?:\\[/([a-z]{1,16})\\])",
+	private static final Pattern _pattern = Pattern.compile(
+		"(?:\\[((?:[a-z]|\\*){1,16})(?:[=\\s]([^\\x00-\\x1F'\\(\\)<>\\[\\]]" +
+			"{1,2083}))?\\])|(?:\\[\\/([a-z]{1,16})\\])",
 		Pattern.CASE_INSENSITIVE);
 
-	private Matcher _matcher;
+	private final Matcher _matcher;
 
 }

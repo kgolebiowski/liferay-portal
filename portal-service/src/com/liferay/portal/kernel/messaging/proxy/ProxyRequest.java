@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -43,6 +43,7 @@ public class ProxyRequest implements Externalizable {
 	 * not use this for any other purpose.
 	 */
 	public ProxyRequest() {
+		_local = false;
 	}
 
 	public ProxyRequest(Method method, Object[] arguments) throws Exception {
@@ -156,12 +157,12 @@ public class ProxyRequest implements Externalizable {
 		objectOutput.writeBoolean(_synchronous);
 	}
 
-	private static Map<Method, boolean[]> _localAndSynchronousMap =
-		new ConcurrentHashMap<Method, boolean[]>();
+	private static final Map<Method, boolean[]> _localAndSynchronousMap =
+		new ConcurrentHashMap<>();
 
 	private Object[] _arguments;
 	private boolean _hasReturnValue;
-	private boolean _local;
+	private final boolean _local;
 	private Method _method;
 	private boolean _synchronous;
 

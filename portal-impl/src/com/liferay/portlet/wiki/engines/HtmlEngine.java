@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -99,7 +99,7 @@ public class HtmlEngine implements WikiEngine {
 			return Collections.emptyMap();
 		}
 
-		Map<String, Boolean> links = new HashMap<String, Boolean>();
+		Map<String, Boolean> links = new HashMap<>();
 
 		Source source = new Source(page.getContent());
 
@@ -126,7 +126,7 @@ public class HtmlEngine implements WikiEngine {
 					0, friendlyURL.length() - 1);
 			}
 
-			Map<String, String> routeParameters = new HashMap<String, String>();
+			Map<String, String> routeParameters = new HashMap<>();
 
 			if (!_router.urlToParameters(friendlyURL, routeParameters)) {
 				if (_log.isWarnEnabled()) {
@@ -159,9 +159,9 @@ public class HtmlEngine implements WikiEngine {
 		return links;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(HtmlEngine.class);
+	private static final Log _log = LogFactoryUtil.getLog(HtmlEngine.class);
 
-	private String _friendlyURLMapping;
-	private Router _router;
+	private final String _friendlyURLMapping;
+	private final Router _router;
 
 }

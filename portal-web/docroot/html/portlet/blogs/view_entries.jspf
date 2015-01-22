@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,14 +17,14 @@
 <%
 boolean showAddEntryButton = BlogsPermission.contains(permissionChecker, scopeGroupId, ActionKeys.ADD_ENTRY);
 boolean showPermissionsButton = BlogsPermission.contains(permissionChecker, scopeGroupId, ActionKeys.PERMISSIONS);
-boolean showSubscribeButton = BlogsPermission.contains(permissionChecker, scopeGroupId, ActionKeys.SUBSCRIBE) && (BlogsUtil.getEmailEntryAddedEnabled(portletPreferences) || BlogsUtil.getEmailEntryUpdatedEnabled(portletPreferences));
+boolean showSubscribeButton = BlogsPermission.contains(permissionChecker, scopeGroupId, ActionKeys.SUBSCRIBE) && (blogsSettings.isEmailEntryAddedEnabled() || blogsSettings.isEmailEntryUpdatedEnabled());
 showSearch = showSearch && !results.isEmpty();
 %>
 
 <c:if test="<%= showAddEntryButton || showPermissionsButton || showSearch %>">
 	<aui:nav-bar>
 		<c:if test="<%= showAddEntryButton || showPermissionsButton %>">
-			<aui:nav>
+			<aui:nav cssClass="navbar-nav">
 				<c:if test="<%= showAddEntryButton %>">
 					<portlet:renderURL var="editEntryURL">
 						<portlet:param name="struts_action" value="/blogs/edit_entry" />
@@ -50,7 +50,7 @@ showSearch = showSearch && !results.isEmpty();
 		</c:if>
 
 		<c:if test="<%= showSearch %>">
-			<aui:nav-bar-search cssClass="pull-right">
+			<aui:nav-bar-search>
 				<div class="form-search">
 					<liferay-ui:input-search autoFocus="<%= windowState.equals(WindowState.MAXIMIZED) %>" id="keywords1" name="keywords" placeholder='<%= LanguageUtil.get(locale, "keywords") %>' />
 				</div>
@@ -60,15 +60,15 @@ showSearch = showSearch && !results.isEmpty();
 </c:if>
 
 <div class="subscribe">
-	<c:if test="<%= enableRSS %>">
+	<c:if test="<%= blogsPortletInstanceSettings.isEnableRSS() %>">
 		<liferay-portlet:resourceURL varImpl="rssURL">
 			<portlet:param name="struts_action" value="/blogs/rss" />
 		</liferay-portlet:resourceURL>
 
 		<liferay-ui:rss
-			delta="<%= rssDelta %>"
-			displayStyle="<%= rssDisplayStyle %>"
-			feedType="<%= rssFeedType %>"
+			delta="<%= blogsPortletInstanceSettings.getRssDelta() %>"
+			displayStyle="<%= blogsPortletInstanceSettings.getRssDisplayStyle() %>"
+			feedType="<%= blogsPortletInstanceSettings.getRssFeedType() %>"
 			resourceURL="<%= rssURL %>"
 		/>
 	</c:if>
@@ -83,8 +83,9 @@ showSearch = showSearch && !results.isEmpty();
 				</portlet:actionURL>
 
 				<liferay-ui:icon
-					image="unsubscribe"
+					iconCssClass="icon-remove-sign"
 					label="<%= true %>"
+					message="unsubscribe"
 					url="<%= unsubscribeURL %>"
 				/>
 			</c:when>
@@ -96,8 +97,9 @@ showSearch = showSearch && !results.isEmpty();
 				</portlet:actionURL>
 
 				<liferay-ui:icon
-					image="subscribe"
+					iconCssClass="icon-ok-sign"
 					label="<%= true %>"
+					message="subscribe"
 					url="<%= subscribeURL %>"
 				/>
 			</c:otherwise>
@@ -111,18 +113,16 @@ showSearch = showSearch && !results.isEmpty();
 />
 
 <%
-long portletDisplayDDMTemplateId = PortletDisplayTemplateUtil.getPortletDisplayTemplateDDMTemplateId(displayStyleGroupId, displayStyle);
+Map<String, Object> contextObjects = new HashMap<String, Object>();
 
-if (portletDisplayDDMTemplateId > 0) {
+contextObjects.put("blogsPortletInstanceSettings", blogsPortletInstanceSettings);
 %>
 
-	<div class="entry-body">
-		<%= PortletDisplayTemplateUtil.renderDDMTemplate(pageContext, portletDisplayDDMTemplateId, _convertToBlogEntries(results)) %>
-	</div>
+<liferay-ui:ddm-template-renderer contextObjects="<%= contextObjects %>" displayStyle="<%= blogsPortletInstanceSettings.getDisplayStyle() %>" displayStyleGroupId="<%= blogsPortletInstanceSettings.getDisplayStyleGroupId(themeDisplay.getScopeGroupId()) %>" entries="<%= _convertToBlogEntries(results) %>">
 
-<%
-}
-else {
+	<%
+	int index = 0;
+
 	for (Object result : results) {
 		BlogsEntry entry = null;
 
@@ -145,19 +145,26 @@ else {
 			continue;
 		}
 
+		index++;
+
 		request.setAttribute("view_entry_content.jsp-searchContainer", searchContainer);
 
 		request.setAttribute("view_entry_content.jsp-entry", entry);
 
 		request.setAttribute("view_entry_content.jsp-assetEntry", assetEntry);
-%>
+	%>
 
 	<liferay-util:include page="/html/portlet/blogs/view_entry_content.jsp" />
 
-<%
+	<c:if test="<%= index < searchContainer.getTotal() %>">
+		<div class="separator"><!-- --></div>
+	</c:if>
+
+	<%
 	}
-}
-%>
+	%>
+
+</liferay-ui:ddm-template-renderer>
 
 <liferay-ui:search-paginator searchContainer="<%= searchContainer %>" />
 

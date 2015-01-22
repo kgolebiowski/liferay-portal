@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,71 +15,61 @@
 package com.liferay.portal.service.persistence;
 
 import com.liferay.portal.NoSuchClusterGroupException;
-import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
 import com.liferay.portal.model.ClusterGroup;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.service.persistence.BasePersistence;
-import com.liferay.portal.service.persistence.PersistenceExecutionTestListener;
-import com.liferay.portal.test.LiferayPersistenceIntegrationJUnitTestRunner;
-import com.liferay.portal.test.persistence.TransactionalPersistenceAdvice;
+import com.liferay.portal.service.ClusterGroupLocalServiceUtil;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.PersistenceTestRule;
+import com.liferay.portal.test.TransactionalTestRule;
+import com.liferay.portal.util.test.RandomTestUtil;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Brian Wing Shun Chan
+ * @generated
  */
-@ExecutionTestListeners(listeners =  {
-	PersistenceExecutionTestListener.class})
-@RunWith(LiferayPersistenceIntegrationJUnitTestRunner.class)
 public class ClusterGroupPersistenceTest {
+	@Rule
+	public final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
+			PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(Propagation.REQUIRED));
+
 	@After
 	public void tearDown() throws Exception {
-		Map<Serializable, BasePersistence<?>> basePersistences = _transactionalPersistenceAdvice.getBasePersistences();
+		Iterator<ClusterGroup> iterator = _clusterGroups.iterator();
 
-		Set<Serializable> primaryKeys = basePersistences.keySet();
+		while (iterator.hasNext()) {
+			_persistence.remove(iterator.next());
 
-		for (Serializable primaryKey : primaryKeys) {
-			BasePersistence<?> basePersistence = basePersistences.get(primaryKey);
-
-			try {
-				basePersistence.remove(primaryKey);
-			}
-			catch (Exception e) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("The model with primary key " + primaryKey +
-						" was already deleted");
-				}
-			}
+			iterator.remove();
 		}
-
-		_transactionalPersistenceAdvice.reset();
 	}
 
 	@Test
 	public void testCreate() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ClusterGroup clusterGroup = _persistence.create(pk);
 
@@ -106,19 +96,19 @@ public class ClusterGroupPersistenceTest {
 
 	@Test
 	public void testUpdateExisting() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ClusterGroup newClusterGroup = _persistence.create(pk);
 
-		newClusterGroup.setMvccVersion(ServiceTestUtil.nextLong());
+		newClusterGroup.setMvccVersion(RandomTestUtil.nextLong());
 
-		newClusterGroup.setName(ServiceTestUtil.randomString());
+		newClusterGroup.setName(RandomTestUtil.randomString());
 
-		newClusterGroup.setClusterNodeIds(ServiceTestUtil.randomString());
+		newClusterGroup.setClusterNodeIds(RandomTestUtil.randomString());
 
-		newClusterGroup.setWholeCluster(ServiceTestUtil.randomBoolean());
+		newClusterGroup.setWholeCluster(RandomTestUtil.randomBoolean());
 
-		_persistence.update(newClusterGroup);
+		_clusterGroups.add(_persistence.update(newClusterGroup));
 
 		ClusterGroup existingClusterGroup = _persistence.findByPrimaryKey(newClusterGroup.getPrimaryKey());
 
@@ -145,7 +135,7 @@ public class ClusterGroupPersistenceTest {
 
 	@Test
 	public void testFindByPrimaryKeyMissing() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		try {
 			_persistence.findByPrimaryKey(pk);
@@ -168,7 +158,7 @@ public class ClusterGroupPersistenceTest {
 		}
 	}
 
-	protected OrderByComparator getOrderByComparator() {
+	protected OrderByComparator<ClusterGroup> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create("ClusterGroup",
 			"mvccVersion", true, "clusterGroupId", true, "name", true,
 			"clusterNodeIds", true, "wholeCluster", true);
@@ -185,7 +175,7 @@ public class ClusterGroupPersistenceTest {
 
 	@Test
 	public void testFetchByPrimaryKeyMissing() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ClusterGroup missingClusterGroup = _persistence.fetchByPrimaryKey(pk);
 
@@ -193,19 +183,103 @@ public class ClusterGroupPersistenceTest {
 	}
 
 	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
+		throws Exception {
+		ClusterGroup newClusterGroup1 = addClusterGroup();
+		ClusterGroup newClusterGroup2 = addClusterGroup();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newClusterGroup1.getPrimaryKey());
+		primaryKeys.add(newClusterGroup2.getPrimaryKey());
+
+		Map<Serializable, ClusterGroup> clusterGroups = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(2, clusterGroups.size());
+		Assert.assertEquals(newClusterGroup1,
+			clusterGroups.get(newClusterGroup1.getPrimaryKey()));
+		Assert.assertEquals(newClusterGroup2,
+			clusterGroups.get(newClusterGroup2.getPrimaryKey()));
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
+		throws Exception {
+		long pk1 = RandomTestUtil.nextLong();
+
+		long pk2 = RandomTestUtil.nextLong();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(pk1);
+		primaryKeys.add(pk2);
+
+		Map<Serializable, ClusterGroup> clusterGroups = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertTrue(clusterGroups.isEmpty());
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
+		throws Exception {
+		ClusterGroup newClusterGroup = addClusterGroup();
+
+		long pk = RandomTestUtil.nextLong();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newClusterGroup.getPrimaryKey());
+		primaryKeys.add(pk);
+
+		Map<Serializable, ClusterGroup> clusterGroups = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(1, clusterGroups.size());
+		Assert.assertEquals(newClusterGroup,
+			clusterGroups.get(newClusterGroup.getPrimaryKey()));
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
+		throws Exception {
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		Map<Serializable, ClusterGroup> clusterGroups = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertTrue(clusterGroups.isEmpty());
+	}
+
+	@Test
+	public void testFetchByPrimaryKeysWithOnePrimaryKey()
+		throws Exception {
+		ClusterGroup newClusterGroup = addClusterGroup();
+
+		Set<Serializable> primaryKeys = new HashSet<Serializable>();
+
+		primaryKeys.add(newClusterGroup.getPrimaryKey());
+
+		Map<Serializable, ClusterGroup> clusterGroups = _persistence.fetchByPrimaryKeys(primaryKeys);
+
+		Assert.assertEquals(1, clusterGroups.size());
+		Assert.assertEquals(newClusterGroup,
+			clusterGroups.get(newClusterGroup.getPrimaryKey()));
+	}
+
+	@Test
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = new ClusterGroupActionableDynamicQuery() {
+		ActionableDynamicQuery actionableDynamicQuery = ClusterGroupLocalServiceUtil.getActionableDynamicQuery();
+
+		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod() {
 				@Override
-				protected void performAction(Object object) {
+				public void performAction(Object object) {
 					ClusterGroup clusterGroup = (ClusterGroup)object;
 
 					Assert.assertNotNull(clusterGroup);
 
 					count.increment();
 				}
-			};
+			});
 
 		actionableDynamicQuery.performActions();
 
@@ -238,7 +312,7 @@ public class ClusterGroupPersistenceTest {
 				ClusterGroup.class.getClassLoader());
 
 		dynamicQuery.add(RestrictionsFactoryUtil.eq("clusterGroupId",
-				ServiceTestUtil.nextLong()));
+				RandomTestUtil.nextLong()));
 
 		List<ClusterGroup> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -279,7 +353,7 @@ public class ClusterGroupPersistenceTest {
 				"clusterGroupId"));
 
 		dynamicQuery.add(RestrictionsFactoryUtil.in("clusterGroupId",
-				new Object[] { ServiceTestUtil.nextLong() }));
+				new Object[] { RandomTestUtil.nextLong() }));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -287,24 +361,23 @@ public class ClusterGroupPersistenceTest {
 	}
 
 	protected ClusterGroup addClusterGroup() throws Exception {
-		long pk = ServiceTestUtil.nextLong();
+		long pk = RandomTestUtil.nextLong();
 
 		ClusterGroup clusterGroup = _persistence.create(pk);
 
-		clusterGroup.setMvccVersion(ServiceTestUtil.nextLong());
+		clusterGroup.setMvccVersion(RandomTestUtil.nextLong());
 
-		clusterGroup.setName(ServiceTestUtil.randomString());
+		clusterGroup.setName(RandomTestUtil.randomString());
 
-		clusterGroup.setClusterNodeIds(ServiceTestUtil.randomString());
+		clusterGroup.setClusterNodeIds(RandomTestUtil.randomString());
 
-		clusterGroup.setWholeCluster(ServiceTestUtil.randomBoolean());
+		clusterGroup.setWholeCluster(RandomTestUtil.randomBoolean());
 
-		_persistence.update(clusterGroup);
+		_clusterGroups.add(_persistence.update(clusterGroup));
 
 		return clusterGroup;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ClusterGroupPersistenceTest.class);
-	private ClusterGroupPersistence _persistence = (ClusterGroupPersistence)PortalBeanLocatorUtil.locate(ClusterGroupPersistence.class.getName());
-	private TransactionalPersistenceAdvice _transactionalPersistenceAdvice = (TransactionalPersistenceAdvice)PortalBeanLocatorUtil.locate(TransactionalPersistenceAdvice.class.getName());
+	private List<ClusterGroup> _clusterGroups = new ArrayList<ClusterGroup>();
+	private ClusterGroupPersistence _persistence = ClusterGroupUtil.getPersistence();
 }

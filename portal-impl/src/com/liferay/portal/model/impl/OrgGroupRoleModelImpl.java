@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.model.impl;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -43,6 +45,7 @@ import java.util.Map;
  * @see com.liferay.portal.model.OrgGroupRoleModel
  * @generated
  */
+@ProviderType
 public class OrgGroupRoleModelImpl extends BaseModelImpl<OrgGroupRole>
 	implements OrgGroupRoleModel {
 	/*
@@ -73,9 +76,9 @@ public class OrgGroupRoleModelImpl extends BaseModelImpl<OrgGroupRole>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portal.model.OrgGroupRole"),
 			true);
-	public static long GROUPID_COLUMN_BITMASK = 1L;
-	public static long ROLEID_COLUMN_BITMASK = 2L;
-	public static long ORGANIZATIONID_COLUMN_BITMASK = 4L;
+	public static final long GROUPID_COLUMN_BITMASK = 1L;
+	public static final long ROLEID_COLUMN_BITMASK = 2L;
+	public static final long ORGANIZATIONID_COLUMN_BITMASK = 4L;
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(com.liferay.portal.util.PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.OrgGroupRole"));
 
@@ -311,6 +314,8 @@ public class OrgGroupRoleModelImpl extends BaseModelImpl<OrgGroupRole>
 	public CacheModel<OrgGroupRole> toCacheModel() {
 		OrgGroupRoleCacheModel orgGroupRoleCacheModel = new OrgGroupRoleCacheModel();
 
+		orgGroupRoleCacheModel.orgGroupRolePK = getPrimaryKey();
+
 		orgGroupRoleCacheModel.mvccVersion = getMvccVersion();
 
 		orgGroupRoleCacheModel.organizationId = getOrganizationId();
@@ -369,8 +374,8 @@ public class OrgGroupRoleModelImpl extends BaseModelImpl<OrgGroupRole>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = OrgGroupRole.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = OrgGroupRole.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			OrgGroupRole.class
 		};
 	private long _mvccVersion;

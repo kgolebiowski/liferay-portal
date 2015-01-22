@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,6 +15,7 @@
 package com.liferay.portal.tools.servicebuilder;
 
 import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
@@ -133,6 +134,14 @@ public class EntityColumn implements Cloneable, Comparable<EntityColumn> {
 
 	public String getEJBName() {
 		return _ejbName;
+	}
+
+	public String getGenericizedType() {
+		if (_type.equals("Map")) {
+			return "Map<String, Serializable>";
+		}
+
+		return _type;
 	}
 
 	public String getHumanCondition(boolean arrayable) {
@@ -404,6 +413,41 @@ public class EntityColumn implements Cloneable, Comparable<EntityColumn> {
 		_parentContainerModel = parentContainerModel;
 	}
 
+	public void validate() {
+		if (Validator.isNotNull(_arrayableOperator)) {
+			if (!_type.equals("char") && !_type.equals("int") &&
+				!_type.equals("long") && !_type.equals("short") &&
+				!_type.equals("String")) {
+
+				throw new IllegalArgumentException(
+					"Type " + _type + " cannot be arrayable");
+			}
+		}
+
+		String comparator = _comparator;
+
+		if (comparator == null) {
+			comparator = StringPool.EQUAL;
+		}
+
+		if (_arrayableOperator.equals("AND") &&
+			!comparator.equals(StringPool.NOT_EQUAL)) {
+
+			throw new IllegalArgumentException(
+				"Illegal combination of arrayable \"AND\" and comparator \"" +
+					comparator + "\"");
+		}
+
+		if (_arrayableOperator.equals("OR") &&
+			!comparator.equals(StringPool.EQUAL) &&
+			!comparator.equals(StringPool.LIKE)) {
+
+			throw new IllegalArgumentException(
+				"Illegal combination of arrayable \"OR\" and comparator \"" +
+					comparator + "\"");
+		}
+	}
+
 	protected String convertComparatorToHtml(String comparator) {
 		if (comparator.equals(">")) {
 			return "&gt;";
@@ -428,29 +472,29 @@ public class EntityColumn implements Cloneable, Comparable<EntityColumn> {
 		return comparator;
 	}
 
-	private boolean _accessor;
+	private final boolean _accessor;
 	private String _arrayableOperator;
 	private boolean _caseSensitive;
 	private String _comparator;
 	private boolean _containerModel;
 	private boolean _convertNull;
 	private String _dbName;
-	private String _ejbName;
-	private boolean _filterPrimary;
+	private final String _ejbName;
+	private final boolean _filterPrimary;
 	private boolean _finderPath;
-	private String _humanName;
+	private final String _humanName;
 	private String _idParam;
 	private String _idType;
-	private boolean _jsonEnabled;
+	private final boolean _jsonEnabled;
 	private boolean _lazy;
 	private boolean _localized;
-	private String _mappingTable;
-	private String _methodName;
-	private String _name;
+	private final String _mappingTable;
+	private final String _methodName;
+	private final String _name;
 	private boolean _orderByAscending;
 	private boolean _orderColumn;
 	private boolean _parentContainerModel;
-	private boolean _primary;
-	private String _type;
+	private final boolean _primary;
+	private final String _type;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -235,7 +235,8 @@ public class DynamicCSSFilter extends IgnoreModuleRequestFilter {
 
 	private static final String _TEMP_DIR = "css";
 
-	private static Log _log = LogFactoryUtil.getLog(DynamicCSSFilter.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		DynamicCSSFilter.class);
 
 	private ServletContext _servletContext;
 	private File _tempDir;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,17 +14,20 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserIdMapper;
 import com.liferay.portal.model.UserIdMapperModel;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.service.UserLocalServiceUtil;
 
 import com.liferay.portlet.expando.model.ExpandoBridge;
 import com.liferay.portlet.expando.util.ExpandoBridgeFactoryUtil;
@@ -49,6 +52,7 @@ import java.util.Map;
  * @see com.liferay.portal.model.UserIdMapperModel
  * @generated
  */
+@ProviderType
 public class UserIdMapperModelImpl extends BaseModelImpl<UserIdMapper>
 	implements UserIdMapperModel {
 	/*
@@ -81,10 +85,10 @@ public class UserIdMapperModelImpl extends BaseModelImpl<UserIdMapper>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portal.model.UserIdMapper"),
 			true);
-	public static long EXTERNALUSERID_COLUMN_BITMASK = 1L;
-	public static long TYPE_COLUMN_BITMASK = 2L;
-	public static long USERID_COLUMN_BITMASK = 4L;
-	public static long USERIDMAPPERID_COLUMN_BITMASK = 8L;
+	public static final long EXTERNALUSERID_COLUMN_BITMASK = 1L;
+	public static final long TYPE_COLUMN_BITMASK = 2L;
+	public static final long USERID_COLUMN_BITMASK = 4L;
+	public static final long USERIDMAPPERID_COLUMN_BITMASK = 8L;
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(com.liferay.portal.util.PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.UserIdMapper"));
 
@@ -216,13 +220,19 @@ public class UserIdMapperModelImpl extends BaseModelImpl<UserIdMapper>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	public long getOriginalUserId() {
@@ -500,14 +510,13 @@ public class UserIdMapperModelImpl extends BaseModelImpl<UserIdMapper>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = UserIdMapper.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = UserIdMapper.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			UserIdMapper.class
 		};
 	private long _mvccVersion;
 	private long _userIdMapperId;
 	private long _userId;
-	private String _userUuid;
 	private long _originalUserId;
 	private boolean _setOriginalUserId;
 	private String _type;

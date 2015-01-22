@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,9 @@
 
 package com.liferay.portlet.dynamicdatamapping.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
@@ -34,8 +37,33 @@ import java.util.Date;
  * @see DDMContent
  * @generated
  */
+@ProviderType
 public class DDMContentCacheModel implements CacheModel<DDMContent>,
 	Externalizable {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DDMContentCacheModel)) {
+			return false;
+		}
+
+		DDMContentCacheModel ddmContentCacheModel = (DDMContentCacheModel)obj;
+
+		if (contentId == ddmContentCacheModel.contentId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, contentId);
+	}
+
 	@Override
 	public String toString() {
 		StringBundler sb = new StringBundler(23);
@@ -60,8 +88,8 @@ public class DDMContentCacheModel implements CacheModel<DDMContent>,
 		sb.append(name);
 		sb.append(", description=");
 		sb.append(description);
-		sb.append(", xml=");
-		sb.append(xml);
+		sb.append(", data=");
+		sb.append(data);
 		sb.append("}");
 
 		return sb.toString();
@@ -118,11 +146,11 @@ public class DDMContentCacheModel implements CacheModel<DDMContent>,
 			ddmContentImpl.setDescription(description);
 		}
 
-		if (xml == null) {
-			ddmContentImpl.setXml(StringPool.BLANK);
+		if (data == null) {
+			ddmContentImpl.setData(StringPool.BLANK);
 		}
 		else {
-			ddmContentImpl.setXml(xml);
+			ddmContentImpl.setData(data);
 		}
 
 		ddmContentImpl.resetOriginalValues();
@@ -142,7 +170,7 @@ public class DDMContentCacheModel implements CacheModel<DDMContent>,
 		modifiedDate = objectInput.readLong();
 		name = objectInput.readUTF();
 		description = objectInput.readUTF();
-		xml = objectInput.readUTF();
+		data = objectInput.readUTF();
 	}
 
 	@Override
@@ -184,11 +212,11 @@ public class DDMContentCacheModel implements CacheModel<DDMContent>,
 			objectOutput.writeUTF(description);
 		}
 
-		if (xml == null) {
+		if (data == null) {
 			objectOutput.writeUTF(StringPool.BLANK);
 		}
 		else {
-			objectOutput.writeUTF(xml);
+			objectOutput.writeUTF(data);
 		}
 	}
 
@@ -202,5 +230,5 @@ public class DDMContentCacheModel implements CacheModel<DDMContent>,
 	public long modifiedDate;
 	public String name;
 	public String description;
-	public String xml;
+	public String data;
 }

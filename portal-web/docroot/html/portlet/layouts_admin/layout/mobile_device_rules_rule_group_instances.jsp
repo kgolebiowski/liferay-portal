@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -66,18 +66,18 @@ PortletURL portletURL = (PortletURL)request.getAttribute("mobile_device_rules_he
 	}
 
 	function <portlet:namespace />mobileDeviceOpenWindow(config) {
-		var data = AUI().mix(
+		var data = AUI._.defaults(
 			config,
 			{
 				dialog: {
-					width: 1024,
 					on: {
 						visibleChange: function(event) {
 							<portlet:namespace />updateRuleGroupInstances();
 						}
-					}
+					},
+					width: 1024
 				},
-				title: Liferay.Language.get('javax.portlet.title.178')
+				title: '<liferay-ui:message key="javax.portlet.title.178" />'
 			}
 		);
 
@@ -86,23 +86,21 @@ PortletURL portletURL = (PortletURL)request.getAttribute("mobile_device_rules_he
 </aui:script>
 
 <c:if test="<%= themeDisplay.isStateExclusive() %>">
-	<aui:script use="aui-base">
-		var uniqueRuleGroupInstancesContainer = A.one('#<portlet:namespace />uniqueRuleGroupInstancesContainer');
-
-		uniqueRuleGroupInstancesContainer.delegate(
+	<aui:script sandbox="<%= true %>">
+		$('#<portlet:namespace />uniqueRuleGroupInstancesContainer').on(
 			'click',
+			'.mobile-device-rule a',
 			function(event) {
 				event.preventDefault();
 
-				var href = event.target.attr('href');
+				var href = $(event.target).attr('href');
 
 				<portlet:namespace />mobileDeviceOpenWindow(
 					{
 						uri: href
 					}
 				);
-			},
-			'.mobile-device-rule a'
+			}
 		);
 	</aui:script>
 </c:if>

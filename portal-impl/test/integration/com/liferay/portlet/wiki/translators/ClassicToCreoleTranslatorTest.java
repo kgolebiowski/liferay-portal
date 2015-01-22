@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,17 +14,22 @@
 
 package com.liferay.portlet.wiki.translators;
 
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Jorge Ferrer
  */
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class ClassicToCreoleTranslatorTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayIntegrationTestRule liferayIntegrationTestRule =
+		new LiferayIntegrationTestRule();
 
 	public ClassicToCreoleTranslatorTest() {
 		_classicToCreoleTranslator = new ClassicToCreoleTranslator();
@@ -286,6 +291,6 @@ public class ClassicToCreoleTranslatorTest {
 		return _classicToCreoleTranslator.translate(content);
 	}
 
-	private ClassicToCreoleTranslator _classicToCreoleTranslator;
+	private final ClassicToCreoleTranslator _classicToCreoleTranslator;
 
 }

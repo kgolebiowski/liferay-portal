@@ -141,6 +141,10 @@ AUI.add(
 							instance._currentPopup = Liferay.Util.Window.getWindow(
 								{
 									dialog: {
+										draggable: {
+											handles: ['.modal-header']
+										},
+										modal: false,
 										on: {
 											visibleChange: function(event) {
 												if (!event.newVal && Browser.isIe() && Browser.getMajorVersion() == 6) {
@@ -158,7 +162,6 @@ AUI.add(
 							instance._currentPopup.plug(
 								[
 									{
-										fn: A.Plugin.IO,
 										cfg: {
 											after: {
 												success: function(event) {
@@ -174,15 +177,16 @@ AUI.add(
 												}
 											},
 											autoLoad: false,
-											showLoading: false,
 											data: {
+												doAsUserId: themeDisplay.getDoAsUserIdEncoded(),
 												p_l_id: themeDisplay.getPlid(),
 												p_p_id: 113,
-												p_p_state: EXCLUSIVE,
-												doAsUserId: themeDisplay.getDoAsUserIdEncoded()
+												p_p_state: EXCLUSIVE
 											},
+											showLoading: false,
 											uri: themeDisplay.getPathMain() + '/portal/render_portlet'
-										}
+										},
+										fn: A.Plugin.IO
 									},
 									{
 										fn: A.LoadingMask
@@ -229,8 +233,9 @@ AUI.add(
 				if (!instance._backgroundColorPicker) {
 					instance._backgroundColorPicker = new A.ColorPickerPopover(
 						{
-							trigger: backgroundColor,
-							plugins: [Liferay.WidgetZIndex]
+							constrain: true,
+							plugins: [Liferay.WidgetZIndex],
+							trigger: backgroundColor
 						}
 					).render(instance._currentPopup.get(BOUNDING_BOX));
 				}
@@ -466,7 +471,7 @@ AUI.add(
 
 				A.each(
 					[cTopColor, cRightColor, cBottomColor, cLeftColor],
-					function(item, index, collection) {
+					function(item, index) {
 						var hexValue = item.val().replace('#', EMPTY);
 
 						var borderLocation = '_borderColorPicker' + index;
@@ -474,6 +479,7 @@ AUI.add(
 						if (!instance[borderLocation]) {
 							instance[borderLocation] = new A.ColorPickerPopover(
 								{
+									constrain: true,
 									trigger: item,
 									zIndex: 1000
 								}
@@ -577,62 +583,53 @@ AUI.add(
 
 				customPortletNote.html(portletInfoText);
 
-				Liferay.Util.enableTextareaTabs(customCSS.getDOM());
+				refreshText = Liferay.Language.get('update-the-styles-on-this-page');
 
-				if (!Browser.isSafari()) {
-					refreshText = Liferay.Language.get('update-the-styles-on-this-page');
+				var refreshLink = A.Node.create('<a href="javascript:;">' + refreshText + '</a>');
 
-					var refreshLink = A.Node.create('<a href="javascript:;">' + refreshText + '</a>');
+				var customStyleBlock = A.one('#lfr-custom-css-block-' + portletId);
 
-					var customStyleBlock = A.one('#lfr-custom-css-block-' + portletId);
+				if (!customStyleBlock) {
 
-					if (!customStyleBlock) {
+					// Do not modify. This is a workaround for an IE bug.
 
-						// Do not modify. This is a workaround for an IE bug.
+					var styleEl = document.createElement(STYLE);
 
-						var styleEl = document.createElement(STYLE);
+					styleEl.id = 'lfr-custom-css-block-' + portletId;
+					styleEl.className = 'lfr-custom-css-block';
+					styleEl.setAttribute(TYPE, 'text/css');
 
-						styleEl.id = 'lfr-custom-css-block-' + portletId;
-						styleEl.className = 'lfr-custom-css-block';
-						styleEl.setAttribute(TYPE, 'text/css');
-
-						document.getElementsByTagName(HEAD)[0].appendChild(styleEl);
-					}
-					else {
-						styleEl = customStyleBlock.getDOM();
-					}
-
-					var refreshStyles = function() {
-						var customStyles = customCSS.val();
-
-						customStyles = customStyles.replace(/<script[^>]*>([\u0001-\uFFFF]*?)<\/script>/gim, EMPTY);
-						customStyles = customStyles.replace(/<\/?[^>]+>/gi, EMPTY);
-
-						if (styleEl.styleSheet) { // for IE only
-							if (customStyles == EMPTY) {
-
-								// Do not modify. This is a workaround for an IE bug.
-
-								customStyles = '<!---->';
-							}
-
-							styleEl.styleSheet.cssText = customStyles;
-						}
-						else {
-							A.one(styleEl).html(customStyles);
-						}
-					};
-
-					refreshLink.detach(CLICK);
-					refreshLink.on(CLICK, refreshStyles);
-
-					customNote.empty().append(refreshLink);
+					document.getElementsByTagName(HEAD)[0].appendChild(styleEl);
 				}
 				else {
-					refreshText = Liferay.Language.get('please-press-the-save-button-to-view-your-changes');
-
-					customNote.empty().text(refreshText);
+					styleEl = customStyleBlock.getDOM();
 				}
+
+				var refreshStyles = function() {
+					var customStyles = customCSS.val();
+
+					customStyles = customStyles.replace(/<script[^>]*>([\u0001-\uFFFF]*?)<\/script>/gim, EMPTY);
+					customStyles = customStyles.replace(/<\/?[^>]+>/gi, EMPTY);
+
+					if (styleEl.styleSheet) { // for IE only
+						if (customStyles == EMPTY) {
+
+							// Do not modify. This is a workaround for an IE bug.
+
+							customStyles = '<!---->';
+						}
+
+						styleEl.styleSheet.cssText = customStyles;
+					}
+					else {
+						A.one(styleEl).html(customStyles);
+					}
+				};
+
+				refreshLink.detach(CLICK);
+				refreshLink.on(CLICK, refreshStyles);
+
+				customNote.empty().append(refreshLink);
 
 				var insertContainer = A.one('#lfr-add-rule-container');
 				var addIdLink = A.one('#lfr-add-id');
@@ -647,7 +644,7 @@ AUI.add(
 					var updateOnTypeHolder = A.Node.create('<span class="field"><span class="field-content"></span></span>');
 					var updateOnTypeLabel = A.Node.create('<label>' + Liferay.Language.get('update-my-styles-as-i-type') + ' </label>');
 
-					updateOnType = A.Node.create('<input id="lfr-update-on-type" type=CHECKBOX />');
+					updateOnType = A.Node.create('<input checked="checked" id="lfr-update-on-type" type="' + CHECKBOX + '" />');
 
 					updateOnTypeLabel.appendChild(updateOnType);
 					updateOnTypeHolder.get(FIRST_CHILD).appendChild(updateOnTypeLabel);
@@ -661,7 +658,11 @@ AUI.add(
 					insertContainer.appendChild(addClassLink);
 					insertContainer.appendChild(updateOnTypeHolder);
 
-					insertContainer.after(customNote);
+					customNote.hide();
+
+					insertContainer.placeAfter(customNote);
+
+					customCSS.on(KEYUP, refreshStyles);
 				}
 
 				updateOnType.on(
@@ -723,17 +724,6 @@ AUI.add(
 				}
 			},
 
-			_getCombo: function(input, selectBox) {
-				var instance = this;
-
-				var inputVal = input.val();
-				var selectVal = selectBox.val();
-
-				inputVal = instance._getSafeInteger(inputVal);
-
-				return {input: inputVal, selectBox: selectVal, both: inputVal + selectVal};
-			},
-
 			_getCSSClasses: function(portletBoundary, portlet) {
 				var instance = this;
 
@@ -763,185 +753,29 @@ AUI.add(
 				return '.' + boundaryClasses.join('.') + portletClasses;
 			},
 
-			_getNodeById: function(id) {
+			_getCombo: function(input, selectBox) {
 				var instance = this;
 
-				return A.one('#_113_' + id);
+				var inputVal = input.val();
+				var selectVal = selectBox.val();
+
+				inputVal = instance._getSafeInteger(inputVal);
+
+				return {
+					both: inputVal + selectVal,
+					input: inputVal,
+					selectBox: selectVal
+				};
 			},
 
-			_getSafeInteger: function(input) {
+			_getDefaultData: function() {
 				var instance = this;
 
-				var output = parseInt(input);
-
-				if (output == EMPTY || isNaN(output)) {
-					output = 0;
-				}
-
-				return output;
-			},
-
-			_insertCustomCSSValue: function(textarea, value) {
-				var instance = this;
-
-				var currentVal = Lang.trim(textarea.val());
-
-				if (currentVal.length) {
-					currentVal += '\n\n';
-				}
-
-				var newVal = currentVal + value + ' {\n\t\n}\n';
-
-				textarea.val(newVal);
-
-				Liferay.Util.setCursorPosition(textarea, newVal.length - 3);
-			},
-
-			_languageClasses: function(key, value, removeClass) {
-				var instance = this;
-
-				var option = instance._portletLanguage.one('option[value=' + key + ']');
-
-				if (option) {
-					if (removeClass) {
-						option.removeClass(FOCUSED);
-					}
-					else {
-						option.addClass(FOCUSED);
-					}
-				}
-			},
-
-			_loadContent: function(instantiated) {
-				var instance = this;
-
-				var newPanel = instance._newPanel;
-
-				if (!instantiated) {
-					newPanel.addClass(INSTANTIATED);
-					instance._portletBoundaryIdVar = A.one('#portlet-boundary-id');
-
-					// Portlet config
-
-					var portletTitle = instance._curPortlet.one('.portlet-title-text');
-
-					instance._defaultPortletTitle = Lang.trim(portletTitle ? portletTitle.text() : EMPTY);
-
-					instance._customTitleInput = instance._getNodeById('custom-title');
-					instance._customTitleCheckbox = instance._getNodeById('use-custom-titleCheckbox');
-					instance._showBorders = instance._getNodeById('show-borders');
-					instance._borderNote = A.one('#border-note');
-					instance._portletLanguage = instance._getNodeById('lfr-portlet-language');
-					instance._portletLinksTarget = instance._getNodeById('lfr-point-links');
-
-					// Text
-
-					instance._fontFamily = instance._getNodeById('lfr-font-family');
-					instance._fontWeight = instance._getNodeById('lfr-font-boldCheckbox');
-					instance._fontStyle = instance._getNodeById('lfr-font-italicCheckbox');
-					instance._fontSize = instance._getNodeById('lfr-font-size');
-					instance._fontColor = instance._getNodeById('lfr-font-color');
-					instance._textAlign = instance._getNodeById('lfr-font-align');
-					instance._textDecoration = instance._getNodeById('lfr-font-decoration');
-					instance._wordSpacing = instance._getNodeById('lfr-font-space');
-					instance._leading = instance._getNodeById('lfr-font-leading');
-					instance._tracking = instance._getNodeById('lfr-font-tracking');
-
-					// Background
-
-					instance._backgroundColor = instance._getNodeById('lfr-bg-color');
-
-					// Border
-
-					instance._ufaBorderWidth = instance._getNodeById('lfr-use-for-all-widthCheckbox');
-					instance._ufaBorderStyle = instance._getNodeById('lfr-use-for-all-styleCheckbox');
-					instance._ufaBorderColor = instance._getNodeById('lfr-use-for-all-colorCheckbox');
-
-					instance._borderTopInt = instance._getNodeById('lfr-border-width-top');
-					instance._borderTopUnit = instance._getNodeById('lfr-border-width-top-unit');
-					instance._borderRightInt = instance._getNodeById('lfr-border-width-right');
-					instance._borderRightUnit = instance._getNodeById('lfr-border-width-right-unit');
-					instance._borderBottomInt = instance._getNodeById('lfr-border-width-bottom');
-					instance._borderBottomUnit = instance._getNodeById('lfr-border-width-bottom-unit');
-					instance._borderLeftInt = instance._getNodeById('lfr-border-width-left');
-					instance._borderLeftUnit = instance._getNodeById('lfr-border-width-left-unit');
-
-					instance._borderTopStyle = instance._getNodeById('lfr-border-style-top');
-					instance._borderRightStyle = instance._getNodeById('lfr-border-style-right');
-					instance._borderBottomStyle = instance._getNodeById('lfr-border-style-bottom');
-					instance._borderLeftStyle = instance._getNodeById('lfr-border-style-left');
-
-					instance._borderTopColor = instance._getNodeById('lfr-border-color-top');
-					instance._borderRightColor = instance._getNodeById('lfr-border-color-right');
-					instance._borderBottomColor = instance._getNodeById('lfr-border-color-bottom');
-					instance._borderLeftColor = instance._getNodeById('lfr-border-color-left');
-
-					// Spacing
-
-					instance._ufaPadding = instance._getNodeById('lfr-use-for-all-paddingCheckbox');
-					instance._ufaMargin = instance._getNodeById('lfr-use-for-all-marginCheckbox');
-
-					instance._paddingTopInt = instance._getNodeById('lfr-padding-top');
-					instance._paddingTopUnit = instance._getNodeById('lfr-padding-top-unit');
-					instance._paddingRightInt = instance._getNodeById('lfr-padding-right');
-					instance._paddingRightUnit = instance._getNodeById('lfr-padding-right-unit');
-					instance._paddingBottomInt = instance._getNodeById('lfr-padding-bottom');
-					instance._paddingBottomUnit = instance._getNodeById('lfr-padding-bottom-unit');
-					instance._paddingLeftInt = instance._getNodeById('lfr-padding-left');
-					instance._paddingLeftUnit = instance._getNodeById('lfr-padding-left-unit');
-
-					instance._marginTopInt = instance._getNodeById('lfr-margin-top');
-					instance._marginTopUnit = instance._getNodeById('lfr-margin-top-unit');
-					instance._marginRightInt = instance._getNodeById('lfr-margin-right');
-					instance._marginRightUnit = instance._getNodeById('lfr-margin-right-unit');
-					instance._marginBottomInt = instance._getNodeById('lfr-margin-bottom');
-					instance._marginBottomUnit = instance._getNodeById('lfr-margin-bottom-unit');
-					instance._marginLeftInt = instance._getNodeById('lfr-margin-left');
-					instance._marginLeftUnit = instance._getNodeById('lfr-margin-left-unit');
-
-					// Advanced CSS
-
-					instance._customCSS = instance._getNodeById('lfr-custom-css');
-					instance._customCSSClassName = instance._getNodeById('lfr-custom-css-class-name');
-
-					instance._saveButton = instance._getNodeById('lfr-lookfeel-save');
-					instance._resetButton = instance._getNodeById('lfr-lookfeel-reset');
-
-					// WAP styling
-
-					instance._wapStyling = instance._getNodeById('wap-styling');
-
-					if (instance._wapStyling) {
-						instance._wapTitleInput = instance._getNodeById('lfr-wap-title');
-						instance._wapInitialWindowStateSelect = instance._getNodeById('lfr-wap-initial-window-state');
-					}
-				}
-
-				instance._tabs = new A.TabView(
-					{
-						srcNode: newPanel,
-						panelNode: newPanel.one('.tab-pane')
-					}
-				).render();
-
-				newPanel.show();
-
-				instance._currentPopup.loadingmask.refreshMask();
-
-				newPanel.all('.lfr-colorpicker-img').remove(true);
-
-				instance._portletMsgResponse = A.one('#lfr-portlet-css-response');
-
-				if (instance._portletMsgResponse) {
-					instance._portletMsgResponse.hide();
-				}
-
-				var defaultData = {
+				return {
 					advancedData: {
 						customCSS: EMPTY,
 						customCSSClassName: EMPTY
 					},
-
 					bgData: {
 						backgroundColor: EMPTY,
 						backgroundImage: EMPTY,
@@ -958,7 +792,6 @@ AUI.add(
 						backgroundRepeat: EMPTY,
 						useBgImage: false
 					},
-
 					borderData: {
 						borderColor: {
 							bottom: EMPTY,
@@ -967,7 +800,6 @@ AUI.add(
 							sameForAll: true,
 							top: EMPTY
 						},
-
 						borderStyle: {
 							bottom: EMPTY,
 							left: EMPTY,
@@ -975,7 +807,6 @@ AUI.add(
 							sameForAll: true,
 							top: EMPTY
 						},
-
 						borderWidth: {
 							bottom: {
 								unit: PX,
@@ -996,7 +827,6 @@ AUI.add(
 							}
 						}
 					},
-
 					portletData: {
 						customTitle: EMPTY,
 						language: 'en_US',
@@ -1006,7 +836,6 @@ AUI.add(
 						titles: {},
 						useCustomTitle: false
 					},
-
 					spacingData: {
 						margin: {
 							bottom: {
@@ -1046,9 +875,7 @@ AUI.add(
 								value: EMPTY
 							}
 						}
-
 					},
-
 					textData: {
 						color: EMPTY,
 						fontFamily: EMPTY,
@@ -1061,12 +888,181 @@ AUI.add(
 						textDecoration: EMPTY,
 						wordSpacing: EMPTY
 					},
-
 					wapData: {
 						initialWindowState: 'NORMAL',
 						title: EMPTY
 					}
 				};
+			},
+
+			_getNodeById: function(id) {
+				var instance = this;
+
+				return A.one('#_113_' + id);
+			},
+
+			_getSafeInteger: function(input) {
+				var instance = this;
+
+				return Lang.toInt(input);
+			},
+
+			_insertCustomCSSValue: function(textarea, value) {
+				var instance = this;
+
+				var currentVal = Lang.trim(textarea.val());
+
+				if (currentVal.length) {
+					currentVal += '\n\n';
+				}
+
+				var newVal = currentVal + value + ' {\n\t\n}\n';
+
+				textarea.val(newVal);
+
+				Liferay.Util.setCursorPosition(textarea, newVal.length - 3);
+			},
+
+			_languageClasses: function(key, value, removeClass) {
+				var instance = this;
+
+				var option = instance._portletLanguage.one('option[value=' + key + ']');
+
+				if (option) {
+					if (removeClass) {
+						option.removeClass(FOCUSED);
+					}
+					else {
+						option.addClass(FOCUSED);
+					}
+				}
+			},
+
+			_loadContent: function(instantiated) {
+				var instance = this;
+
+				var newPanel = instance._newPanel;
+
+				var portletConfig = instance._getDefaultData();
+
+				if (!instantiated) {
+					newPanel.addClass(INSTANTIATED);
+					instance._portletBoundaryIdVar = A.one('#portlet-boundary-id');
+
+					// Portlet config
+
+					var portletTitle = instance._curPortlet.one('.portlet-title-text');
+
+					instance._defaultPortletTitle = Lang.trim(portletTitle ? portletTitle.text() : EMPTY);
+
+					instance._customTitleInput = instance._getNodeById('custom-title');
+					instance._customTitleCheckbox = instance._getNodeById('use-custom-title');
+					instance._showBorders = instance._getNodeById('show-borders');
+					instance._borderNote = A.one('#border-note');
+					instance._portletLanguage = instance._getNodeById('lfr-portlet-language');
+					instance._portletLinksTarget = instance._getNodeById('lfr-point-links');
+
+					// Text
+
+					instance._fontFamily = instance._getNodeById('lfr-font-family');
+					instance._fontWeight = instance._getNodeById('lfr-font-bold');
+					instance._fontStyle = instance._getNodeById('lfr-font-italic');
+					instance._fontSize = instance._getNodeById('lfr-font-size');
+					instance._fontColor = instance._getNodeById('lfr-font-color');
+					instance._textAlign = instance._getNodeById('lfr-font-align');
+					instance._textDecoration = instance._getNodeById('lfr-font-decoration');
+					instance._wordSpacing = instance._getNodeById('lfr-font-space');
+					instance._leading = instance._getNodeById('lfr-font-leading');
+					instance._tracking = instance._getNodeById('lfr-font-tracking');
+
+					// Background
+
+					instance._backgroundColor = instance._getNodeById('lfr-bg-color');
+
+					// Border
+
+					instance._ufaBorderWidth = instance._getNodeById('lfr-use-for-all-width');
+					instance._ufaBorderStyle = instance._getNodeById('lfr-use-for-all-style');
+					instance._ufaBorderColor = instance._getNodeById('lfr-use-for-all-color');
+
+					instance._borderTopInt = instance._getNodeById('lfr-border-width-top');
+					instance._borderTopUnit = instance._getNodeById('lfr-border-width-top-unit');
+					instance._borderRightInt = instance._getNodeById('lfr-border-width-right');
+					instance._borderRightUnit = instance._getNodeById('lfr-border-width-right-unit');
+					instance._borderBottomInt = instance._getNodeById('lfr-border-width-bottom');
+					instance._borderBottomUnit = instance._getNodeById('lfr-border-width-bottom-unit');
+					instance._borderLeftInt = instance._getNodeById('lfr-border-width-left');
+					instance._borderLeftUnit = instance._getNodeById('lfr-border-width-left-unit');
+
+					instance._borderTopStyle = instance._getNodeById('lfr-border-style-top');
+					instance._borderRightStyle = instance._getNodeById('lfr-border-style-right');
+					instance._borderBottomStyle = instance._getNodeById('lfr-border-style-bottom');
+					instance._borderLeftStyle = instance._getNodeById('lfr-border-style-left');
+
+					instance._borderTopColor = instance._getNodeById('lfr-border-color-top');
+					instance._borderRightColor = instance._getNodeById('lfr-border-color-right');
+					instance._borderBottomColor = instance._getNodeById('lfr-border-color-bottom');
+					instance._borderLeftColor = instance._getNodeById('lfr-border-color-left');
+
+					// Spacing
+
+					instance._ufaPadding = instance._getNodeById('lfr-use-for-all-padding');
+					instance._ufaMargin = instance._getNodeById('lfr-use-for-all-margin');
+
+					instance._paddingTopInt = instance._getNodeById('lfr-padding-top');
+					instance._paddingTopUnit = instance._getNodeById('lfr-padding-top-unit');
+					instance._paddingRightInt = instance._getNodeById('lfr-padding-right');
+					instance._paddingRightUnit = instance._getNodeById('lfr-padding-right-unit');
+					instance._paddingBottomInt = instance._getNodeById('lfr-padding-bottom');
+					instance._paddingBottomUnit = instance._getNodeById('lfr-padding-bottom-unit');
+					instance._paddingLeftInt = instance._getNodeById('lfr-padding-left');
+					instance._paddingLeftUnit = instance._getNodeById('lfr-padding-left-unit');
+
+					instance._marginTopInt = instance._getNodeById('lfr-margin-top');
+					instance._marginTopUnit = instance._getNodeById('lfr-margin-top-unit');
+					instance._marginRightInt = instance._getNodeById('lfr-margin-right');
+					instance._marginRightUnit = instance._getNodeById('lfr-margin-right-unit');
+					instance._marginBottomInt = instance._getNodeById('lfr-margin-bottom');
+					instance._marginBottomUnit = instance._getNodeById('lfr-margin-bottom-unit');
+					instance._marginLeftInt = instance._getNodeById('lfr-margin-left');
+					instance._marginLeftUnit = instance._getNodeById('lfr-margin-left-unit');
+
+					// Advanced CSS
+
+					instance._customCSS = instance._getNodeById('lfr-custom-css');
+					instance._customCSSClassName = instance._getNodeById('lfr-custom-css-class-name');
+
+					instance._saveButton = instance._getNodeById('lfr-lookfeel-save');
+					instance._resetButton = instance._getNodeById('lfr-lookfeel-reset');
+
+					// WAP styling
+
+					instance._wapStyling = instance._getNodeById('wap-styling');
+
+					if (instance._wapStyling) {
+						instance._wapTitleInput = instance._getNodeById('lfr-wap-title');
+						instance._wapInitialWindowStateSelect = instance._getNodeById('lfr-wap-initial-window-state');
+					}
+				}
+
+				instance._tabs = new A.TabView(
+					{
+						panelNode: newPanel.one('.tab-pane'),
+						srcNode: newPanel
+					}
+				).render();
+
+				newPanel.show();
+
+				instance._currentPopup.loadingmask.refreshMask();
+
+				newPanel.all('.lfr-colorpicker-img').remove(true);
+
+				instance._portletMsgResponse = A.one('#lfr-portlet-css-response');
+
+				if (instance._portletMsgResponse) {
+					instance._portletMsgResponse.hide();
+				}
 
 				var onLookAndFeelComplete = function() {
 					instance._portletBoundaryIdVar.val(instance._curPortletWrapperId);
@@ -1084,7 +1080,7 @@ AUI.add(
 
 					var useForAll = newPanel.all('.lfr-use-for-all input[type=checkbox]');
 
-					var handleForms = function(item, index, collection) {
+					var handleForms = function(item, index) {
 						var checkBox = item;
 
 						var fieldset = checkBox.ancestor(FIELDSET);
@@ -1100,7 +1096,7 @@ AUI.add(
 						var checked = item.get(CHECKED);
 
 						otherHolders.each(
-							function(holderItem, holderIndex, holderCollection) {
+							function(holderItem, holderIndex) {
 								if (holderIndex > firstIndex) {
 									var fields = holderItem.all('input, select');
 									var colorPickerImages = holderItem.all('.buttonitem');
@@ -1158,8 +1154,10 @@ AUI.add(
 						}
 						else {
 							message = Liferay.Language.get('your-settings-could-not-be-saved');
-							messageClass = 'alert alert-error';
+							messageClass = 'alert alert-danger';
 						}
+
+						var ajaxResponse = ajaxResponseMsg;
 
 						if (!ajaxResponseMsg) {
 							ajaxResponse = A.Node.create(ajaxResponseHTML);
@@ -1228,8 +1226,8 @@ AUI.add(
 								customStyle.remove(true);
 							}
 
-							instance._objData = defaultData;
-							instance._objData.portletData.titles = {};
+							A.mix(instance._objData, instance._getDefaultData(), true);
+
 							instance._setDefaults();
 						}
 					);
@@ -1237,7 +1235,7 @@ AUI.add(
 					instance._currentPopup.loadingmask.hide();
 				};
 
-				instance._objData = defaultData;
+				instance._objData = portletConfig;
 
 				A.io.request(
 					themeDisplay.getPathMain() + '/portlet_configuration/get_look_and_feel',
@@ -1252,6 +1250,8 @@ AUI.add(
 						on: {
 							success: function(event, id, obj) {
 								var objectData = this.get(RESPONSE_DATA);
+
+								A.mix(objectData, portletConfig);
 
 								if (objectData.hasCssValue) {
 									instance._objData = objectData;
@@ -1286,46 +1286,7 @@ AUI.add(
 				customTitleCheckbox.on(
 					CLICK,
 					function(event) {
-						var title;
-
-						var portletTitleSelector = '.portlet-title-default';
-
-						if (showBorders.val() != 'false') {
-							portletTitleSelector = '.portlet-title-text';
-						}
-
-						var portletTitleText = instance._curPortlet.one(portletTitleSelector);
-
-						var checked = event.currentTarget.get(CHECKED);
-
-						portletData.useCustomTitle = checked;
-
-						if (checked) {
-							customTitleInput.set(DISABLED, false);
-							language.set(DISABLED, false);
-
-							title = Lang.trim(customTitleInput.val());
-
-							if (title == EMPTY) {
-								title = (portletTitleText && portletTitleText.text()) || EMPTY;
-								title = Lang.trim(title);
-
-								customTitleInput.val(title);
-							}
-
-							portletData.title = title;
-
-							instance._portletTitles(false, title);
-						}
-						else {
-							customTitleInput.attr(DISABLED, true);
-							language.attr(DISABLED, true);
-							title = instance._defaultPortletTitle;
-						}
-
-						if (portletTitleText) {
-							portletTitleText.text(title);
-						}
+						instance._setCustomTitleInput(event);
 					}
 				);
 
@@ -1355,7 +1316,17 @@ AUI.add(
 							var portletLanguage = instance._portletLanguage.val();
 
 							if (portletLanguage == instance._currentLanguage) {
-								portletTitle.html(cruft + value);
+								portletTitle.html(cruft);
+
+								var portletTitleText = portletTitle;
+
+								if (instance._showBorders.val() != 'false') {
+									portletTitleText = portletTitle.one('.portlet-title-text');
+								}
+
+								if (portletTitleText) {
+									portletTitleText.text(value);
+								}
 							}
 
 							portletData.title = value;
@@ -1441,6 +1412,57 @@ AUI.add(
 				}
 			},
 
+			_setCustomTitleInput: function(event) {
+				var instance = this;
+
+				var title;
+
+				var customTitleInput = instance._customTitleInput;
+				var language = instance._portletLanguage;
+
+				var portletData = instance._objData.portletData;
+
+				var portletTitleSelector = '.portlet-title-default';
+
+				if (instance._showBorders.val() != 'false') {
+					portletTitleSelector = '.portlet-title-text';
+				}
+
+				var portletTitleText = instance._curPortlet.one(portletTitleSelector);
+
+				var checked = event.currentTarget.get(CHECKED);
+
+				portletData.useCustomTitle = checked;
+
+				if (checked) {
+					customTitleInput.set(DISABLED, false);
+					language.set(DISABLED, false);
+
+					title = Lang.trim(customTitleInput.val());
+
+					if (title == EMPTY) {
+						title = (portletTitleText && portletTitleText.text()) || EMPTY;
+						title = Lang.trim(title);
+
+						customTitleInput.val(title);
+					}
+
+					portletData.title = title;
+
+					instance._portletTitles(false, title);
+				}
+				else {
+					customTitleInput.attr(DISABLED, true);
+					language.attr(DISABLED, true);
+
+					title = instance._defaultPortletTitle;
+				}
+
+				if (portletTitleText) {
+					portletTitleText.text(title);
+				}
+			},
+
 			_setDefaults: function() {
 				var instance = this;
 
@@ -1480,31 +1502,30 @@ AUI.add(
 				instance._setSelect(instance._portletLanguage, instance._currentLanguage);
 				instance._setSelect(instance._portletLinksTarget, portletData.portletLinksTarget);
 
-				var portletTitles = portletData.titles;
-
 				var portletTitle = instance._portletTitles(portletData.language);
 
-				if (!portletTitle) {
-					instance._portletTitles(EMPTY);
+				if (portletData.useCustomTitle) {
+					if (!portletTitle) {
+						instance._portletTitles(EMPTY);
 
-					portletData.title = EMPTY;
+						portletData.title = EMPTY;
+					}
+
+					if (portletData.titles) {
+						A.each(
+							portletData.titles,
+							function(item, index) {
+								instance._languageClasses(item);
+							}
+						);
+					}
+				}
+				else {
+					instance._customTitleInput.attr(DISABLED, true);
+					instance._portletLanguage.attr(DISABLED, true);
 				}
 
 				instance._setInput(instance._customTitleInput, portletTitle);
-
-				if (!portletData.useCustomTitle) {
-					instance._customTitleInput.set(DISABLED, true);
-					instance._portletLanguage.set(DISABLED, true);
-				}
-
-				if (portletData.titles) {
-					A.each(
-						portletData.titles,
-						function(item, index, collection) {
-							instance._languageClasses(item);
-						}
-					);
-				}
 
 				// Text
 
@@ -1927,8 +1948,9 @@ AUI.add(
 				if (!instance._fontColorPicker) {
 					instance._fontColorPicker = new A.ColorPickerPopover(
 						{
-							trigger: fontColor,
-							plugins: [Liferay.WidgetZIndex]
+							constrain: true,
+							plugins: [Liferay.WidgetZIndex],
+							trigger: fontColor
 						}
 					).render(instance._currentPopup.get(BOUNDING_BOX));
 				}

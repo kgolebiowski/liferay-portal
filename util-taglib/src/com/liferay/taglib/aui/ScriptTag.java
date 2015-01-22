@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,15 +14,15 @@
 
 package com.liferay.taglib.aui;
 
-import com.liferay.portal.kernel.servlet.BodyContentWrapper;
-import com.liferay.portal.kernel.servlet.PortalIncludeUtil;
-import com.liferay.portal.kernel.servlet.taglib.FileAvailabilityUtil;
+import com.liferay.portal.kernel.servlet.taglib.BodyContentWrapper;
 import com.liferay.portal.kernel.servlet.taglib.aui.ScriptData;
 import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.Portlet;
+import com.liferay.taglib.FileAvailabilityUtil;
 import com.liferay.taglib.aui.base.BaseScriptTag;
+import com.liferay.taglib.util.PortalIncludeUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -114,6 +114,24 @@ public class ScriptTag extends BaseScriptTag {
 			StringBundler bodyContentSB = getBodyContentAsStringBundler();
 
 			String use = getUse();
+
+			if (getSandbox() || (use != null)) {
+				StringBundler sb = new StringBundler();
+
+				if (use == null) {
+					sb.append("(function() {");
+				}
+
+				sb.append("var $ = AUI.$;");
+				sb.append("var _ = AUI._;");
+				sb.append(bodyContentSB);
+
+				if (use == null) {
+					sb.append("})();");
+				}
+
+				bodyContentSB = sb;
+			}
 
 			if (isPositionInLine()) {
 				ScriptData scriptData = new ScriptData();

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -29,7 +29,6 @@ import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.UniqueList;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
@@ -47,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,8 +64,7 @@ public class LayoutTemplateLocalServiceImpl
 
 	@Override
 	public String getContent(
-			String layoutTemplateId, boolean standard, String themeId)
-		throws SystemException {
+		String layoutTemplateId, boolean standard, String themeId) {
 
 		LayoutTemplate layoutTemplate = getLayoutTemplate(
 			layoutTemplateId, standard, themeId);
@@ -147,9 +146,8 @@ public class LayoutTemplateLocalServiceImpl
 
 	@Override
 	public List<LayoutTemplate> getLayoutTemplates() {
-		List<LayoutTemplate> customLayoutTemplates =
-			new ArrayList<LayoutTemplate>(
-				_portalCustom.size() + _warCustom.size());
+		List<LayoutTemplate> customLayoutTemplates = new ArrayList<>(
+			_portalCustom.size() + _warCustom.size());
 
 		customLayoutTemplates.addAll(ListUtil.fromMapValues(_portalCustom));
 		customLayoutTemplates.addAll(ListUtil.fromMapValues(_warCustom));
@@ -218,8 +216,7 @@ public class LayoutTemplateLocalServiceImpl
 
 	@Override
 	public String getWapContent(
-			String layoutTemplateId, boolean standard, String themeId)
-		throws SystemException {
+		String layoutTemplateId, boolean standard, String themeId) {
 
 		LayoutTemplate layoutTemplate = getLayoutTemplate(
 			layoutTemplateId, standard, themeId);
@@ -269,7 +266,7 @@ public class LayoutTemplateLocalServiceImpl
 		String servletContextName, ServletContext servletContext, String[] xmls,
 		PluginPackage pluginPackage) {
 
-		List<LayoutTemplate> layoutTemplates = new UniqueList<LayoutTemplate>();
+		Set<LayoutTemplate> layoutTemplates = new LinkedHashSet<>();
 
 		try {
 			for (String xml : xmls) {
@@ -283,7 +280,7 @@ public class LayoutTemplateLocalServiceImpl
 			_log.error(e, e);
 		}
 
-		return layoutTemplates;
+		return new ArrayList<>(layoutTemplates);
 	}
 
 	@Override
@@ -348,10 +345,14 @@ public class LayoutTemplateLocalServiceImpl
 
 			layoutTemplateModel.setStandard(standard);
 			layoutTemplateModel.setThemeId(themeId);
-			layoutTemplateModel.setName(
-				GetterUtil.getString(
-					layoutTemplateElement.attributeValue("name"),
-					layoutTemplateModel.getName()));
+
+			String templateName = GetterUtil.getString(
+				layoutTemplateElement.attributeValue("name"));
+
+			if (Validator.isNotNull(templateName)) {
+				layoutTemplateModel.setName(templateName);
+			}
+
 			layoutTemplateModel.setTemplatePath(
 				GetterUtil.getString(
 					layoutTemplateElement.elementText("template-path"),
@@ -563,7 +564,7 @@ public class LayoutTemplateLocalServiceImpl
 		catch (Exception e) {
 			_log.error(e);
 
-			return new ArrayList<String>();
+			return new ArrayList<>();
 		}
 	}
 
@@ -573,7 +574,7 @@ public class LayoutTemplateLocalServiceImpl
 		Map<String, LayoutTemplate> layoutTemplates = _themes.get(key);
 
 		if (layoutTemplates == null) {
-			layoutTemplates = new LinkedHashMap<String, LayoutTemplate>();
+			layoutTemplates = new LinkedHashMap<>();
 
 			_themes.put(key, layoutTemplates);
 		}
@@ -587,7 +588,7 @@ public class LayoutTemplateLocalServiceImpl
 		Map<String, LayoutTemplate> layoutTemplates = _themes.get(key);
 
 		if (layoutTemplates == null) {
-			layoutTemplates = new LinkedHashMap<String, LayoutTemplate>();
+			layoutTemplates = new LinkedHashMap<>();
 
 			_themes.put(key, layoutTemplates);
 		}
@@ -600,7 +601,7 @@ public class LayoutTemplateLocalServiceImpl
 			String xml, PluginPackage pluginPackage)
 		throws Exception {
 
-		Set<LayoutTemplate> layoutTemplates = new HashSet<LayoutTemplate>();
+		Set<LayoutTemplate> layoutTemplates = new HashSet<>();
 
 		if (xml == null) {
 			return layoutTemplates;
@@ -629,18 +630,18 @@ public class LayoutTemplateLocalServiceImpl
 		return layoutTemplates;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutTemplateLocalServiceImpl.class);
 
-	private static Map<String, LayoutTemplate> _portalCustom =
-		new LinkedHashMap<String, LayoutTemplate>();
-	private static Map<String, LayoutTemplate> _portalStandard =
-		new LinkedHashMap<String, LayoutTemplate>();
-	private static Map<String, Map<String, LayoutTemplate>> _themes =
-		new LinkedHashMap<String, Map<String, LayoutTemplate>>();
-	private static Map<String, LayoutTemplate> _warCustom =
-		new LinkedHashMap<String, LayoutTemplate>();
-	private static Map<String, LayoutTemplate> _warStandard =
-		new LinkedHashMap<String, LayoutTemplate>();
+	private static final Map<String, LayoutTemplate> _portalCustom =
+		new LinkedHashMap<>();
+	private static final Map<String, LayoutTemplate> _portalStandard =
+		new LinkedHashMap<>();
+	private static final Map<String, Map<String, LayoutTemplate>> _themes =
+		new LinkedHashMap<>();
+	private static final Map<String, LayoutTemplate> _warCustom =
+		new LinkedHashMap<>();
+	private static final Map<String, LayoutTemplate> _warStandard =
+		new LinkedHashMap<>();
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -70,6 +70,6 @@ public class TermRangeQueryImpl extends BaseQueryImpl
 		return _termRangeQuery.toString();
 	}
 
-	private org.apache.lucene.search.TermRangeQuery _termRangeQuery;
+	private final org.apache.lucene.search.TermRangeQuery _termRangeQuery;
 
 }

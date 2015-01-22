@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,12 +40,7 @@ String format = ParamUtil.getString(request, "format");
 
 List<String> portletTitles = new ArrayList<String>();
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("struts_action", "/search/search");
-portletURL.setParameter("groupId", String.valueOf(groupId));
-portletURL.setParameter("keywords", keywords);
-portletURL.setParameter("format", format);
+PortletURL portletURL = PortletURLUtil.getCurrent(renderRequest, renderResponse);
 
 request.setAttribute("search.jsp-portletURL", portletURL);
 request.setAttribute("search.jsp-returnToFullPageURL", portletDisplay.getURLBack());
@@ -61,11 +56,12 @@ request.setAttribute("search.jsp-returnToFullPageURL", portletDisplay.getURLBack
 	<aui:input name="format" type="hidden" value="<%= format %>" />
 
 	<aui:fieldset id="searchContainer">
-		<aui:input autoFocus="<%= windowState.equals(WindowState.MAXIMIZED) %>" inlineField="<%= true %>" label="" name="keywords" size="30" value="<%= HtmlUtil.escape(keywords) %>" />
+		<aui:input autoFocus="<%= windowState.equals(WindowState.MAXIMIZED) %>" inlineField="<%= true %>" label="" name="keywords" size="30" title="search" value="<%= HtmlUtil.escape(keywords) %>" />
 
-		<aui:input inlineField="<%= true %>" label="" name="search" src='<%= themeDisplay.getPathThemeImages() + "/common/search.png" %>' title="search" type="image" />
-
-		<aui:input inlineField="<%= true %>" label="" name="clearSearch" src='<%= themeDisplay.getPathThemeImages() + "/common/close.png" %>' title="clear-search" type="image" />
+		<aui:field-wrapper inlineField="<%= true %>">
+			<aui:button icon="icon-search" onClick='<%= renderResponse.getNamespace() + "search();" %>' value="search" />
+			<aui:button icon="icon-remove" onClick='<%= renderResponse.getNamespace() + "clearSearch();" %>' value="clear" />
+		</aui:field-wrapper>
 	</aui:fieldset>
 
 	<div class="lfr-token-list" id="<portlet:namespace />searchTokens">
@@ -83,7 +79,7 @@ request.setAttribute("search.jsp-returnToFullPageURL", portletDisplay.getURLBack
 
 						A.Array.each(
 							fieldValues,
-							function(item, index, collection) {
+							function(item, index) {
 								var values = item.split('|');
 
 								var field = A.one('#' + values[0]);
@@ -118,124 +114,74 @@ request.setAttribute("search.jsp-returnToFullPageURL", portletDisplay.getURLBack
 	</c:if>
 </aui:form>
 
-<aui:script use="aui-base">
-	A.on(
-		'click',
+<aui:script sandbox="<%= true %>">
+	$('#<portlet:namespace />keywords').on(
+		'keydown',
 		function(event) {
-			var targetId = event.target.get('id');
-
-			if (targetId === '<portlet:namespace />search') {
+			if (event.keyCode === 13) {
 				<portlet:namespace />search();
 			}
-			else if (targetId === '<portlet:namespace />clearSearch') {
-				<portlet:renderURL copyCurrentRenderParameters="<%= false %>" var="clearSearchURL">
-					<portlet:param name="groupId" value="0" />
-				</portlet:renderURL>
-
-				window.location.href = '<%= clearSearchURL %>';
-			}
-		},
-		'#<portlet:namespace />searchContainer'
+		}
 	);
 
-	var searchContainer = A.one('.portlet-search .result .lfr-search-container');
+	$('.portlet-search .result .lfr-search-container').on(
+		'click',
+		'.table-cell .asset-entry .toggle-details',
+		function(event) {
+			var handle = $(event.currentTarget);
+			var rowTD = handle.parentsUntil('.table-data', '.table-cell');
 
-	if (searchContainer) {
-		searchContainer.delegate(
-			'click',
-			function(event) {
-				document.<portlet:namespace />fm.<portlet:namespace /><%= SearchContainer.DEFAULT_CUR_PARAM %>.value = 1;
+			var documentFields = rowTD.find('.asset-entry .asset-entry-fields');
 
-				submitForm(document.<portlet:namespace />fm);
+			if (handle.text() == '[+]') {
+				documentFields.removeClass('hide');
 
-				event.preventDefault();
-			},
-			'.page-links a.first'
-		);
-
-		searchContainer.delegate(
-			'click',
-			function(event) {
-				document.<portlet:namespace />fm.<portlet:namespace /><%= SearchContainer.DEFAULT_CUR_PARAM %>.value = parseInt(document.<portlet:namespace />fm.<portlet:namespace /><%= SearchContainer.DEFAULT_CUR_PARAM %>.value) - 1;
-
-				submitForm(document.<portlet:namespace />fm);
-
-				event.preventDefault();
-			},
-			'.page-links a.previous'
-		);
-
-		searchContainer.delegate(
-			'click',
-			function(event) {
-				document.<portlet:namespace />fm.<portlet:namespace /><%= SearchContainer.DEFAULT_CUR_PARAM %>.value = parseInt(document.<portlet:namespace />fm.<portlet:namespace /><%= SearchContainer.DEFAULT_CUR_PARAM %>.value) + 1;
-
-				submitForm(document.<portlet:namespace />fm);
-
-				event.preventDefault();
-			},
-			'.page-links a.next'
-		);
-	}
-
-	var resultsGrid = A.one('.portlet-search .result .searchcontainer-content');
-
-	if (resultsGrid) {
-		resultsGrid.delegate(
-			'click',
-			function(event) {
-				var handle = event.currentTarget;
-				var rowTD = handle.ancestor('.table-cell');
-
-				var documentFields = rowTD.one('.asset-entry .asset-entry-fields');
-
-				if (handle.text() == '[+]') {
-					documentFields.show();
-					handle.text('[-]');
-				}
-				else if (handle.text() == '[-]') {
-					documentFields.hide();
-					handle.text('[+]');
-				}
-			},
-			'.table-cell .asset-entry .toggle-details'
-		);
-	}
-
-	Liferay.provide(
-		window,
-		'<portlet:namespace />addSearchProvider',
-		function() {
-			window.external.AddSearchProvider("<%= themeDisplay.getPortalURL() %><%= PortalUtil.getPathMain() %>/search/open_search_description.xml?p_l_id=<%= themeDisplay.getPlid() %>&groupId=<%= groupId %>");
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		window,
-		'<portlet:namespace />search',
-		function() {
-			document.<portlet:namespace />fm.<portlet:namespace /><%= SearchContainer.DEFAULT_CUR_PARAM %>.value = 1;
-
-			var keywords = document.<portlet:namespace />fm.<portlet:namespace />keywords.value;
-
-			keywords = keywords.replace(/^\s+|\s+$/, '');
-
-			if (keywords != '') {
-				submitForm(document.<portlet:namespace />fm);
+				handle.text('[-]');
 			}
-		},
-		['aui-base']
+			else if (handle.text() == '[-]') {
+				documentFields.addClass('hide');
+
+				handle.text('[+]');
+			}
+		}
 	);
 </aui:script>
 
+<aui:script>
+	function <portlet:namespace />addSearchProvider() {
+		window.external.AddSearchProvider('<%= themeDisplay.getPortalURL() %><%= PortalUtil.getPathMain() %>/search/open_search_description.xml?p_l_id=<%= themeDisplay.getPlid() %>&groupId=<%= groupId %>');
+	}
+
+	function <portlet:namespace />clearSearch() {
+		<portlet:renderURL copyCurrentRenderParameters="<%= false %>" var="clearSearchURL">
+			<portlet:param name="groupId" value="0" />
+		</portlet:renderURL>
+
+		window.location.href = '<%= clearSearchURL %>';
+	}
+
+	function <portlet:namespace />search() {
+		var form = AUI.$(document.<portlet:namespace />fm);
+
+		form.fm('<%= SearchContainer.DEFAULT_CUR_PARAM %>').val(1);
+
+		var keywords = form.fm('keywords').val();
+
+		keywords = keywords.replace(/^\s+|\s+$/, '');
+
+		if (keywords != '') {
+			submitForm(form);
+		}
+	}
+</aui:script>
+
 <%
-String pageSubtitle = LanguageUtil.get(pageContext, "search-results");
-String pageDescription = LanguageUtil.get(pageContext, "search-results");
-String pageKeywords = LanguageUtil.get(pageContext, "search");
+String pageSubtitle = LanguageUtil.get(request, "search-results");
+String pageDescription = LanguageUtil.get(request, "search-results");
+String pageKeywords = LanguageUtil.get(request, "search");
 
 if (!portletTitles.isEmpty()) {
-	pageDescription = LanguageUtil.get(pageContext, "searched") + StringPool.SPACE + StringUtil.merge(portletTitles, StringPool.COMMA_AND_SPACE);
+	pageDescription = LanguageUtil.get(request, "searched") + StringPool.SPACE + StringUtil.merge(portletTitles, StringPool.COMMA_AND_SPACE);
 }
 
 if (Validator.isNotNull(keywords)) {

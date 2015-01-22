@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portal.kernel.cluster;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @author Shuyang Zhou
@@ -23,12 +22,5 @@ import java.util.concurrent.TimeoutException;
 public interface ClusterResponseCallback {
 
 	public void callback(BlockingQueue<ClusterNodeResponse> blockingQueue);
-
-	public void callback(ClusterNodeResponses clusterNodeResponses);
-
-	public void processInterruptedException(
-		InterruptedException interruptedException);
-
-	public void processTimeoutException(TimeoutException timeoutException);
 
 }

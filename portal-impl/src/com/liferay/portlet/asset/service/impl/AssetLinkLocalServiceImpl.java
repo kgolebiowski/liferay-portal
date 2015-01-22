@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portlet.asset.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.asset.NoSuchLinkException;
@@ -57,12 +56,11 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *         ordering of links
 	 * @return the asset link
 	 * @throws PortalException if the user could not be found
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
 	public AssetLink addLink(
 			long userId, long entryId1, long entryId2, int type, int weight)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		User user = userPersistence.findByPrimaryKey(userId);
 		Date now = new Date();
@@ -105,11 +103,10 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	/**
 	 * Deletes the asset link.
 	 *
-	 * @param  link the asset link
-	 * @throws SystemException if a system exception occurred
+	 * @param link the asset link
 	 */
 	@Override
-	public void deleteLink(AssetLink link) throws SystemException {
+	public void deleteLink(AssetLink link) {
 		if (AssetLinkConstants.isTypeBi(link.getType())) {
 			try {
 				assetLinkPersistence.removeByE_E_T(
@@ -127,12 +124,9 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *
 	 * @param  linkId the primary key of the asset link
 	 * @throws PortalException if the asset link could not be found
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public void deleteLink(long linkId)
-		throws PortalException, SystemException {
-
+	public void deleteLink(long linkId) throws PortalException {
 		AssetLink link = assetLinkPersistence.findByPrimaryKey(linkId);
 
 		deleteLink(link);
@@ -141,11 +135,10 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	/**
 	 * Deletes all links associated with the asset entry.
 	 *
-	 * @param  entryId the primary key of the asset entry
-	 * @throws SystemException if a system exception occurred
+	 * @param entryId the primary key of the asset entry
 	 */
 	@Override
-	public void deleteLinks(long entryId) throws SystemException {
+	public void deleteLinks(long entryId) {
 		for (AssetLink link : assetLinkPersistence.findByE1(entryId)) {
 			deleteLink(link);
 		}
@@ -158,14 +151,11 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	/**
 	 * Delete all links that associate the two asset entries.
 	 *
-	 * @param  entryId1 the primary key of the first asset entry
-	 * @param  entryId2 the primary key of the second asset entry
-	 * @throws SystemException if a system exception occurred
+	 * @param entryId1 the primary key of the first asset entry
+	 * @param entryId2 the primary key of the second asset entry
 	 */
 	@Override
-	public void deleteLinks(long entryId1, long entryId2)
-		throws SystemException {
-
+	public void deleteLinks(long entryId1, long entryId2) {
 		List<AssetLink> links = assetLinkPersistence.findByE_E(
 			entryId1, entryId2);
 
@@ -179,14 +169,13 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *
 	 * @param  entryId the primary key of the asset entry
 	 * @return the asset links whose first entry ID is the given entry ID
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public List<AssetLink> getDirectLinks(long entryId) throws SystemException {
+	public List<AssetLink> getDirectLinks(long entryId) {
 		List<AssetLink> assetLinks = assetLinkPersistence.findByE1(entryId);
 
 		if (!assetLinks.isEmpty()) {
-			List<AssetLink> filteredAssetLinks = new ArrayList<AssetLink>(
+			List<AssetLink> filteredAssetLinks = new ArrayList<>(
 				assetLinks.size());
 
 			for (AssetLink assetLink : assetLinks) {
@@ -217,17 +206,14 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *         {@link com.liferay.portlet.asset.model.AssetLinkConstants}
 	 * @return the asset links of the given link type whose first entry ID is
 	 *         the given entry ID
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public List<AssetLink> getDirectLinks(long entryId, int typeId)
-		throws SystemException {
-
+	public List<AssetLink> getDirectLinks(long entryId, int typeId) {
 		List<AssetLink> assetLinks = assetLinkPersistence.findByE1_T(
 			entryId, typeId);
 
 		if (!assetLinks.isEmpty()) {
-			List<AssetLink> filteredAssetLinks = new ArrayList<AssetLink>(
+			List<AssetLink> filteredAssetLinks = new ArrayList<>(
 				assetLinks.size());
 
 			for (AssetLink assetLink : assetLinks) {
@@ -252,14 +238,13 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 * @param  entryId the primary key of the asset entry
 	 * @return the asset links whose first or second entry ID is the given entry
 	 *         ID
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public List<AssetLink> getLinks(long entryId) throws SystemException {
+	public List<AssetLink> getLinks(long entryId) {
 		List<AssetLink> e1Links = assetLinkPersistence.findByE1(entryId);
 		List<AssetLink> e2Links = assetLinkPersistence.findByE2(entryId);
 
-		List<AssetLink> links = new ArrayList<AssetLink>(
+		List<AssetLink> links = new ArrayList<>(
 			e1Links.size() + e2Links.size());
 
 		links.addAll(e1Links);
@@ -281,18 +266,15 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *         {@link com.liferay.portlet.asset.model.AssetLinkConstants}
 	 * @return the asset links of the given link type whose first or second
 	 *         entry ID is the given entry ID
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public List<AssetLink> getLinks(long entryId, int typeId)
-		throws SystemException {
-
+	public List<AssetLink> getLinks(long entryId, int typeId) {
 		List<AssetLink> e1Links = assetLinkPersistence.findByE1_T(
 			entryId, typeId);
 		List<AssetLink> e2Links = assetLinkPersistence.findByE2_T(
 			entryId, typeId);
 
-		List<AssetLink> links = new ArrayList<AssetLink>(
+		List<AssetLink> links = new ArrayList<>(
 			e1Links.size() + e2Links.size());
 
 		links.addAll(e1Links);
@@ -314,19 +296,16 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *         {@link com.liferay.portlet.asset.model.AssetLinkConstants}
 	 * @return the asset links of the given link type whose second entry ID is
 	 *         the given entry ID
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
-	public List<AssetLink> getReverseLinks(long entryId, int typeId)
-		throws SystemException {
-
+	public List<AssetLink> getReverseLinks(long entryId, int typeId) {
 		return assetLinkPersistence.findByE2_T(entryId, typeId);
 	}
 
 	@Override
 	public AssetLink updateLink(
 			long userId, long entryId1, long entryId2, int typeId, int weight)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		AssetLink assetLink = assetLinkPersistence.fetchByE_E_T(
 			entryId1, entryId2, typeId);
@@ -366,12 +345,11 @@ public class AssetLinkLocalServiceImpl extends AssetLinkLocalServiceBaseImpl {
 	 *         which is a unidirectional relationship. For more information see
 	 *         {@link com.liferay.portlet.asset.model.AssetLinkConstants}
 	 * @throws PortalException if the user could not be found
-	 * @throws SystemException if a system exception occurred
 	 */
 	@Override
 	public void updateLinks(
 			long userId, long entryId, long[] linkEntryIds, int typeId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (linkEntryIds == null) {
 			return;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -220,19 +220,20 @@ public interface JournalArticleImageModel extends BaseModel<JournalArticleImage>
 	public Object clone();
 
 	@Override
-	public int compareTo(JournalArticleImage journalArticleImage);
+	public int compareTo(
+		com.liferay.portlet.journal.model.JournalArticleImage journalArticleImage);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<JournalArticleImage> toCacheModel();
+	public CacheModel<com.liferay.portlet.journal.model.JournalArticleImage> toCacheModel();
 
 	@Override
-	public JournalArticleImage toEscapedModel();
+	public com.liferay.portlet.journal.model.JournalArticleImage toEscapedModel();
 
 	@Override
-	public JournalArticleImage toUnescapedModel();
+	public com.liferay.portlet.journal.model.JournalArticleImage toUnescapedModel();
 
 	@Override
 	public String toString();

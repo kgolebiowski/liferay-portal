@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -48,8 +48,8 @@ public class StringDistanceRelevancyChecker implements RelevancyChecker {
 		return true;
 	}
 
-	private float _scoresThreshold;
-	private StringDistance _stringDistance;
-	private String _word;
+	private final float _scoresThreshold;
+	private final StringDistance _stringDistance;
+	private final String _word;
 
 }

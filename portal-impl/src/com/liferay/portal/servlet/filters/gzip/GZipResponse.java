@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -197,11 +197,11 @@ public class GZipResponse extends MetaInfoCacheServletResponse {
 
 	private static final String _GZIP = "gzip";
 
-	private static Log _log = LogFactoryUtil.getLog(GZipResponse.class);
+	private static final Log _log = LogFactoryUtil.getLog(GZipResponse.class);
 
-	private boolean _firefox;
+	private final boolean _firefox;
 	private PrintWriter _printWriter;
-	private HttpServletResponse _response;
+	private final HttpServletResponse _response;
 	private ServletOutputStream _servletOutputStream;
 	private UnsyncByteArrayOutputStream _unsyncByteArrayOutputStream;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,11 @@
 
 package com.liferay.portal.kernel.lar;
 
-import com.liferay.portal.kernel.backgroundtask.BackgroundTaskThreadLocal;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.Validator;
@@ -26,13 +26,12 @@ import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
+import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.service.PortletLocalServiceUtil;
 import com.liferay.portal.service.PortletPreferencesLocalServiceUtil;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
-import com.liferay.portlet.dynamicdatamapping.service.DDMTemplateLocalServiceUtil;
 import com.liferay.portlet.portletdisplaytemplate.util.PortletDisplayTemplate;
 import com.liferay.portlet.portletdisplaytemplate.util.PortletDisplayTemplateUtil;
 
@@ -40,6 +39,7 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.portlet.PortletPreferences;
 
@@ -47,6 +47,41 @@ import javax.portlet.PortletPreferences;
  * @author Brian Wing Shun Chan
  */
 public abstract class BasePortletDataHandler implements PortletDataHandler {
+
+	@Override
+	public PortletPreferences addDefaultData(
+			PortletDataContext portletDataContext, String portletId,
+			PortletPreferences portletPreferences)
+		throws PortletDataException {
+
+		long startTime = 0;
+
+		if (_log.isInfoEnabled()) {
+			_log.info("Adding default data to portlet " + portletId);
+
+			startTime = System.currentTimeMillis();
+		}
+
+		try {
+			return doAddDefaultData(
+				portletDataContext, portletId, portletPreferences);
+		}
+		catch (PortletDataException pde) {
+			throw pde;
+		}
+		catch (Exception e) {
+			throw new PortletDataException(e);
+		}
+		finally {
+			if (_log.isInfoEnabled()) {
+				long duration = System.currentTimeMillis() - startTime;
+
+				_log.info(
+					"Added default data to portlet in " +
+						Time.getDuration(duration));
+			}
+		}
+	}
 
 	@Override
 	public PortletPreferences deleteData(
@@ -106,19 +141,6 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 					portletDataContext, portletDataHandlerControl);
 			}
 
-			if (BackgroundTaskThreadLocal.hasBackgroundTask()) {
-				PortletDataContext clonePortletDataContext =
-					PortletDataContextFactoryUtil.clonePortletDataContext(
-						portletDataContext);
-
-				prepareManifestSummary(
-					clonePortletDataContext, portletPreferences);
-
-				PortletDataHandlerStatusMessageSenderUtil.sendStatusMessage(
-					"portlet", portletId,
-					clonePortletDataContext.getManifestSummary());
-			}
-
 			return doExportData(
 				portletDataContext, portletId, portletPreferences);
 		}
@@ -169,7 +191,7 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		throws Exception {
 
 		List<PortletDataHandlerBoolean> configurationControls =
-			new ArrayList<PortletDataHandlerBoolean>();
+			new ArrayList<>();
 
 		// Setup
 
@@ -259,7 +281,7 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		String[] configurationPortletOptions) {
 
 		List<PortletDataHandlerBoolean> configurationControls =
-			new ArrayList<PortletDataHandlerBoolean>();
+			new ArrayList<>();
 
 		// Setup
 
@@ -318,6 +340,11 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 	}
 
 	@Override
+	public String getServiceName() {
+		return null;
+	}
+
+	@Override
 	public PortletPreferences importData(
 			PortletDataContext portletDataContext, String portletId,
 			PortletPreferences portletPreferences, String data)
@@ -362,6 +389,11 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 	}
 
 	@Override
+	public boolean isDataAlwaysStaged() {
+		return _dataAlwaysStaged;
+	}
+
+	@Override
 	public boolean isDataLocalized() {
 		return _dataLocalized;
 	}
@@ -395,6 +427,18 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 	@Override
 	public boolean isPublishToLiveByDefault() {
 		return _publishToLiveByDefault;
+	}
+
+	@Override
+	public boolean isRollbackOnException() {
+
+		// For now, we are going to throw an exception if one portlet data
+		// handler has an exception to ensure that the transaction is rolled
+		// back for data integrity. We may decide that this is not the best
+		// behavior in the future because a bad plugin could prevent deletion of
+		// groups.
+
+		return true;
 	}
 
 	@Override
@@ -432,33 +476,7 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 			PortletPreferences portletPreferences)
 		throws PortletDataException {
 
-		String displayStyle = getDisplayTemplate(
-			portletDataContext, portletId, portletPreferences);
-
-		if (Validator.isNotNull(displayStyle) &&
-			displayStyle.startsWith(
-				PortletDisplayTemplate.DISPLAY_STYLE_PREFIX)) {
-
-			long displayStyleGroupId = getDisplayTemplateGroupId(
-				portletDataContext, portletId, portletPreferences);
-
-			long previousScopeGroupId = portletDataContext.getScopeGroupId();
-
-			if (displayStyleGroupId != portletDataContext.getScopeGroupId()) {
-				portletDataContext.setScopeGroupId(displayStyleGroupId);
-			}
-
-			DDMTemplate ddmTemplate =
-				PortletDisplayTemplateUtil.fetchDDMTemplate(
-					portletDataContext.getGroupId(), displayStyle);
-
-			if (ddmTemplate != null) {
-				StagedModelDataHandlerUtil.exportReferenceStagedModel(
-					portletDataContext, portletId, ddmTemplate);
-			}
-
-			portletDataContext.setScopeGroupId(previousScopeGroupId);
-		}
+		exportDisplayStyle(portletDataContext, portletId, portletPreferences);
 
 		try {
 			return doProcessExportPortletPreferences(
@@ -479,120 +497,8 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		throws PortletDataException {
 
 		try {
-			String displayStyle = getDisplayTemplate(
+			importDisplayStyle(
 				portletDataContext, portletId, portletPreferences);
-
-			if (Validator.isNotNull(displayStyle) &&
-				displayStyle.startsWith(
-					PortletDisplayTemplate.DISPLAY_STYLE_PREFIX)) {
-
-				DDMTemplate ddmTemplate = null;
-
-				long displayStyleGroupId = getDisplayTemplateGroupId(
-					portletDataContext, portletId, portletPreferences);
-
-				if (displayStyleGroupId ==
-						portletDataContext.getCompanyGroupId()) {
-
-					Element importDataRootElement =
-						portletDataContext.getImportDataRootElement();
-
-					Element referencesElement = importDataRootElement.element(
-						"references");
-
-					List<Element> referenceElements =
-						referencesElement.elements();
-
-					String ddmTemplateUuid =
-						PortletDisplayTemplateUtil.getDDMTemplateUuid(
-							displayStyle);
-
-					boolean preloaded = false;
-					long referenceClassNameId = 0;
-					String templateKey = null;
-
-					for (Element referenceElement : referenceElements) {
-						String className = referenceElement.attributeValue(
-							"class-name");
-						String uuid = referenceElement.attributeValue("uuid");
-
-						if (!className.equals(DDMTemplate.class.getName()) ||
-							!uuid.equals(ddmTemplateUuid)) {
-
-							continue;
-						}
-
-						preloaded = GetterUtil.getBoolean(
-							referenceElement.attributeValue("preloaded"));
-						referenceClassNameId = PortalUtil.getClassNameId(
-							referenceElement.attributeValue(
-								"referenced-class-name"));
-						templateKey = referenceElement.attributeValue(
-							"template-key");
-
-						break;
-					}
-
-					if (!preloaded) {
-						ddmTemplate =
-							PortletDisplayTemplateUtil.fetchDDMTemplate(
-								portletDataContext.getCompanyGroupId(),
-								displayStyle);
-					}
-					else {
-						ddmTemplate = DDMTemplateLocalServiceUtil.fetchTemplate(
-							portletDataContext.getCompanyGroupId(),
-							referenceClassNameId, templateKey);
-					}
-				}
-				else if (displayStyleGroupId ==
-							portletDataContext.getSourceGroupId()) {
-
-					ddmTemplate = PortletDisplayTemplateUtil.fetchDDMTemplate(
-						portletDataContext.getScopeGroupId(), displayStyle);
-				}
-				else {
-					ddmTemplate = PortletDisplayTemplateUtil.fetchDDMTemplate(
-						displayStyleGroupId, displayStyle);
-				}
-
-				long importedDisplayStyleGroupId =
-					portletDataContext.getScopeGroupId();
-
-				if (ddmTemplate == null) {
-					String ddmTemplateUuid =
-						PortletDisplayTemplateUtil.getDDMTemplateUuid(
-							displayStyle);
-
-					Element ddmTemplateElement =
-						portletDataContext.getImportDataElement(
-							DDMTemplate.class.getSimpleName(), "uuid",
-							ddmTemplateUuid);
-
-					String ddmTemplatePath = ddmTemplateElement.attributeValue(
-						"path");
-
-					ddmTemplate =
-						(DDMTemplate)portletDataContext.getZipEntryAsObject(
-							ddmTemplatePath);
-
-					if (ddmTemplate != null) {
-						StagedModelDataHandlerUtil.importStagedModel(
-							portletDataContext, ddmTemplate);
-					}
-				}
-				else {
-					importedDisplayStyleGroupId = ddmTemplate.getGroupId();
-				}
-
-				portletPreferences.setValue(
-					"displayStyleGroupId",
-					String.valueOf(importedDisplayStyleGroupId));
-			}
-			else {
-				portletPreferences.setValue(
-					"displayStyleGroupId", StringPool.BLANK);
-			}
 
 			return doProcessImportPortletPreferences(
 				portletDataContext, portletId, portletPreferences);
@@ -688,6 +594,14 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		}
 	}
 
+	protected PortletPreferences doAddDefaultData(
+			PortletDataContext portletDataContext, String portletId,
+			PortletPreferences portletPreferences)
+		throws Exception {
+
+		return portletPreferences;
+	}
+
 	protected PortletPreferences doDeleteData(
 			PortletDataContext portletDataContext, String portletId,
 			PortletPreferences portletPreferences)
@@ -734,7 +648,42 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		return portletPreferences;
 	}
 
-	protected String getDisplayTemplate(
+	protected void exportDisplayStyle(
+			PortletDataContext portletDataContext, String portletId,
+			PortletPreferences portletPreferences)
+		throws PortletDataException {
+
+		String displayStyle = getDisplayStyle(
+			portletDataContext, portletId, portletPreferences);
+
+		if (Validator.isNull(displayStyle) ||
+			!displayStyle.startsWith(
+				PortletDisplayTemplate.DISPLAY_STYLE_PREFIX)) {
+
+			return;
+		}
+
+		long displayStyleGroupId = getDisplayStyleGroupId(
+			portletDataContext, portletId, portletPreferences);
+
+		long previousScopeGroupId = portletDataContext.getScopeGroupId();
+
+		if (displayStyleGroupId != portletDataContext.getScopeGroupId()) {
+			portletDataContext.setScopeGroupId(displayStyleGroupId);
+		}
+
+		DDMTemplate ddmTemplate = PortletDisplayTemplateUtil.fetchDDMTemplate(
+			portletDataContext.getGroupId(), displayStyle);
+
+		if (ddmTemplate != null) {
+			StagedModelDataHandlerUtil.exportReferenceStagedModel(
+				portletDataContext, portletId, ddmTemplate);
+		}
+
+		portletDataContext.setScopeGroupId(previousScopeGroupId);
+	}
+
+	protected String getDisplayStyle(
 		PortletDataContext portletDataContext, String portletId,
 		PortletPreferences portletPreferences) {
 
@@ -752,7 +701,7 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		return null;
 	}
 
-	protected long getDisplayTemplateGroupId(
+	protected long getDisplayStyleGroupId(
 		PortletDataContext portletDataContext, String portletId,
 		PortletPreferences portletPreferences) {
 
@@ -838,6 +787,48 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		return totalModelCount;
 	}
 
+	protected void importDisplayStyle(
+			PortletDataContext portletDataContext, String portletId,
+			PortletPreferences portletPreferences)
+		throws Exception {
+
+		String displayStyle = getDisplayStyle(
+			portletDataContext, portletId, portletPreferences);
+
+		if (Validator.isNull(displayStyle) ||
+			!displayStyle.startsWith(
+				PortletDisplayTemplate.DISPLAY_STYLE_PREFIX)) {
+
+			return;
+		}
+
+		StagedModelDataHandlerUtil.importReferenceStagedModels(
+			portletDataContext, DDMTemplate.class);
+
+		long displayStyleGroupId = getDisplayStyleGroupId(
+			portletDataContext, portletId, portletPreferences);
+
+		Map<Long, Long> groupIds =
+			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
+				Group.class);
+
+		long groupId = MapUtil.getLong(
+			groupIds, displayStyleGroupId, displayStyleGroupId);
+
+		DDMTemplate ddmTemplate = PortletDisplayTemplateUtil.fetchDDMTemplate(
+			groupId, displayStyle);
+
+		if (ddmTemplate != null) {
+			portletPreferences.setValue(
+				"displayStyleGroupId",
+				String.valueOf(ddmTemplate.getGroupId()));
+		}
+		else {
+			portletPreferences.setValue(
+				"displayStyleGroupId", StringPool.BLANK);
+		}
+	}
+
 	/**
 	 * @deprecated As of 6.2.0
 	 */
@@ -850,6 +841,10 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 	 */
 	@Deprecated
 	protected void setAlwaysStaged(boolean alwaysStaged) {
+	}
+
+	protected void setDataAlwaysStaged(boolean dataAlwaysStaged) {
+		_dataAlwaysStaged = dataAlwaysStaged;
 	}
 
 	protected void setDataLevel(DataLevel dataLevel) {
@@ -909,9 +904,10 @@ public abstract class BasePortletDataHandler implements PortletDataHandler {
 		_supportsDataStrategyCopyAsNew = supportsDataStrategyCopyAsNew;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		BasePortletDataHandler.class);
 
+	private boolean _dataAlwaysStaged;
 	private DataLevel _dataLevel = DataLevel.SITE;
 	private boolean _dataLocalized;
 	private String[] _dataPortletPreferences = StringPool.EMPTY_ARRAY;

@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,7 @@
 <%@ include file="/html/taglib/init.jsp" %>
 
 <%
+String contents = (String)request.getAttribute("liferay-ui:input-editor:contents");
 String cssClass = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-editor:cssClass"));
 String initMethod = (String)request.getAttribute("liferay-ui:input-editor:initMethod");
 String name = namespace + GetterUtil.getString((String)request.getAttribute("liferay-ui:input-editor:name"));
@@ -25,6 +26,12 @@ String onChangeMethod = (String)request.getAttribute("liferay-ui:input-editor:on
 
 if (Validator.isNotNull(onChangeMethod)) {
 	onChangeMethod = namespace + onChangeMethod;
+}
+
+String onInitMethod = (String)request.getAttribute("liferay-ui:input-editor:onInitMethod");
+
+if (Validator.isNotNull(onInitMethod)) {
+	onInitMethod = namespace + onInitMethod;
 }
 
 boolean resizable = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:input-editor:resizable"));
@@ -51,20 +58,28 @@ boolean resizable = GetterUtil.getBoolean((String)request.getAttribute("liferay-
 		},
 
 		initEditor: function() {
-			<c:if test="<%= Validator.isNotNull(initMethod) %>">
+			<c:if test="<%= (contents == null) && Validator.isNotNull(initMethod) %>">
 				<%= name %>.setHTML(<%= namespace + initMethod %>());
-
-				<c:if test="<%= resizable %>">
-					new A.Resize(
-						{
-							handles: 'br',
-							node: '#<%= name %>_container',
-							wrap: true
-						}
-					);
-				</c:if>
 			</c:if>
+
+			<c:if test="<%= resizable && BrowserSnifferUtil.isIe(request) %>">
+				new A.Resize(
+					{
+						handles: 'br',
+						node: '#<%= name %>_container',
+						wrap: true
+					}
+				);
+			</c:if>
+
+			<c:if test="<%= Validator.isNotNull(onInitMethod) %>">
+				window['<%= HtmlUtil.escapeJS(namespace + onInitMethod) %>']();
+			</c:if>
+
+			window['<%= name %>'].instanceReady = true;
 		},
+
+		instanceReady: false,
 
 		setHTML: function(value) {
 			document.getElementById('<%= name %>').value = value || '';
@@ -78,19 +93,7 @@ boolean resizable = GetterUtil.getBoolean((String)request.getAttribute("liferay-
 	<table bgcolor="#FFFFFF" cellpadding="0" cellspacing="0" height="100%" width="100%">
 	<tr>
 		<td bgcolor="#FFFFFF" height="100%">
-			<textarea id="<%= name %>" name="<%= name %>"
-
-			<%
-			if (Validator.isNotNull(onChangeMethod)) {
-			%>
-
-				onChange="<%= HtmlUtil.escapeJS(onChangeMethod) %>(this.value)"
-
-			<%
-			}
-			%>
-
-			style="font-family: monospace; height: 100%; min-height: 8em; min-width: 10em; resize: vertical; width: 100%;"></textarea>
+			<textarea class="lfr-editor-textarea" id="<%= name %>" name="<%= name %>" <%= Validator.isNotNull(onChangeMethod) ? "onChange=\"" + HtmlUtil.escapeJS(onChangeMethod) + "(this.value)\"" : StringPool.BLANK %> style="resize:<%= resizable ? "vertical" : "none" %>"><%= (contents != null) ? contents : StringPool.BLANK %></textarea>
 		</td>
 	</tr>
 	</table>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -24,8 +24,6 @@ public class DuplicateQueryRuleException extends PortalException {
 	public DuplicateQueryRuleException(
 		boolean contains, boolean andOperator, String name) {
 
-		super();
-
 		_contains = contains;
 		_andOperator = andOperator;
 		_name = name;
@@ -43,8 +41,8 @@ public class DuplicateQueryRuleException extends PortalException {
 		return _contains;
 	}
 
-	private boolean _andOperator;
-	private boolean _contains;
-	private String _name;
+	private final boolean _andOperator;
+	private final boolean _contains;
+	private final String _name;
 
 }

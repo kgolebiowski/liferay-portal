@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -45,7 +46,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
+import org.jets3t.service.Jets3tProperties;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.S3ServiceException;
 import org.jets3t.service.ServiceException;
@@ -65,13 +68,19 @@ import org.jets3t.service.security.AWSCredentials;
 public class S3Store extends BaseStore {
 
 	public S3Store() {
+		S3Service s3Service = null;
+		S3Bucket s3Bucket = null;
+
 		try {
-			_s3Service = getS3Service();
-			_s3Bucket = getS3Bucket();
+			s3Service = getS3Service();
+			s3Bucket = getS3Bucket();
 		}
 		catch (S3ServiceException s3se) {
 			_log.error(s3se.getMessage());
 		}
+
+		_s3Service = s3Service;
+		_s3Bucket = s3Bucket;
 	}
 
 	@Override
@@ -81,8 +90,7 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public void addFile(
-			long companyId, long repositoryId, String fileName, InputStream is)
-		throws SystemException {
+		long companyId, long repositoryId, String fileName, InputStream is) {
 
 		try {
 			S3Object s3Object = new S3Object(
@@ -92,14 +100,12 @@ public class S3Store extends BaseStore {
 			s3Object.setDataInputStream(is);
 
 			_s3Service.putObject(_s3Bucket, s3Object);
-
-			is.close();
-		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
 		}
 		catch (S3ServiceException s3se) {
 			throw new SystemException(s3se);
+		}
+		finally {
+			StreamUtil.cleanUp(is);
 		}
 	}
 
@@ -109,8 +115,7 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public void deleteDirectory(
-			long companyId, long repositoryId, String dirName)
-		throws SystemException {
+		long companyId, long repositoryId, String dirName) {
 
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
@@ -127,9 +132,7 @@ public class S3Store extends BaseStore {
 	}
 
 	@Override
-	public void deleteFile(long companyId, long repositoryId, String fileName)
-		throws SystemException {
-
+	public void deleteFile(long companyId, long repositoryId, String fileName) {
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
 				_s3Bucket.getName(), getKey(companyId, repositoryId, fileName),
@@ -146,9 +149,8 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public void deleteFile(
-			long companyId, long repositoryId, String fileName,
-			String versionLabel)
-		throws SystemException {
+		long companyId, long repositoryId, String fileName,
+		String versionLabel) {
 
 		try {
 			_s3Service.deleteObject(
@@ -164,7 +166,7 @@ public class S3Store extends BaseStore {
 	public File getFile(
 			long companyId, long repositoryId, String fileName,
 			String versionLabel)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		try {
 			if (Validator.isNull(versionLabel)) {
@@ -194,7 +196,7 @@ public class S3Store extends BaseStore {
 	public InputStream getFileAsStream(
 			long companyId, long repositoryId, String fileName,
 			String versionLabel)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		try {
 			if (Validator.isNull(versionLabel)) {
@@ -214,9 +216,7 @@ public class S3Store extends BaseStore {
 	}
 
 	@Override
-	public String[] getFileNames(long companyId, long repositoryId)
-		throws SystemException {
-
+	public String[] getFileNames(long companyId, long repositoryId) {
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
 				_s3Bucket.getName(), getKey(companyId, repositoryId), null);
@@ -230,8 +230,7 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public String[] getFileNames(
-			long companyId, long repositoryId, String dirName)
-		throws SystemException {
+		long companyId, long repositoryId, String dirName) {
 
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
@@ -247,7 +246,7 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public long getFileSize(long companyId, long repositoryId, String fileName)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		try {
 			String versionLabel = getHeadVersionLabel(
@@ -273,9 +272,8 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public boolean hasFile(
-			long companyId, long repositoryId, String fileName,
-			String versionLabel)
-		throws SystemException {
+		long companyId, long repositoryId, String fileName,
+		String versionLabel) {
 
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
@@ -300,9 +298,12 @@ public class S3Store extends BaseStore {
 
 	@Override
 	public void updateFile(
-			long companyId, long repositoryId, long newRepositoryId,
-			String fileName)
-		throws SystemException {
+		long companyId, long repositoryId, long newRepositoryId,
+		String fileName) {
+
+		File tempFile = null;
+		InputStream is = null;
+		S3Object newS3Object = null;
 
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
@@ -314,13 +315,13 @@ public class S3Store extends BaseStore {
 
 				oldS3Object = _s3Service.getObject(_s3Bucket.getName(), oldKey);
 
-				File tempFile = new File(
+				tempFile = new File(
 					SystemProperties.get(SystemProperties.TMP_DIR) +
 						File.separator + PortalUUIDUtil.generate());
 
 				FileUtil.write(tempFile, oldS3Object.getDataInputStream());
 
-				InputStream is = new FileInputStream(tempFile);
+				is = new FileInputStream(tempFile);
 
 				String newPrefix = getKey(companyId, newRepositoryId);
 
@@ -330,16 +331,12 @@ public class S3Store extends BaseStore {
 
 				String newKey = newPrefix + oldKey.substring(x);
 
-				S3Object newS3Object = new S3Object(_s3Bucket, newKey);
+				newS3Object = new S3Object(_s3Bucket, newKey);
 
 				newS3Object.setDataInputStream(is);
 
 				_s3Service.putObject(_s3Bucket, newS3Object);
 				_s3Service.deleteObject(_s3Bucket, oldKey);
-
-				is.close();
-
-				FileUtil.delete(tempFile);
 			}
 		}
 		catch (IOException ioe) {
@@ -348,13 +345,21 @@ public class S3Store extends BaseStore {
 		catch (ServiceException se) {
 			throw new SystemException(se);
 		}
+		finally {
+			StreamUtil.cleanUp(is);
+
+			FileUtil.delete(tempFile);
+		}
 	}
 
 	@Override
 	public void updateFile(
-			long companyId, long repositoryId, String fileName,
-			String newFileName)
-		throws SystemException {
+		long companyId, long repositoryId, String fileName,
+		String newFileName) {
+
+		File tempFile = null;
+		InputStream is = null;
+		S3Object newS3Object = null;
 
 		try {
 			S3Object[] s3Objects = _s3Service.listObjects(
@@ -366,7 +371,7 @@ public class S3Store extends BaseStore {
 
 				oldS3Object = _s3Service.getObject(_s3Bucket.getName(), oldKey);
 
-				File tempFile = new File(
+				tempFile = new File(
 					SystemProperties.get(SystemProperties.TMP_DIR) +
 						File.separator + PortalUUIDUtil.generate());
 
@@ -374,7 +379,7 @@ public class S3Store extends BaseStore {
 
 				oldS3Object.closeDataInputStream();
 
-				InputStream is = new FileInputStream(tempFile);
+				is = new FileInputStream(tempFile);
 
 				String newPrefix = getKey(companyId, repositoryId, newFileName);
 
@@ -385,18 +390,12 @@ public class S3Store extends BaseStore {
 
 				String newKey = newPrefix + oldKey.substring(x);
 
-				S3Object newS3Object = new S3Object(_s3Bucket, newKey);
+				newS3Object = new S3Object(_s3Bucket, newKey);
 
 				newS3Object.setDataInputStream(is);
 
 				_s3Service.putObject(_s3Bucket, newS3Object);
 				_s3Service.deleteObject(_s3Bucket, oldKey);
-
-				newS3Object.closeDataInputStream();
-
-				is.close();
-
-				FileUtil.delete(tempFile);
 			}
 		}
 		catch (IOException ioe) {
@@ -405,13 +404,17 @@ public class S3Store extends BaseStore {
 		catch (ServiceException se) {
 			throw new SystemException(se);
 		}
+		finally {
+			StreamUtil.cleanUp(is);
+
+			FileUtil.delete(tempFile);
+		}
 	}
 
 	@Override
 	public void updateFile(
-			long companyId, long repositoryId, String fileName,
-			String versionLabel, InputStream is)
-		throws SystemException {
+		long companyId, long repositoryId, String fileName, String versionLabel,
+		InputStream is) {
 
 		try {
 			S3Object s3Object = new S3Object(
@@ -421,14 +424,12 @@ public class S3Store extends BaseStore {
 			s3Object.setDataInputStream(is);
 
 			_s3Service.putObject(_s3Bucket, s3Object);
-
-			is.close();
-		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
 		}
 		catch (S3ServiceException s3se) {
 			throw new SystemException(s3se);
+		}
+		finally {
+			StreamUtil.cleanUp(is);
 		}
 	}
 
@@ -516,7 +517,7 @@ public class S3Store extends BaseStore {
 	}
 
 	protected String[] getFileNames(S3Object[] s3Objects) {
-		List<String> fileNames = new ArrayList<String>();
+		List<String> fileNames = new ArrayList<>();
 
 		for (S3Object s3Object : s3Objects) {
 			String fileName = getFileName(s3Object.getKey());
@@ -555,6 +556,18 @@ public class S3Store extends BaseStore {
 		else {
 			throw new NoSuchFileException(fileName);
 		}
+	}
+
+	protected Jets3tProperties getJets3tProperties() {
+		Jets3tProperties jets3tProperties = new Jets3tProperties();
+
+		jets3tProperties.loadAndReplaceProperties(_jets3tProperties, "liferay");
+
+		if (_log.isInfoEnabled()) {
+			_log.info("Jets3t properties: " + jets3tProperties.getProperties());
+		}
+
+		return jets3tProperties;
 	}
 
 	protected String getKey(long companyId, long repositoryId) {
@@ -617,7 +630,10 @@ public class S3Store extends BaseStore {
 	protected S3Service getS3Service() throws S3ServiceException {
 		AWSCredentials credentials = getAWSCredentials();
 
-		return new RestS3Service(credentials);
+		Jets3tProperties jets3tProperties = getJets3tProperties();
+
+		return new RestS3Service(
+			credentials, ReleaseInfo.getServerInfo(), null, jets3tProperties);
 	}
 
 	protected File getTempFile(S3Object s3Object, String fileName)
@@ -683,10 +699,13 @@ public class S3Store extends BaseStore {
 
 	private static final String _TEMP_DIR_PATTERN = "/yyyy/MM/dd/HH/";
 
-	private static Log _log = LogFactoryUtil.getLog(S3Store.class);
+	private static final Log _log = LogFactoryUtil.getLog(S3Store.class);
+
+	private static final Properties _jets3tProperties = PropsUtil.getProperties(
+		PropsKeys.DL_STORE_S3_JETS3T, true);
 
 	private int _calledGetFileCount;
-	private S3Bucket _s3Bucket;
-	private S3Service _s3Service;
+	private final S3Bucket _s3Bucket;
+	private final S3Service _s3Service;
 
 }

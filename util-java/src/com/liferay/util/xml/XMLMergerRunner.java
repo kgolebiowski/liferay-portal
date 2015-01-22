@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.security.xml.SecureXMLFactoryProviderUtil;
 import com.liferay.util.xml.descriptor.XMLDescriptor;
 
 import java.io.File;
@@ -30,6 +31,8 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
+import org.xml.sax.XMLReader;
+
 /**
  * @author Jorge Ferrer
  */
@@ -38,6 +41,9 @@ public class XMLMergerRunner {
 	public XMLMergerRunner(String descriptorClassName) {
 		if (Validator.isNotNull(descriptorClassName)) {
 			_descriptorClassName = descriptorClassName;
+		}
+		else {
+			_descriptorClassName = _AUTO_DESCRIPTOR;
 		}
 	}
 
@@ -122,7 +128,15 @@ public class XMLMergerRunner {
 			doctype = slaveDoctype;
 		}
 
-		SAXReader reader = new SAXReader();
+		XMLReader xmlReader = null;
+
+		if (SecureXMLFactoryProviderUtil.getSecureXMLFactoryProvider()
+				!= null) {
+
+			xmlReader = SecureXMLFactoryProviderUtil.newXMLReader();
+		}
+
+		SAXReader reader = new SAXReader(xmlReader);
 
 		Document masterDoc = reader.read(new UnsyncStringReader(masterXml));
 		Document slaveDoc = reader.read(new UnsyncStringReader(slaveXml));
@@ -147,6 +161,6 @@ public class XMLMergerRunner {
 
 	private static final String _AUTO_DESCRIPTOR = "auto";
 
-	private String _descriptorClassName = _AUTO_DESCRIPTOR;
+	private final String _descriptorClassName;
 
 }

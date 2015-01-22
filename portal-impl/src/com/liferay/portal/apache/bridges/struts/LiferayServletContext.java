@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -269,6 +269,10 @@ public class LiferayServletContext implements ServletContext {
 		return _servletContext.getServerInfo();
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public Servlet getServlet(String name) {
 		return null;
@@ -279,6 +283,10 @@ public class LiferayServletContext implements ServletContext {
 		return _servletContext.getServletContextName();
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public Enumeration<String> getServletNames() {
 		return Collections.enumeration(new ArrayList<String>());
@@ -296,6 +304,10 @@ public class LiferayServletContext implements ServletContext {
 		return _servletContext.getServletRegistrations();
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public Enumeration<Servlet> getServlets() {
 		return Collections.enumeration(new ArrayList<Servlet>());
@@ -306,6 +318,10 @@ public class LiferayServletContext implements ServletContext {
 		return _servletContext.getSessionCookieConfig();
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public void log(Exception exception, String message) {
 		_servletContext.log(message, exception);
@@ -348,6 +364,6 @@ public class LiferayServletContext implements ServletContext {
 		return _servletContext.toString();
 	}
 
-	private ServletContext _servletContext;
+	private final ServletContext _servletContext;
 
 }

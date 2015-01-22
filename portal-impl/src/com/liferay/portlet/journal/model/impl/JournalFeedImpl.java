@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,7 +19,58 @@ package com.liferay.portlet.journal.model.impl;
  */
 public class JournalFeedImpl extends JournalFeedBaseImpl {
 
-	public JournalFeedImpl() {
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getDDMRendererTemplateKey()}
+	 */
+	@Deprecated
+	@Override
+	public String getRendererTemplateId() {
+		return getDDMRendererTemplateKey();
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getDDMStructureKey()}
+	 */
+	@Deprecated
+	@Override
+	public String getStructureId() {
+		return getDDMStructureKey();
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getDDMTemplateKey()}
+	 */
+	@Deprecated
+	@Override
+	public String getTemplateId() {
+		return getDDMTemplateKey();
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #setRendererTemplateKey()}
+	 */
+	@Deprecated
+	@Override
+	public void setRendererTemplateId(String rendererTemplateKey) {
+		setDDMRendererTemplateKey(rendererTemplateKey);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #setDDMStructureKey()}
+	 */
+	@Deprecated
+	@Override
+	public void setStructureId(String structureKey) {
+		setDDMStructureKey(structureKey);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #setDDMTemplateKey()}
+	 */
+	@Deprecated
+	@Override
+	public void setTemplateId(String templateKey) {
+		setDDMTemplateKey(templateKey);
 	}
 
 }

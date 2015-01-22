@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,8 +17,8 @@ package com.liferay.portlet.admin.messaging;
 import com.liferay.portal.kernel.messaging.BaseMessageListener;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.security.exportimport.UserImporterUtil;
 import com.liferay.portal.security.ldap.LDAPSettingsUtil;
-import com.liferay.portal.security.ldap.PortalLDAPImporterUtil;
 import com.liferay.portal.service.CompanyLocalServiceUtil;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public class LDAPImportMessageListener extends BaseMessageListener {
 			long companyId = company.getCompanyId();
 
 			if (LDAPSettingsUtil.isImportOnStartup(companyId)) {
-				PortalLDAPImporterUtil.importFromLDAP(companyId);
+				UserImporterUtil.importUsers(companyId);
 			}
 		}
 	}
@@ -48,7 +48,7 @@ public class LDAPImportMessageListener extends BaseMessageListener {
 			doImportOnStartup();
 		}
 		else {
-			PortalLDAPImporterUtil.importFromLDAP();
+			UserImporterUtil.importUsers();
 		}
 	}
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -45,7 +45,7 @@ public class PortletContextFactory {
 	}
 
 	private PortletContextFactory() {
-		_pool = new ConcurrentHashMap<String, Map<String, PortletContext>>();
+		_pool = new ConcurrentHashMap<>();
 	}
 
 	private PortletContext _create(
@@ -55,7 +55,7 @@ public class PortletContextFactory {
 			portlet.getRootPortletId());
 
 		if (portletContexts == null) {
-			portletContexts = new ConcurrentHashMap<String, PortletContext>();
+			portletContexts = new ConcurrentHashMap<>();
 
 			_pool.put(portlet.getRootPortletId(), portletContexts);
 		}
@@ -99,12 +99,12 @@ public class PortletContextFactory {
 		_pool.remove(portlet.getRootPortletId());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortletContextFactory.class);
 
-	private static PortletContextFactory _instance =
+	private static final PortletContextFactory _instance =
 		new PortletContextFactory();
 
-	private Map<String, Map<String, PortletContext>> _pool;
+	private final Map<String, Map<String, PortletContext>> _pool;
 
 }

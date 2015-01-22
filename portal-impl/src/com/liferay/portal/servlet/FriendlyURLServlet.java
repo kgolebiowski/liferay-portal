@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,6 +16,7 @@ package com.liferay.portal.servlet;
 
 import com.liferay.portal.NoSuchGroupException;
 import com.liferay.portal.NoSuchLayoutException;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.PortalMessages;
@@ -24,14 +25,18 @@ import com.liferay.portal.kernel.struts.LastPath;
 import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.Layout;
+import com.liferay.portal.model.LayoutConstants;
 import com.liferay.portal.model.LayoutFriendlyURL;
 import com.liferay.portal.model.LayoutFriendlyURLComposite;
 import com.liferay.portal.model.User;
 import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutFriendlyURLLocalServiceUtil;
+import com.liferay.portal.service.LayoutLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextFactory;
 import com.liferay.portal.service.ServiceContextThreadLocal;
@@ -98,15 +103,9 @@ public class FriendlyURLServlet extends HttpServlet {
 
 		String redirect = mainPath;
 
-		String pathInfo = request.getPathInfo();
+		String pathInfo = getPathInfo(request);
 
-		String friendlyURL = _friendlyURLPathPrefix;
-
-		if (Validator.isNotNull(pathInfo)) {
-			friendlyURL = friendlyURL.concat(pathInfo);
-		}
-
-		request.setAttribute(WebKeys.FRIENDLY_URL, friendlyURL);
+		request.setAttribute(WebKeys.FRIENDLY_URL, getFriendlyURL(pathInfo));
 
 		Object[] redirectArray = null;
 
@@ -169,6 +168,32 @@ public class FriendlyURLServlet extends HttpServlet {
 				response.sendRedirect(redirect);
 			}
 		}
+	}
+
+	protected String getFriendlyURL(String pathInfo) {
+		String friendlyURL = _friendlyURLPathPrefix;
+
+		if (Validator.isNotNull(pathInfo)) {
+			friendlyURL = friendlyURL.concat(pathInfo);
+		}
+
+		return friendlyURL;
+	}
+
+	protected String getPathInfo(HttpServletRequest request) {
+		String requestURI = request.getRequestURI();
+
+		int pos = requestURI.indexOf(Portal.JSESSIONID);
+
+		if (pos != -1) {
+			requestURI = requestURI.substring(0, pos);
+		}
+
+		String pathProxy = PortalUtil.getPathProxy();
+
+		pos = _friendlyURLPathPrefix.length() - pathProxy.length();
+
+		return requestURI.substring(pos);
 	}
 
 	protected Object[] getRedirect(
@@ -244,7 +269,15 @@ public class FriendlyURLServlet extends HttpServlet {
 		}
 
 		if (group == null) {
-			throw new NoSuchGroupException();
+			StringBundler sb = new StringBundler(5);
+
+			sb.append("{companyId=");
+			sb.append(companyId);
+			sb.append(", friendlyURL=");
+			sb.append(friendlyURL);
+			sb.append("}");
+
+			throw new NoSuchGroupException(sb.toString());
 		}
 
 		// Layout friendly URL
@@ -260,7 +293,7 @@ public class FriendlyURLServlet extends HttpServlet {
 				WebKeys.REDIRECT_TO_DEFAULT_LAYOUT, Boolean.TRUE);
 		}
 
-		Map<String, Object> requestContext = new HashMap<String, Object>();
+		Map<String, Object> requestContext = new HashMap<>();
 
 		requestContext.put("request", request);
 
@@ -274,38 +307,61 @@ public class FriendlyURLServlet extends HttpServlet {
 		}
 
 		if (Validator.isNotNull(friendlyURL)) {
-			LayoutFriendlyURLComposite layoutFriendlyURLComposite =
-				PortalUtil.getLayoutFriendlyURLComposite(
-					group.getGroupId(), _private, friendlyURL, params,
-					requestContext);
+			try {
+				LayoutFriendlyURLComposite layoutFriendlyURLComposite =
+					PortalUtil.getLayoutFriendlyURLComposite(
+						group.getGroupId(), _private, friendlyURL, params,
+						requestContext);
 
-			Layout layout = layoutFriendlyURLComposite.getLayout();
+				Layout layout = layoutFriendlyURLComposite.getLayout();
 
-			String layoutFriendlyURLCompositeFriendlyURL =
-				layoutFriendlyURLComposite.getFriendlyURL();
+				String layoutFriendlyURLCompositeFriendlyURL =
+					layoutFriendlyURLComposite.getFriendlyURL();
 
-			pos = layoutFriendlyURLCompositeFriendlyURL.indexOf(
-				Portal.FRIENDLY_URL_SEPARATOR);
+				pos = layoutFriendlyURLCompositeFriendlyURL.indexOf(
+					Portal.FRIENDLY_URL_SEPARATOR);
 
-			if (pos != 0) {
-				if (pos != -1) {
-					layoutFriendlyURLCompositeFriendlyURL =
-						layoutFriendlyURLCompositeFriendlyURL.substring(0, pos);
+				if (pos != 0) {
+					if (pos != -1) {
+						layoutFriendlyURLCompositeFriendlyURL =
+							layoutFriendlyURLCompositeFriendlyURL.substring(
+								0, pos);
+					}
+
+					Locale locale = PortalUtil.getLocale(request);
+
+					if (LanguageUtil.isAvailableLocale(
+							group.getGroupId(), locale) &&
+						!StringUtil.equalsIgnoreCase(
+							layoutFriendlyURLCompositeFriendlyURL,
+							layout.getFriendlyURL(locale))) {
+
+						Locale originalLocale = setAlternativeLayoutFriendlyURL(
+							request, layout,
+							layoutFriendlyURLCompositeFriendlyURL);
+
+						String redirect = PortalUtil.getLocalizedFriendlyURL(
+							request, layout, locale, originalLocale);
+
+						return new Object[] {redirect, Boolean.TRUE};
+					}
+				}
+			}
+			catch (NoSuchLayoutException nsle) {
+				List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
+					group.getGroupId(), _private,
+					LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
+
+				for (Layout layout : layouts) {
+					if (layout.matches(request, friendlyURL)) {
+						String redirect = PortalUtil.getLayoutActualURL(
+							layout, mainPath);
+
+						return new Object[] {redirect, Boolean.FALSE};
+					}
 				}
 
-				Locale locale = PortalUtil.getLocale(request);
-
-				if (!layoutFriendlyURLCompositeFriendlyURL.equals(
-						layout.getFriendlyURL(locale))) {
-
-					Locale originalLocale = setAlternativeLayoutFriendlyURL(
-						request, layout, layoutFriendlyURLCompositeFriendlyURL);
-
-					String redirect = PortalUtil.getLocalizedFriendlyURL(
-						request, layout, locale, originalLocale);
-
-					return new Object[] {redirect, Boolean.TRUE};
-				}
+				throw nsle;
 			}
 		}
 
@@ -347,7 +403,8 @@ public class FriendlyURLServlet extends HttpServlet {
 		return locale;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(FriendlyURLServlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		FriendlyURLServlet.class);
 
 	private String _friendlyURLPathPrefix;
 	private boolean _private;

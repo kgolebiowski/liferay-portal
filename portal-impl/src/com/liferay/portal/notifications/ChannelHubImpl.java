@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -363,8 +363,8 @@ public class ChannelHubImpl implements ChannelHub {
 			return;
 		}
 
-		List<NotificationEvent> persistedNotificationEvents =
-			new ArrayList<NotificationEvent>(notificationEvents.size());
+		List<NotificationEvent> persistedNotificationEvents = new ArrayList<>(
+			notificationEvents.size());
 
 		for (NotificationEvent notificationEvent : notificationEvents) {
 			if (notificationEvent.isDeliveryRequired()) {
@@ -390,6 +390,19 @@ public class ChannelHubImpl implements ChannelHub {
 	}
 
 	@Override
+	public void storeNotificationEvent(
+			long userId, NotificationEvent notificationEvent)
+		throws ChannelException {
+
+		Channel channel = fetchChannel(userId);
+
+		if (channel != null) {
+			channel.storeNotificationEvent(
+				notificationEvent, System.currentTimeMillis());
+		}
+	}
+
+	@Override
 	public void unregisterChannelListener(
 			long userId, ChannelListener channelListener)
 		throws ChannelException {
@@ -400,8 +413,8 @@ public class ChannelHubImpl implements ChannelHub {
 	}
 
 	private Channel _channel;
-	private ConcurrentMap<Long, Channel> _channels =
-		new ConcurrentHashMap<Long, Channel>();
+	private final ConcurrentMap<Long, Channel> _channels =
+		new ConcurrentHashMap<>();
 	private long _companyId = CompanyConstants.SYSTEM;
 
 }

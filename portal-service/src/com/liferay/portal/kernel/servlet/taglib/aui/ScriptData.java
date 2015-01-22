@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -108,7 +108,7 @@ public class ScriptData implements Mergeable<ScriptData>, Serializable {
 		writer.write(loadMethod);
 		writer.write("(");
 
-		Set<String> useSet = new TreeSet<String>();
+		Set<String> useSet = new TreeSet<>();
 
 		for (PortletData portletData : _portletDataMap.values()) {
 			useSet.addAll(portletData._useSet);
@@ -131,8 +131,8 @@ public class ScriptData implements Mergeable<ScriptData>, Serializable {
 	}
 
 	private void _addToSBIndexList(StringBundler sb) {
-		ObjectValuePair<StringBundler, Integer> ovp =
-			new ObjectValuePair<StringBundler, Integer>(sb, sb.index());
+		ObjectValuePair<StringBundler, Integer> ovp = new ObjectValuePair<>(
+			sb, sb.index());
 
 		int index = _sbIndexList.indexOf(ovp);
 
@@ -169,10 +169,10 @@ public class ScriptData implements Mergeable<ScriptData>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private ConcurrentMap<String, PortletData> _portletDataMap =
-		new ConcurrentHashMap<String, PortletData>();
-	private List<ObjectValuePair<StringBundler, Integer>> _sbIndexList =
-		new ArrayList<ObjectValuePair<StringBundler, Integer>>();
+	private final ConcurrentMap<String, PortletData> _portletDataMap =
+		new ConcurrentHashMap<>();
+	private final List<ObjectValuePair<StringBundler, Integer>> _sbIndexList =
+		new ArrayList<>();
 
 	private class PortletData implements Serializable {
 
@@ -188,7 +188,7 @@ public class ScriptData implements Mergeable<ScriptData>, Serializable {
 				String[] useArray = StringUtil.split(use);
 
 				for (int i = 0; i < useArray.length; i++) {
-					_useSet.add(useArray[i]);
+					_useSet.add(StringUtil.trim(useArray[i]));
 				}
 			}
 		}
@@ -205,16 +205,16 @@ public class ScriptData implements Mergeable<ScriptData>, Serializable {
 				String[] useArray = StringUtil.split(use);
 
 				for (int i = 0; i < useArray.length; i++) {
-					_useSet.add(useArray[i]);
+					_useSet.add(StringUtil.trim(useArray[i]));
 				}
 			}
 		}
 
 		private static final long serialVersionUID = 1L;
 
-		private StringBundler _callbackSB = new StringBundler();
-		private StringBundler _rawSB = new StringBundler();
-		private Set<String> _useSet = new TreeSet<String>();
+		private final StringBundler _callbackSB = new StringBundler();
+		private final StringBundler _rawSB = new StringBundler();
+		private final Set<String> _useSet = new TreeSet<>();
 
 	}
 

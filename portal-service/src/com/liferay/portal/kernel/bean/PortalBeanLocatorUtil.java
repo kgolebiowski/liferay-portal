@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -124,7 +124,7 @@ public class PortalBeanLocatorUtil {
 		_beanLocator = beanLocator;
 	}
 
-	public static interface PACL {
+	public interface PACL {
 
 		public ClassLoader getBeanLocatorClassLoader(BeanLocator beanLocator);
 
@@ -135,11 +135,11 @@ public class PortalBeanLocatorUtil {
 
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortalBeanLocatorUtil.class);
 
 	private static BeanLocator _beanLocator;
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
 	private static class NoPACL implements PACL {
 

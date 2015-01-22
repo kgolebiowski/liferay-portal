@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -62,7 +62,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 				<aui:select id="repositoryTypes" label="repository-type" name="className">
 
 					<%
-					for (String dlRepositoryImpl : RepositoryFactoryUtil.getRepositoryClassNames()) {
+					for (String dlRepositoryImpl : RepositoryClassDefinitionCatalogUtil.getExternalRepositoryClassNames()) {
 					%>
 
 						<aui:option label="<%= HtmlUtil.escape(ResourceActionsUtil.getModelResource(locale, dlRepositoryImpl)) %>" value="<%= HtmlUtil.escapeAttribute(dlRepositoryImpl) %>" />
@@ -100,7 +100,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 					%>
 
 							<dt>
-								<%= LanguageUtil.get(pageContext, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedParameter), CharPool.UNDERLINE, CharPool.DASH))) %>
+								<%= LanguageUtil.get(request, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedParameter), CharPool.UNDERLINE, CharPool.DASH))) %>
 							</dt>
 							<dd>
 								<%= HtmlUtil.escape(supportedParameterValue) %>
@@ -133,7 +133,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 <div class="hide" id="<portlet:namespace />settingsSupported">
 
 	<%
-	for (String dlRepositoryImpl : RepositoryFactoryUtil.getRepositoryClassNames()) {
+	for (String dlRepositoryImpl : RepositoryClassDefinitionCatalogUtil.getExternalRepositoryClassNames()) {
 		String className = HtmlUtil.escapeAttribute(dlRepositoryImpl.substring(dlRepositoryImpl.lastIndexOf(StringPool.PERIOD) + 1));
 
 		long classNameId = PortalUtil.getClassNameId(dlRepositoryImpl);
@@ -146,7 +146,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 
 			<div class="settings-configuration <%= ((supportedConfigurations.length == 1) ? "hide" : "") %>" id="<portlet:namespace />repository-<%= className %>-wrapper">
 				<aui:select cssClass="repository-configuration" id='<%= "repository-" + className %>' label="repository-configuration" name="settings--configuration-type--">
-					<aui:option label="<%= LanguageUtil.get(pageContext, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedConfiguration), CharPool.UNDERLINE, CharPool.DASH))) %>" selected="<%= supportedConfiguration.equals(supportedConfigurations[0]) %>" value="<%= HtmlUtil.escapeAttribute(supportedConfiguration) %>" />
+					<aui:option label="<%= LanguageUtil.get(request, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedConfiguration), CharPool.UNDERLINE, CharPool.DASH))) %>" selected="<%= supportedConfiguration.equals(supportedConfigurations[0]) %>" value="<%= HtmlUtil.escapeAttribute(supportedConfiguration) %>" />
 				</aui:select>
 			</div>
 			<div class="settings-parameters" id="<portlet:namespace />repository-<%= className %>-configuration-<%= HtmlUtil.escapeAttribute(supportedConfiguration) %>">
@@ -157,7 +157,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 				for (String supportedParameter : supportedParameters) {
 				%>
 
-					<aui:input label="<%= LanguageUtil.get(pageContext, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedParameter), CharPool.UNDERLINE, CharPool.DASH))) %>" name='<%= "settings--" + HtmlUtil.escapeAttribute(supportedParameter) + "--" %>' type="text" value="" />
+					<aui:input label="<%= LanguageUtil.get(request, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedParameter), CharPool.UNDERLINE, CharPool.DASH))) %>" name='<%= "settings--" + HtmlUtil.escapeAttribute(supportedParameter) + "--" %>' type="text" value="" />
 
 				<%
 				}
@@ -176,73 +176,52 @@ long folderId = ParamUtil.getLong(request, "folderId");
 
 </div>
 
-<aui:script use="aui-base">
-	var settingsSupported = A.one('#<portlet:namespace />settingsSupported');
-	var settingsConfiguration = A.one('#<portlet:namespace />settingsConfiguration');
-	var settingsParameters = A.one('#<portlet:namespace />settingsParameters');
+<aui:script sandbox="<%= true %>">
+	var settingsSupported = $('#<portlet:namespace />settingsSupported');
+	var settingsConfiguration = $('#<portlet:namespace />settingsConfiguration');
+	var settingsParameters = $('#<portlet:namespace />settingsParameters');
 
 	var showConfiguration = function(select) {
-		if (settingsConfiguration) {
-			settingsSupported.append(settingsConfiguration.all('.settings-configuration'));
-		}
+		settingsSupported.append(settingsConfiguration.find('.settings-configuration'));
+		settingsSupported.append(settingsParameters.find('.settings-parameters'));
 
-		if (settingsParameters) {
-			settingsSupported.append(settingsParameters.all('.settings-parameters'));
-		}
+		var className = select.val().split('.').pop();
 
-		var value = select.val();
-		var className = value.split('.').pop();
+		var selectRepositoryConfiguration = $('#<portlet:namespace />repository-' + className);
 
-		var repositoryConfiguration = A.one('#<portlet:namespace />repository-' + className + '-wrapper');
-		var selectRepositoryConfiguration = A.one('#<portlet:namespace />repository-' + className);
+		var repositoryParameters = $('#<portlet:namespace />repository-' + className + '-configuration-' + selectRepositoryConfiguration.val());
 
-		if (selectRepositoryConfiguration) {
-			var repositoryParameters = A.one('#<portlet:namespace />repository-' + className + '-configuration-' + selectRepositoryConfiguration.val());
+		settingsConfiguration.append($('#<portlet:namespace />repository-' + className + '-wrapper'));
 
-			if (settingsConfiguration) {
-				settingsConfiguration.append(repositoryConfiguration);
-			}
-
-			if (settingsParameters) {
-				settingsParameters.append(repositoryParameters);
-			}
-		}
+		settingsParameters.append(repositoryParameters);
 	};
 
 	var showParameters = function(event) {
-		var select = event.currentTarget;
+		var select = $(event.currentTarget);
 
-		var repositoryParameters = A.one('#' + select.attr('id') + '-configuration-' + select.val());
+		settingsSupported.append(settingsParameters.find('.settings-parameters'));
+		settingsParameters.append($('#' + select.attr('id') + '-configuration-' + select.val()));
+	};
 
-		var settingsParametersChildren = settingsParameters.all('.settings-parameters');
+	var selectRepositoryTypes = $('#<portlet:namespace />repositoryTypes');
 
-		settingsSupported.append(settingsParametersChildren);
-		settingsParameters.append(repositoryParameters);
-	}
+	selectRepositoryTypes.on(
+		'change',
+		function(event) {
+			showConfiguration(selectRepositoryTypes);
+		}
+	);
 
-	var selectRepositoryTypes = A.one('#<portlet:namespace />repositoryTypes');
+	showConfiguration(selectRepositoryTypes);
 
-	if (selectRepositoryTypes) {
-		selectRepositoryTypes.on(
-			'change',
-			function(event) {
-				showConfiguration(event.currentTarget);
-			}
-		);
-
-		showConfiguration(selectRepositoryTypes);
-	}
-
-	var selectConfiguration = A.all('.repository-configuration');
-
-	selectConfiguration.on('change', showParameters);
+	$('.repository-configuration').on('change', showParameters);
 </aui:script>
 
 <%
 if (repository != null) {
 	DLUtil.addPortletBreadcrumbEntries(folderId, request, renderResponse);
 
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "edit"), currentURL);
+	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "edit"), currentURL);
 }
 %>
 

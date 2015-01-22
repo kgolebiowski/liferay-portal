@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -29,7 +29,7 @@ public class CoalescedPipeTest {
 
 	@Test
 	public void testBlockingTake() throws InterruptedException {
-		final CoalescedPipe<String> coalescedPipe = new CoalescedPipe<String>();
+		final CoalescedPipe<String> coalescedPipe = new CoalescedPipe<>();
 
 		ScheduledExecutorService scheduledExecutorService =
 			Executors.newScheduledThreadPool(1);
@@ -62,7 +62,7 @@ public class CoalescedPipeTest {
 
 	@Test
 	public void testNonBlockingTake() throws InterruptedException {
-		CoalescedPipe<String> coalescedPipe = new CoalescedPipe<String>();
+		CoalescedPipe<String> coalescedPipe = new CoalescedPipe<>();
 
 		coalescedPipe.put("test2");
 		coalescedPipe.put("test3");
@@ -83,7 +83,7 @@ public class CoalescedPipeTest {
 
 		// Without comparator
 
-		CoalescedPipe<String> coalescedPipe = new CoalescedPipe<String>();
+		CoalescedPipe<String> coalescedPipe = new CoalescedPipe<>();
 
 		// Null
 
@@ -169,7 +169,7 @@ public class CoalescedPipeTest {
 
 	@Test
 	public void testTakeSnapshot() throws InterruptedException {
-		CoalescedPipe<String> coalescedPipe = new CoalescedPipe<String>();
+		CoalescedPipe<String> coalescedPipe = new CoalescedPipe<>();
 
 		Object[] snapShot = coalescedPipe.takeSnapshot();
 

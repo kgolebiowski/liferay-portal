@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -52,7 +52,7 @@ public class JournalArticleAtomCollectionProvider
 
 	@Override
 	public List<String> getEntryAuthors(JournalArticle journalArticle) {
-		List<String> authors = new ArrayList<String>(1);
+		List<String> authors = new ArrayList<>(1);
 
 		authors.add(journalArticle.getUserName());
 
@@ -123,7 +123,7 @@ public class JournalArticleAtomCollectionProvider
 			AtomRequestContext atomRequestContext)
 		throws Exception {
 
-		List<JournalArticle> journalArticles = new ArrayList<JournalArticle>();
+		List<JournalArticle> journalArticles = new ArrayList<>();
 
 		long companyId = CompanyThreadLocal.getCompanyId();
 		long groupId = atomRequestContext.getLongParameter("groupId");
@@ -136,29 +136,29 @@ public class JournalArticleAtomCollectionProvider
 		long classNameId = 0;
 		String keywords = null;
 		Double version = null;
-		String type = atomRequestContext.getParameter("type", "general");
-		String structureId = null;
-		String templateId = null;
+		String ddmStructureKey = null;
+		String ddmTemplateKey = null;
 		Date displayDateGT = null;
 		Date displayDateLT = new Date();
 		int status = WorkflowConstants.STATUS_APPROVED;
 		Date reviewDate = null;
 
-		OrderByComparator obc = new ArticleVersionComparator();
+		OrderByComparator<JournalArticle> obc = new ArticleVersionComparator();
 
 		int count = JournalArticleServiceUtil.searchCount(
-			companyId, groupId, folderIds, classNameId, keywords, version, type,
-			structureId, templateId, displayDateGT, displayDateLT, status,
-			reviewDate);
+			companyId, groupId, folderIds, classNameId, keywords, version,
+			ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
+			status, reviewDate);
 
 		AtomPager atomPager = new AtomPager(atomRequestContext, count);
 
 		AtomUtil.saveAtomPagerInRequest(atomRequestContext, atomPager);
 
 		journalArticles = JournalArticleServiceUtil.search(
-			companyId, groupId, folderIds, classNameId, keywords, version, type,
-			structureId, templateId, displayDateGT, displayDateLT, status,
-			reviewDate, atomPager.getStart(), atomPager.getEnd() + 1, obc);
+			companyId, groupId, folderIds, classNameId, keywords, version,
+			ddmStructureKey, ddmTemplateKey, displayDateGT, displayDateLT,
+			status, reviewDate, atomPager.getStart(), atomPager.getEnd() + 1,
+			obc);
 
 		return journalArticles;
 	}
@@ -178,15 +178,14 @@ public class JournalArticleAtomCollectionProvider
 
 		Locale locale = LocaleUtil.getDefault();
 
-		Map<Locale, String> titleMap = new HashMap<Locale, String>();
+		Map<Locale, String> titleMap = new HashMap<>();
 
 		titleMap.put(locale, title);
 
-		Map<Locale, String> descriptionMap = new HashMap<Locale, String>();
+		Map<Locale, String> descriptionMap = new HashMap<>();
 
-		String type = atomRequestContext.getParameter("type", "general");
-		String structureId = null;
-		String templateId = null;
+		String ddmStructureKey = null;
+		String ddmTemplateKey = null;
 		String layoutUuid = null;
 
 		Calendar cal = Calendar.getInstance();
@@ -222,7 +221,7 @@ public class JournalArticleAtomCollectionProvider
 
 		JournalArticle journalArticle = JournalArticleServiceUtil.addArticle(
 			groupId, folderId, classNameId, classPK, articleId, autoArticleId,
-			titleMap, descriptionMap, content, type, structureId, templateId,
+			titleMap, descriptionMap, content, ddmStructureKey, ddmTemplateKey,
 			layoutUuid, displayDateMonth, displayDateDay, displayDateYear,
 			displayDateHour, displayDateMinute, expirationDateMonth,
 			expirationDateDay, expirationDateYear, expirationDateHour,

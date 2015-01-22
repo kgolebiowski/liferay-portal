@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -104,7 +104,7 @@ public class ShutdownUtil {
 		_message = message;
 	}
 
-	private static ShutdownUtil _instance = new ShutdownUtil();
+	private static final ShutdownUtil _instance = new ShutdownUtil();
 
 	private Date _date;
 	private String _message;

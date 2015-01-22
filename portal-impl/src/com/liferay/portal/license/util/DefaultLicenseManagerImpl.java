@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -140,7 +140,7 @@ public class DefaultLicenseManagerImpl
 
 	@Override
 	public int getLicenseState(String productId) {
-		Map<String, String> licenseProperties = new HashMap<String, String>();
+		Map<String, String> licenseProperties = new HashMap<>();
 
 		licenseProperties.put("productId", productId);
 
@@ -173,7 +173,7 @@ public class DefaultLicenseManagerImpl
 		LicenseUtil.writeServerProperties(bytes);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DefaultLicenseManagerImpl.class);
 
 }

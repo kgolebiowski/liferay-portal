@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,38 +14,25 @@
 
 package com.liferay.portal.tools;
 
-import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
-import com.liferay.portal.kernel.io.unsync.UnsyncPrintWriter;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.SystemProperties;
-import com.liferay.portal.kernel.util.UnsyncPrintWriterPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.ModelHintsConstants;
-import com.liferay.portal.scripting.ruby.RubyExecutor;
-import com.liferay.portal.servlet.filters.aggregate.AggregateFilter;
-import com.liferay.portal.servlet.filters.aggregate.FileAggregateContext;
 import com.liferay.portal.servlet.filters.dynamiccss.RTLCSSUtil;
+import com.liferay.portal.tools.sass.SassExecutorUtil;
 import com.liferay.portal.util.FastDateFormatFactoryImpl;
 import com.liferay.portal.util.FileImpl;
-import com.liferay.portal.util.PortalImpl;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsImpl;
 
 import java.io.File;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.apache.tools.ant.DirectoryScanner;
 
@@ -77,29 +64,16 @@ public class SassToCssBuilder {
 				cacheFileName.substring(y);
 	}
 
-	public static String getContent(String docrootDirName, String fileName)
-		throws Exception {
-
-		File file = new File(docrootDirName.concat(fileName));
-
-		String content = FileUtil.read(file);
-
-		content = AggregateFilter.aggregateCss(
-			new FileAggregateContext(docrootDirName, fileName), content);
-
-		return parseStaticTokens(content);
-	}
-
 	public static String getRtlCustomFileName(String fileName) {
 		int pos = fileName.lastIndexOf(StringPool.PERIOD);
 
 		return fileName.substring(0, pos) + "_rtl" + fileName.substring(pos);
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		Map<String, String> arguments = ArgumentsUtil.parseArguments(args);
 
-		List<String> dirNames = new ArrayList<String>();
+		List<String> dirNames = new ArrayList<>();
 
 		String dirName = arguments.get("sass.dir");
 
@@ -122,12 +96,7 @@ public class SassToCssBuilder {
 		String docrootDirName = arguments.get("sass.docroot.dir");
 		String portalCommonDirName = arguments.get("sass.portal.common.dir");
 
-		try {
-			new SassToCssBuilder(dirNames, docrootDirName, portalCommonDirName);
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
+		new SassToCssBuilder(dirNames, docrootDirName, portalCommonDirName);
 	}
 
 	public static String parseStaticTokens(String content) {
@@ -158,43 +127,19 @@ public class SassToCssBuilder {
 
 		_initUtil(classLoader);
 
-		_rubyScript = StringUtil.read(
-			classLoader,
-			"com/liferay/portal/servlet/filters/dynamiccss" +
-				"/dependencies/main.rb");
-
-		_tempDir = SystemProperties.get(SystemProperties.TMP_DIR);
-
-		RubyExecutor rubyExecutor = new RubyExecutor();
-
-		rubyExecutor.setExecuteInSeparateThread(false);
-
-		List<String> fileNames = new ArrayList<String>();
+		List<String> fileNames = new ArrayList<>();
 
 		for (String dirName : dirNames) {
 			_collectSassFiles(fileNames, dirName, docrootDirName);
 		}
 
-		Runtime runtime = Runtime.getRuntime();
-
-		ExecutorService executorService = Executors.newFixedThreadPool(
-			runtime.availableProcessors());
-
-		List<Future<String>> futures = new ArrayList<Future<String>>(
-			fileNames.size());
+		SassExecutorUtil.init(docrootDirName, portalCommonDirName);
 
 		for (String fileName : fileNames) {
-			Callable<String> callable = new CacheSassCallable(
-				rubyExecutor, docrootDirName, portalCommonDirName, fileName);
-
-			futures.add(executorService.submit(callable));
+			SassExecutorUtil.execute(docrootDirName, fileName);
 		}
 
-		for (Future<String> future : futures) {
-			System.out.println(future.get());
-		}
-
-		executorService.shutdownNow();
+		SassExecutorUtil.persist();
 	}
 
 	private void _collectSassFiles(
@@ -232,12 +177,6 @@ public class SassToCssBuilder {
 		}
 	}
 
-	private String _getCssThemePath(String fileName) {
-		int pos = fileName.lastIndexOf("/css/");
-
-		return fileName.substring(0, pos + 4);
-	}
-
 	private void _initUtil(ClassLoader classLoader) {
 		FastDateFormatFactoryUtil fastDateFormatFactoryUtil =
 			new FastDateFormatFactoryUtil();
@@ -251,10 +190,6 @@ public class SassToCssBuilder {
 
 		PortalClassLoaderUtil.setClassLoader(classLoader);
 
-		PortalUtil portalUtil = new PortalUtil();
-
-		portalUtil.setPortal(new PortalImpl());
-
 		PropsUtil.setProps(new PropsImpl());
 
 		RTLCSSUtil.init();
@@ -264,6 +199,10 @@ public class SassToCssBuilder {
 		throws Exception {
 
 		for (String fileName : fileNames) {
+			if (fileName.contains("_rtl")) {
+				continue;
+			}
+
 			fileName = _normalizeFileName(dirName, fileName);
 
 			File file = new File(fileName);
@@ -287,110 +226,6 @@ public class SassToCssBuilder {
 				StringPool.SLASH, StringPool.SLASH
 			}
 		);
-	}
-
-	private String _parseSassFile(
-			RubyExecutor rubyExecutor, String docrootDirName,
-			String portalCommonDirName, String fileName)
-		throws Exception {
-
-		String filePath = docrootDirName.concat(fileName);
-
-		Map<String, Object> inputObjects = new HashMap<String, Object>();
-
-		inputObjects.put("commonSassPath", portalCommonDirName);
-		inputObjects.put("content", getContent(docrootDirName, fileName));
-		inputObjects.put("cssRealPath", filePath);
-		inputObjects.put("cssThemePath", _getCssThemePath(filePath));
-		inputObjects.put("sassCachePath", _tempDir);
-
-		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
-			new UnsyncByteArrayOutputStream();
-
-		UnsyncPrintWriter unsyncPrintWriter = UnsyncPrintWriterPool.borrow(
-			unsyncByteArrayOutputStream);
-
-		inputObjects.put("out", unsyncPrintWriter);
-
-		rubyExecutor.eval(null, inputObjects, null, _rubyScript);
-
-		unsyncPrintWriter.flush();
-
-		return unsyncByteArrayOutputStream.toString();
-	}
-
-	private String _rubyScript;
-	private String _tempDir;
-
-	private class CacheSassCallable implements Callable<String> {
-
-		public CacheSassCallable(
-			RubyExecutor rubyExecutor, String docrootDirName,
-			String portalCommonDirName, String fileName) {
-
-			_rubyExecutor = rubyExecutor;
-			_docrootDirName = docrootDirName;
-			_portalCommonDirName = portalCommonDirName;
-			_fileName = fileName;
-		}
-
-		@Override
-		public String call() throws Exception {
-			long start = System.currentTimeMillis();
-
-			String fileName = _docrootDirName.concat(_fileName);
-
-			File cacheFile = getCacheFile(fileName);
-
-			String parsedContent = _parseSassFile(
-				_rubyExecutor, _docrootDirName, _portalCommonDirName,
-				_fileName);
-
-			FileUtil.write(cacheFile, parsedContent);
-
-			File file = new File(fileName);
-
-			long lastModified = file.lastModified();
-
-			cacheFile.setLastModified(lastModified);
-
-			// Generate RTL cache
-
-			File rtlCacheFile = getCacheFile(fileName, "_rtl");
-
-			String rtlCss = RTLCSSUtil.getRtlCss(parsedContent);
-
-			// Append custom CSS for RTL
-
-			String rtlCustomFileName = getRtlCustomFileName(_fileName);
-
-			File rtlCustomFile = new File(_docrootDirName, rtlCustomFileName);
-
-			if (rtlCustomFile.exists()) {
-				lastModified = rtlCustomFile.lastModified();
-
-				String rtlCustomCss = _parseSassFile(
-					_rubyExecutor, _docrootDirName, _portalCommonDirName,
-					rtlCustomFileName);
-
-				rtlCss += rtlCustomCss;
-			}
-
-			FileUtil.write(rtlCacheFile, rtlCss);
-
-			rtlCacheFile.setLastModified(lastModified);
-
-			long end = System.currentTimeMillis();
-
-			return "Parsed " + _docrootDirName + _fileName + " in " +
-				(end - start) + " ms";
-		}
-
-		private String _docrootDirName;
-		private String _fileName;
-		private String _portalCommonDirName;
-		private RubyExecutor _rubyExecutor;
-
 	}
 
 }

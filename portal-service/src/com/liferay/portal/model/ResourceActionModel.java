@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -169,19 +169,19 @@ public interface ResourceActionModel extends BaseModel<ResourceAction>, MVCCMode
 	public Object clone();
 
 	@Override
-	public int compareTo(ResourceAction resourceAction);
+	public int compareTo(com.liferay.portal.model.ResourceAction resourceAction);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<ResourceAction> toCacheModel();
+	public CacheModel<com.liferay.portal.model.ResourceAction> toCacheModel();
 
 	@Override
-	public ResourceAction toEscapedModel();
+	public com.liferay.portal.model.ResourceAction toEscapedModel();
 
 	@Override
-	public ResourceAction toUnescapedModel();
+	public com.liferay.portal.model.ResourceAction toUnescapedModel();
 
 	@Override
 	public String toString();

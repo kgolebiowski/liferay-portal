@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,27 +14,33 @@
 
 package com.liferay.portlet.journal.service.permission;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.ServiceTestUtil;
 import com.liferay.portal.service.permission.BasePermissionTestCase;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.util.test.RandomTestUtil;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalFolder;
-import com.liferay.portlet.journal.util.JournalTestUtil;
+import com.liferay.portlet.journal.util.test.JournalTestUtil;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Eric Chin
  * @author Shinn Lok
  */
-@ExecutionTestListeners(listeners = {EnvironmentExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class JournalArticlePermissionTest extends BasePermissionTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Test
 	public void testContains() throws Exception {
@@ -47,26 +53,36 @@ public class JournalArticlePermissionTest extends BasePermissionTestCase {
 
 		removePortletModelViewPermission();
 
-		Assert.assertFalse(
-			JournalArticlePermission.contains(
-				permissionChecker, _article, ActionKeys.VIEW));
-		Assert.assertFalse(
-			JournalArticlePermission.contains(
-				permissionChecker, _subarticle, ActionKeys.VIEW));
+		if (PropsValues.JOURNAL_ARTICLE_VIEW_PERMISSION_CHECK_ENABLED) {
+			Assert.assertFalse(
+				JournalArticlePermission.contains(
+					permissionChecker, _article, ActionKeys.VIEW));
+			Assert.assertFalse(
+				JournalArticlePermission.contains(
+					permissionChecker, _subarticle, ActionKeys.VIEW));
+		}
+		else {
+			Assert.assertTrue(
+				JournalArticlePermission.contains(
+					permissionChecker, _article, ActionKeys.VIEW));
+			Assert.assertTrue(
+				JournalArticlePermission.contains(
+					permissionChecker, _subarticle, ActionKeys.VIEW));
+		}
 	}
 
 	@Override
 	protected void doSetUp() throws Exception {
 		_article = JournalTestUtil.addArticle(
-			group.getGroupId(), ServiceTestUtil.randomString(),
-			ServiceTestUtil.randomString());
+			group.getGroupId(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString());
 
 		JournalFolder folder = JournalTestUtil.addFolder(
-			group.getGroupId(), ServiceTestUtil.randomString());
+			group.getGroupId(), RandomTestUtil.randomString());
 
 		_subarticle = JournalTestUtil.addArticle(
 			group.getGroupId(), folder.getFolderId(),
-			ServiceTestUtil.randomString(), ServiceTestUtil.randomString());
+			RandomTestUtil.randomString(), RandomTestUtil.randomString());
 	}
 
 	@Override

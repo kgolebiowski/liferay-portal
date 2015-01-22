@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -53,7 +53,7 @@ public class MessagingProxyInvocationHandler implements InvocationHandler {
 		}
 	}
 
-	private static InvocationHandlerFactory _invocationHandlerFactory =
+	private static final InvocationHandlerFactory _invocationHandlerFactory =
 		new InvocationHandlerFactory() {
 
 		@Override
@@ -63,6 +63,6 @@ public class MessagingProxyInvocationHandler implements InvocationHandler {
 
 	};
 
-	private BaseProxyBean _baseProxyBean;
+	private final BaseProxyBean _baseProxyBean;
 
 }

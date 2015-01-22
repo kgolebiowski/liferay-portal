@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,30 +14,40 @@
  */
 --%>
 
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-
-<%@ page import="com.liferay.portal.kernel.util.ContentTypes" %>
-<%@ page import="com.liferay.portal.kernel.util.HtmlUtil" %>
-<%@ page import="com.liferay.portal.kernel.util.ParamUtil" %>
-<%@ page import="com.liferay.portal.util.PortalUtil" %>
+<%@ include file="/html/js/editor/ckeditor_init.jsp" %>
 
 <%
 String attachmentURLPrefix = ParamUtil.getString(request, "attachmentURLPrefix");
+
 String contentsLanguageId = ParamUtil.getString(request, "contentsLanguageId");
+
+Locale contentsLocale = LocaleUtil.fromLanguageId(contentsLanguageId);
+
+contentsLanguageId = LocaleUtil.toLanguageId(contentsLocale);
+
 String cssClasses = ParamUtil.getString(request, "cssClasses");
 String cssPath = ParamUtil.getString(request, "cssPath");
+
 String languageId = ParamUtil.getString(request, "languageId");
+
+Locale locale = LocaleUtil.fromLanguageId(languageId);
+
+languageId = LocaleUtil.toLanguageId(locale);
+
 String name = ParamUtil.getString(request, "name");
 boolean resizable = ParamUtil.getBoolean(request, "resizable");
+boolean showSource = ParamUtil.getBoolean(request, "showSource");
 long wikiPageResourcePrimKey = ParamUtil.getLong(request, "wikiPageResourcePrimKey");
 
 response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 %>
 
-;(function() {
+;window['<%= HtmlUtil.escapeJS(name) %>Config'] = function() {
 	var ckEditor = CKEDITOR.instances['<%= HtmlUtil.escapeJS(name) %>'];
 
 	var config = ckEditor.config;
+
+	config.allowedContent = 'b strong i hr h1 h2 h3 h4 h5 h6 em ul ol li pre table tr th; img a[*]';
 
 	config.attachmentURLPrefix = '<%= HtmlUtil.escapeJS(attachmentURLPrefix) %>';
 
@@ -45,21 +55,27 @@ response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 
 	config.contentsCss = ['<%= HtmlUtil.escapeJS(cssPath) %>/aui.css', '<%= HtmlUtil.escapeJS(cssPath) %>/main.css'];
 
-	config.contentsLangDirection = '<%= PortalUtil.isRightToLeft(request) ? "rtl" : "ltr" %>';
+	<%
+	String contentsLanguageDir = LanguageUtil.get(contentsLocale, "lang.dir");
+	%>
 
-	config.contentsLanguage = '<%= HtmlUtil.escapeJS(contentsLanguageId.replace("iw_", "he_")) %>';
+	config.contentsLangDirection = '<%= HtmlUtil.escapeJS(contentsLanguageDir) %>';
+
+	config.contentsLanguage = '<%= contentsLanguageId.replace("iw_", "he_") %>';
 
 	config.decodeLinks = true;
 
 	config.disableObjectResizing = true;
 
-	config.extraPlugins = 'creole,wikilink';
+	config.extraPlugins = 'a11yhelpbtn,creole,lfrpopup,wikilink';
+
+	config.filebrowserWindowFeatures = 'title=<%= LanguageUtil.get(locale, "browse") %>';
 
 	config.format_tags = 'p;h1;h2;h3;h4;h5;h6;pre';
 
 	config.height = 265;
 
-	config.language = '<%= HtmlUtil.escapeJS(languageId.replace("iw_", "he_")) %>';
+	config.language = '<%= languageId.replace("iw_", "he_") %>';
 
 	config.removePlugins = [
 		'elementspath',
@@ -95,39 +111,50 @@ response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 	config.resize_enabled = <%= resizable %>;
 
 	config.toolbar_creole = [
-		['Cut','Copy','Paste','PasteText','PasteFromWord'],
-		['Undo','Redo'],
-		['Bold', 'Italic', '-', 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+		['Bold', 'Italic', '-' ,'RemoveFormat'],
+		['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
 		['Format'],
+		['Link', 'Unlink'],
+		['Table', '-', <c:if test="<%= (wikiPageResourcePrimKey > 0) %>">'Image', '-', </c:if> 'HorizontalRule', '-', 'SpecialChar' ],
+		'/',
+		['Cut', 'Copy', 'Paste', '-', 'PasteText', 'PasteFromWord', '-', 'SelectAll', '-', 'Undo', 'Redo'],
+		['Find','Replace'],
 
-		<%
-		String linkButtonBar = "['Link', 'Unlink']";
+		<c:if test="<%= showSource %>">
+			['Source'],
+		</c:if>
 
-		if (wikiPageResourcePrimKey > 0) {
-			linkButtonBar = "['Link', 'Unlink', 'Image']";
-		}
-		%>
-
-		<%= linkButtonBar %>,
-
-		['Table', '-', 'HorizontalRule', 'SpecialChar' ],
-		['Find','Replace','-','SelectAll','RemoveFormat'],
-		['Source']
+		['A11YBtn']
 	];
 
 	config.toolbar_phone = [
-		['Bold', 'Italic', 'Underline'],
+		['Bold', 'Italic'],
 		['NumberedList', 'BulletedList'],
-		['Image', 'Link', 'Unlink']
+		['Link', 'Unlink']
 	];
 
+	<c:if test="<%= (wikiPageResourcePrimKey > 0) %>">
+		config.toolbar_phone.push(['Image']);
+	</c:if>
+
+	<c:if test="<%= showSource %>">
+		config.toolbar_phone.push(['Source']);
+	</c:if>
+
 	config.toolbar_tablet = [
-		['Bold', 'Italic', 'Underline', 'Strike'],
-		['NumberedList', 'BulletedList'],
-		['Image', 'Link', 'Unlink'],
-		['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-		['Styles', 'FontSize']
+		['Bold', 'Italic'],
+		['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+		['Format'],
+		['Link', 'Unlink']
 	];
+
+	<c:if test="<%= (wikiPageResourcePrimKey > 0) %>">
+		config.toolbar_tablet.push(['Image']);
+	</c:if>
+
+	<c:if test="<%= showSource %>">
+		config.toolbar_tablet.push(['Source']);
+	</c:if>
 
 	ckEditor.on(
 		'dialogDefinition',
@@ -177,4 +204,8 @@ response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 			}
 		}
 	);
-})();
+
+	<%@ include file="/html/js/editor/ckeditor/ckconfig_creole-ext.jsp" %>
+};
+
+window['<%= HtmlUtil.escapeJS(name) %>Config']();

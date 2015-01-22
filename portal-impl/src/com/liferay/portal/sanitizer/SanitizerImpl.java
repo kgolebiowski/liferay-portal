@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,14 +14,14 @@
 
 package com.liferay.portal.sanitizer;
 
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.sanitizer.Sanitizer;
 import com.liferay.portal.kernel.sanitizer.SanitizerException;
-import com.liferay.portal.kernel.util.InstanceFactory;
 import com.liferay.portal.kernel.util.StreamUtil;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.PropsValues;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceReference;
+import com.liferay.registry.ServiceTracker;
+import com.liferay.registry.ServiceTrackerCustomizer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,29 +35,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author Zsolt Balogh
  * @author Brian Wing Shun Chan
+ * @author Peter Fellwock
  */
 public class SanitizerImpl implements Sanitizer {
 
 	public SanitizerImpl() {
-		for (String className : PropsValues.SANITIZER_IMPL) {
-			if (Validator.isNull(className)) {
-				continue;
-			}
+		Registry registry = RegistryUtil.getRegistry();
 
-			try {
-				Sanitizer sanitizer = (Sanitizer)InstanceFactory.newInstance(
-					className);
+		_serviceTracker = registry.trackServices(
+			Sanitizer.class, new SanitizerServiceTrackerCustomizer());
 
-				registerSanitizer(sanitizer);
-			}
-			catch (Exception e) {
-				_log.error(e, e);
-			}
-		}
-	}
-
-	public void registerSanitizer(Sanitizer sanitizer) {
-		_sanitizers.add(sanitizer);
+		_serviceTracker.open();
 	}
 
 	@Override
@@ -89,7 +77,9 @@ public class SanitizerImpl implements Sanitizer {
 		}
 
 		if (_sanitizers.size() == 1) {
-			sanitize(
+			Sanitizer sanitizer = _sanitizers.get(0);
+
+			sanitizer.sanitize(
 				companyId, groupId, userId, className, classPK, contentType,
 				modes, inputStream, outputStream, options);
 
@@ -138,8 +128,41 @@ public class SanitizerImpl implements Sanitizer {
 		_sanitizers.remove(sanitizer);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SanitizerImpl.class);
+	private final List<Sanitizer> _sanitizers = new CopyOnWriteArrayList<>();
+	private final ServiceTracker<?, Sanitizer> _serviceTracker;
 
-	private List<Sanitizer> _sanitizers = new CopyOnWriteArrayList<Sanitizer>();
+	private class SanitizerServiceTrackerCustomizer
+		implements ServiceTrackerCustomizer<Sanitizer, Sanitizer> {
+
+		@Override
+		public Sanitizer addingService(
+			ServiceReference<Sanitizer> serviceReference) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			Sanitizer sanitizer = registry.getService(serviceReference);
+
+			_sanitizers.add(sanitizer);
+
+			return sanitizer;
+		}
+
+		@Override
+		public void modifiedService(
+			ServiceReference<Sanitizer> serviceReference, Sanitizer sanitizer) {
+		}
+
+		@Override
+		public void removedService(
+			ServiceReference<Sanitizer> serviceReference, Sanitizer sanitizer) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			registry.ungetService(serviceReference);
+
+			_sanitizers.remove(sanitizer);
+		}
+
+	}
 
 }

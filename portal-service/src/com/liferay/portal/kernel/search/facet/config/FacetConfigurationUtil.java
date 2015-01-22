@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,8 +30,7 @@ import java.util.List;
 public class FacetConfigurationUtil {
 
 	public static List<FacetConfiguration> load(String configuration) {
-		List<FacetConfiguration> facetConfigurations =
-			new ArrayList<FacetConfiguration>();
+		List<FacetConfiguration> facetConfigurations = new ArrayList<>();
 
 		try {
 			if (Validator.isNull(configuration)) {
@@ -87,7 +86,7 @@ public class FacetConfigurationUtil {
 		return facetConfiguration;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		FacetConfigurationUtil.class);
 
 }

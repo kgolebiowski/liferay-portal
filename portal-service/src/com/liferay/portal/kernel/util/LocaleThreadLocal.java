@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -45,14 +45,13 @@ public class LocaleThreadLocal {
 		_themeDisplayLocale.set(locale);
 	}
 
-	private static ThreadLocal<Locale> _defaultLocale =
-		new AutoResetThreadLocal<Locale>(
-			LocaleThreadLocal.class + "._defaultLocale");
-	private static ThreadLocal<Locale> _siteDefaultLocale =
-		new AutoResetThreadLocal<Locale>(
+	private static final ThreadLocal<Locale> _defaultLocale =
+		new AutoResetThreadLocal<>(LocaleThreadLocal.class + "._defaultLocale");
+	private static final ThreadLocal<Locale> _siteDefaultLocale =
+		new AutoResetThreadLocal<>(
 			LocaleThreadLocal.class + "._siteDefaultLocale");
-	private static ThreadLocal<Locale> _themeDisplayLocale =
-		new AutoResetThreadLocal<Locale>(
+	private static final ThreadLocal<Locale> _themeDisplayLocale =
+		new AutoResetThreadLocal<>(
 			LocaleThreadLocal.class + "._themeDisplayLocale");
 
 }

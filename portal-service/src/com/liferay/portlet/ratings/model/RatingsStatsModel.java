@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -195,19 +195,20 @@ public interface RatingsStatsModel extends AttachedModel, BaseModel<RatingsStats
 	public Object clone();
 
 	@Override
-	public int compareTo(RatingsStats ratingsStats);
+	public int compareTo(
+		com.liferay.portlet.ratings.model.RatingsStats ratingsStats);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<RatingsStats> toCacheModel();
+	public CacheModel<com.liferay.portlet.ratings.model.RatingsStats> toCacheModel();
 
 	@Override
-	public RatingsStats toEscapedModel();
+	public com.liferay.portlet.ratings.model.RatingsStats toEscapedModel();
 
 	@Override
-	public RatingsStats toUnescapedModel();
+	public com.liferay.portlet.ratings.model.RatingsStats toUnescapedModel();
 
 	@Override
 	public String toString();

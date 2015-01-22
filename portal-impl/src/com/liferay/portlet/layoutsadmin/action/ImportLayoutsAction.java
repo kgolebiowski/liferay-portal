@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,7 +22,6 @@ import com.liferay.portal.LayoutPrototypeException;
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.NoSuchGroupException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.lar.ExportImportHelper;
@@ -91,8 +90,7 @@ public class ImportLayoutsAction extends PortletAction {
 		try {
 			if (cmd.equals(Constants.ADD_TEMP)) {
 				addTempFileEntry(
-					actionRequest, actionResponse,
-					ExportImportHelper.TEMP_FOLDER_NAME);
+					actionRequest, ExportImportHelper.TEMP_FOLDER_NAME);
 
 				validateFile(
 					actionRequest, actionResponse,
@@ -199,8 +197,7 @@ public class ImportLayoutsAction extends PortletAction {
 	}
 
 	protected void addTempFileEntry(
-			ActionRequest actionRequest, ActionResponse actionResponse,
-			String folderName)
+			ActionRequest actionRequest, String folderName)
 		throws Exception {
 
 		UploadPortletRequest uploadPortletRequest =
@@ -222,7 +219,7 @@ public class ImportLayoutsAction extends PortletAction {
 			String contentType = uploadPortletRequest.getContentType("file");
 
 			LayoutServiceUtil.addTempFileEntry(
-				groupId, sourceFileName, folderName, inputStream, contentType);
+				groupId, folderName, sourceFileName, inputStream, contentType);
 		}
 		catch (Exception e) {
 			UploadException uploadException =
@@ -279,7 +276,7 @@ public class ImportLayoutsAction extends PortletAction {
 			String fileName = ParamUtil.getString(actionRequest, "fileName");
 
 			LayoutServiceUtil.deleteTempFileEntry(
-				themeDisplay.getScopeGroupId(), fileName, folderName);
+				themeDisplay.getScopeGroupId(), folderName, fileName);
 
 			jsonObject.put("deleted", Boolean.TRUE);
 		}
@@ -295,14 +292,14 @@ public class ImportLayoutsAction extends PortletAction {
 	}
 
 	protected void deleteTempFileEntry(long groupId, String folderName)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		String[] tempFileEntryNames = LayoutServiceUtil.getTempFileEntryNames(
+		String[] tempFileNames = LayoutServiceUtil.getTempFileNames(
 			groupId, folderName);
 
-		for (String tempFileEntryName : tempFileEntryNames) {
+		for (String tempFileEntryName : tempFileNames) {
 			LayoutServiceUtil.deleteTempFileEntry(
-				groupId, tempFileEntryName, folderName);
+				groupId, folderName, tempFileEntryName);
 		}
 	}
 
@@ -348,8 +345,7 @@ public class ImportLayoutsAction extends PortletAction {
 
 		try {
 			inputStream = DLFileEntryLocalServiceUtil.getFileAsStream(
-				themeDisplay.getUserId(), fileEntry.getFileEntryId(),
-				fileEntry.getVersion(), false);
+				fileEntry.getFileEntryId(), fileEntry.getVersion(), false);
 
 			importData(actionRequest, fileEntry.getTitle(), inputStream);
 
@@ -393,8 +389,7 @@ public class ImportLayoutsAction extends PortletAction {
 
 		try {
 			inputStream = DLFileEntryLocalServiceUtil.getFileAsStream(
-				themeDisplay.getUserId(), fileEntry.getFileEntryId(),
-				fileEntry.getVersion(), false);
+				fileEntry.getFileEntryId(), fileEntry.getVersion(), false);
 
 			MissingReferences missingReferences = validateFile(
 				actionRequest, inputStream);
@@ -437,6 +432,7 @@ public class ImportLayoutsAction extends PortletAction {
 			inputStream);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ImportLayoutsAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ImportLayoutsAction.class);
 
 }

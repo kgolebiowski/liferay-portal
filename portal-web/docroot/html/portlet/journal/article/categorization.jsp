@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,13 +21,7 @@ String defaultLanguageId = (String)request.getAttribute("edit_article.jsp-defaul
 
 JournalArticle article = (JournalArticle)request.getAttribute(WebKeys.JOURNAL_ARTICLE);
 
-String type = BeanParamUtil.getString(article, request, "type");
-
-if (Validator.isNull(type)) {
-	type = "general";
-}
-
-String toLanguageId = (String)request.getAttribute("edit_article.jsp-toLanguageId");
+DDMStructure ddmStructure = (DDMStructure)request.getAttribute("edit_article.jsp-structure");
 %>
 
 <liferay-ui:error-marker key="errorSection" value="categorization" />
@@ -36,28 +30,11 @@ String toLanguageId = (String)request.getAttribute("edit_article.jsp-toLanguageI
 
 <h3><liferay-ui:message key="categorization" /></h3>
 
-<c:if test="<%= Validator.isNull(toLanguageId) %>">
-	<liferay-ui:asset-categories-error />
+<liferay-ui:asset-categories-error />
 
-	<liferay-ui:asset-tags-error />
-</c:if>
-
-<liferay-ui:error exception="<%= ArticleTypeException.class %>" message="please-select-a-type" />
+<liferay-ui:asset-tags-error />
 
 <aui:fieldset>
-	<aui:select name="type" showEmptyOption="<%= true %>">
-
-		<%
-		for (int i = 0; i < JournalArticleConstants.TYPES.length; i++) {
-		%>
-
-			<aui:option label="<%= JournalArticleConstants.TYPES[i] %>" selected="<%= type.equals(JournalArticleConstants.TYPES[i]) %>" />
-
-		<%
-		}
-		%>
-
-	</aui:select>
 
 	<%
 	long classPK = 0;
@@ -66,18 +43,16 @@ String toLanguageId = (String)request.getAttribute("edit_article.jsp-toLanguageI
 		classPK = article.getResourcePrimKey();
 
 		if (!article.isApproved() && (article.getVersion() != JournalArticleConstants.VERSION_DEFAULT)) {
-			try {
-				AssetEntryLocalServiceUtil.getEntry(JournalArticle.class.getName(), article.getPrimaryKey());
+			AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(JournalArticle.class.getName(), article.getPrimaryKey());
 
+			if (assetEntry != null) {
 				classPK = article.getPrimaryKey();
-			}
-			catch (NoSuchEntryException nsee) {
 			}
 		}
 	}
 	%>
 
-	<aui:input classPK="<%= classPK %>" name="categories" type="assetCategories" />
+	<aui:input classPK="<%= classPK %>" classTypePK="<%= ddmStructure.getStructureId() %>" name="categories" type="assetCategories" />
 
 	<aui:input classPK="<%= classPK %>" name="tags" type="assetTags" />
 </aui:fieldset>

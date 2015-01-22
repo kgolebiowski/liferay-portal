@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,8 +17,7 @@
 <%@ include file="/html/portlet/layouts_admin/init.jsp" %>
 
 <%
-Group group = (Group)request.getAttribute("edit_pages.jsp-group");
-Layout selLayout = (Layout)request.getAttribute("edit_pages.jsp-selLayout");
+Layout selLayout = layoutsAdminDisplayContext.getSelLayout();
 
 UnicodeProperties layoutTypeSettings = selLayout.getTypeSettingsProperties();
 %>
@@ -32,6 +31,11 @@ UnicodeProperties layoutTypeSettings = selLayout.getTypeSettingsProperties();
 <liferay-ui:error exception="<%= ImageTypeException.class %>" message="please-enter-a-file-with-a-valid-file-type" />
 
 <aui:fieldset cssClass="lfr-portrait-editor">
+
+	<%
+	Group group = layoutsAdminDisplayContext.getGroup();
+	%>
+
 	<c:if test="<%= !group.isLayoutPrototype() %>">
 
 		<%
@@ -60,26 +64,17 @@ UnicodeProperties layoutTypeSettings = selLayout.getTypeSettingsProperties();
 </aui:fieldset>
 
 <aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />editLayoutLogo',
-		function(logoURL, deleteLogo) {
-			var A = AUI();
+	function <portlet:namespace />editLayoutLogo(logoURL, deleteLogo) {
+		var $ = AUI.$;
 
-			var layoutLogo = A.one('.layout-logo-<%= selLayout.getPlid() %>');
+		var layoutLogo = $('.layout-logo-<%= selLayout.getPlid() %>');
 
-			if (!layoutLogo) {
-				var layoutNavItem = A.one('#layout_<%= selLayout.getLayoutId() %> span');
+		if (!layoutLogo.length) {
+			layoutLogo = $('<img alt="<liferay-ui:message escapeAttribute="<%= true %>" key="logo" />" class="layout-logo-<%= selLayout.getPlid() %>" src="' + logoURL + '" />');
 
-				layoutLogo = A.Node.create('<img class="layout-logo-<%= selLayout.getPlid() %>" src="' + logoURL + '" />');
+			$('#layout_<%= selLayout.getLayoutId() %> span').prepend(layoutLogo);
+		}
 
-				if (layoutNavItem) {
-					layoutNavItem.prepend(layoutLogo);
-				}
-			}
-
-			layoutLogo.toggle(!deleteLogo);
-		},
-		['aui-base']
-	);
+		layoutLogo.toggleClass('hide', deleteLogo);
+	}
 </aui:script>

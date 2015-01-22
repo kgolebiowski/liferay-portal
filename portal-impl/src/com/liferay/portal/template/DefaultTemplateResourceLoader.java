@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -280,18 +280,18 @@ public class DefaultTemplateResourceLoader implements TemplateResourceLoader {
 		_multiVMPortalCache.put(templateId, templateResource);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DefaultTemplateResourceLoader.class);
 
-	private static NullHolderTemplateResource _nullHolderTemplateResource =
-		new NullHolderTemplateResource();
+	private static final NullHolderTemplateResource
+		_nullHolderTemplateResource = new NullHolderTemplateResource();
 
 	private long _modificationCheckInterval;
-	private PortalCache<String, TemplateResource> _multiVMPortalCache;
-	private String _name;
-	private PortalCache<String, TemplateResource> _singleVMPortalCache;
-	private Set<TemplateResourceParser> _templateResourceParsers =
-		new HashSet<TemplateResourceParser>();
+	private final PortalCache<String, TemplateResource> _multiVMPortalCache;
+	private final String _name;
+	private final PortalCache<String, TemplateResource> _singleVMPortalCache;
+	private final Set<TemplateResourceParser> _templateResourceParsers =
+		new HashSet<>();
 
 	private static class NullHolderTemplateResource
 		implements TemplateResource {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,6 +16,7 @@ package com.liferay.portal.events;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.events.ActionException;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -27,10 +28,7 @@ import com.liferay.portal.service.LayoutLocalServiceUtil;
 import com.liferay.portal.service.LayoutPrototypeLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PortletKeys;
-import com.liferay.portlet.blogs.model.BlogsEntry;
-import com.liferay.portlet.wiki.model.WikiPage;
 
 import java.util.HashMap;
 import java.util.List;
@@ -60,10 +58,9 @@ public class AddDefaultLayoutPrototypesAction
 		throws Exception {
 
 		Layout layout = addLayoutPrototype(
-			companyId, defaultUserId, "Blog",
-			"Create, edit, and view blogs from this page. Explore topics " +
-				"using tags, and connect with other members that blog.",
-			"2_columns_iii", layoutPrototypes);
+			companyId, defaultUserId, "layout-prototype-blog-title",
+			"layout-prototype-blog-description", "2_columns_iii",
+			layoutPrototypes);
 
 		if (layout == null) {
 			return;
@@ -71,42 +68,43 @@ public class AddDefaultLayoutPrototypesAction
 
 		addPortletId(layout, PortletKeys.BLOGS, "column-1");
 
-		String portletId = addPortletId(
-			layout, PortletKeys.TAGS_CLOUD, "column-2");
-
-		Map<String, String> preferences = new HashMap<String, String>();
-
-		preferences.put(
-			"classNameId",
-			String.valueOf(PortalUtil.getClassNameId(BlogsEntry.class)));
-		preferences.put("showAssetCount", Boolean.TRUE.toString());
-
-		updatePortletSetup(layout, portletId, preferences);
-
 		addPortletId(layout, PortletKeys.RECENT_BLOGGERS, "column-2");
 	}
 
 	protected Layout addLayoutPrototype(
-			long companyId, long defaultUserId, String name, String description,
-			String layouteTemplateId, List<LayoutPrototype> layoutPrototypes)
+			long companyId, long defaultUserId, String nameKey,
+			String descriptionKey, String layouteTemplateId,
+			List<LayoutPrototype> layoutPrototypes)
 		throws Exception {
+
+		String name = LanguageUtil.get(LocaleUtil.getDefault(), nameKey);
+		String description = LanguageUtil.get(
+			LocaleUtil.getDefault(), descriptionKey);
 
 		for (LayoutPrototype layoutPrototype : layoutPrototypes) {
 			String curName = layoutPrototype.getName(LocaleUtil.getDefault());
-			String curDescription = layoutPrototype.getDescription();
+			String curDescription = layoutPrototype.getDescription(
+				LocaleUtil.getDefault());
 
 			if (name.equals(curName) && description.equals(curDescription)) {
 				return null;
 			}
 		}
 
-		Map<Locale, String> nameMap = new HashMap<Locale, String>();
+		Map<Locale, String> nameMap = new HashMap<>();
+		Map<Locale, String> descriptionMap = new HashMap<>();
 
-		nameMap.put(LocaleUtil.getDefault(), name);
+		Locale[] locales = LanguageUtil.getAvailableLocales();
+
+		for (Locale locale : locales) {
+			nameMap.put(locale, LanguageUtil.get(locale, nameKey));
+			descriptionMap.put(
+				locale, LanguageUtil.get(locale, descriptionKey));
+		}
 
 		LayoutPrototype layoutPrototype =
 			LayoutPrototypeLocalServiceUtil.addLayoutPrototype(
-				defaultUserId, companyId, nameMap, description, true,
+				defaultUserId, companyId, nameMap, descriptionMap, true,
 				new ServiceContext());
 
 		Layout layout = layoutPrototype.getLayout();
@@ -125,19 +123,14 @@ public class AddDefaultLayoutPrototypesAction
 		throws Exception {
 
 		Layout layout = addLayoutPrototype(
-			companyId, defaultUserId, "Content Display Page",
-			"Create, edit, and explore web content with this page. Search " +
-				"available content, explore related content with tags, and " +
-					"browse content categories.",
-			"2_columns_ii", layoutPrototypes);
+			companyId, defaultUserId, "layout-prototype-web-content-title",
+			"layout-prototype-web-content-description", "2_columns_ii",
+			layoutPrototypes);
 
 		if (layout == null) {
 			return;
 		}
 
-		addPortletId(layout, PortletKeys.ASSET_TAGS_NAVIGATION, "column-1");
-		addPortletId(
-			layout, PortletKeys.ASSET_CATEGORIES_NAVIGATION, "column-1");
 		addPortletId(layout, PortletKeys.SEARCH, "column-2");
 		String portletId = addPortletId(
 			layout, PortletKeys.ASSET_PUBLISHER, "column-2");
@@ -160,31 +153,15 @@ public class AddDefaultLayoutPrototypesAction
 		throws Exception {
 
 		Layout layout = addLayoutPrototype(
-			companyId, defaultUserId, "Wiki",
-			"Collaborate with members through the wiki on this page. " +
-				"Discover related content through tags, and navigate quickly " +
-					"and easily with categories.",
-			"2_columns_iii", layoutPrototypes);
+			companyId, defaultUserId, "layout-prototype-wiki-title",
+			"layout-prototype-wiki-description", "2_columns_iii",
+			layoutPrototypes);
 
 		if (layout == null) {
 			return;
 		}
 
 		addPortletId(layout, PortletKeys.WIKI, "column-1");
-		addPortletId(
-			layout, PortletKeys.ASSET_CATEGORIES_NAVIGATION, "column-2");
-
-		String portletId = addPortletId(
-			layout, PortletKeys.ASSET_TAGS_NAVIGATION, "column-2");
-
-		Map<String, String> preferences = new HashMap<String, String>();
-
-		preferences.put(
-			"classNameId",
-			String.valueOf(PortalUtil.getClassNameId(WikiPage.class)));
-		preferences.put("showAssetCount", Boolean.TRUE.toString());
-
-		updatePortletSetup(layout, portletId, preferences);
 	}
 
 	protected void doRun(long companyId) throws Exception {

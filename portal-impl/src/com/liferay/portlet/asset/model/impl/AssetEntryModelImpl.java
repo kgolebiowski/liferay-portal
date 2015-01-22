@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,11 @@
 
 package com.liferay.portlet.asset.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -26,8 +28,10 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.User;
 import com.liferay.portal.model.impl.BaseModelImpl;
 import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 
 import com.liferay.portlet.asset.model.AssetEntry;
@@ -63,6 +67,7 @@ import java.util.TreeSet;
  * @generated
  */
 @JSON(strict = true)
+@ProviderType
 public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	implements AssetEntryModel {
 	/*
@@ -83,6 +88,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 			{ "classPK", Types.BIGINT },
 			{ "classUuid", Types.VARCHAR },
 			{ "classTypeId", Types.BIGINT },
+			{ "listable", Types.BOOLEAN },
 			{ "visible", Types.BOOLEAN },
 			{ "startDate", Types.TIMESTAMP },
 			{ "endDate", Types.TIMESTAMP },
@@ -90,8 +96,8 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 			{ "expirationDate", Types.TIMESTAMP },
 			{ "mimeType", Types.VARCHAR },
 			{ "title", Types.VARCHAR },
-			{ "description", Types.VARCHAR },
-			{ "summary", Types.VARCHAR },
+			{ "description", Types.CLOB },
+			{ "summary", Types.CLOB },
 			{ "url", Types.VARCHAR },
 			{ "layoutUuid", Types.VARCHAR },
 			{ "height", Types.INTEGER },
@@ -99,7 +105,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 			{ "priority", Types.DOUBLE },
 			{ "viewCount", Types.INTEGER }
 		};
-	public static final String TABLE_SQL_CREATE = "create table AssetEntry (entryId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,classUuid VARCHAR(75) null,classTypeId LONG,visible BOOLEAN,startDate DATE null,endDate DATE null,publishDate DATE null,expirationDate DATE null,mimeType VARCHAR(75) null,title STRING null,description STRING null,summary STRING null,url STRING null,layoutUuid VARCHAR(75) null,height INTEGER,width INTEGER,priority DOUBLE,viewCount INTEGER)";
+	public static final String TABLE_SQL_CREATE = "create table AssetEntry (entryId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,classUuid VARCHAR(75) null,classTypeId LONG,listable BOOLEAN,visible BOOLEAN,startDate DATE null,endDate DATE null,publishDate DATE null,expirationDate DATE null,mimeType VARCHAR(75) null,title STRING null,description TEXT null,summary TEXT null,url STRING null,layoutUuid VARCHAR(75) null,height INTEGER,width INTEGER,priority DOUBLE,viewCount INTEGER)";
 	public static final String TABLE_SQL_DROP = "drop table AssetEntry";
 	public static final String ORDER_BY_JPQL = " ORDER BY assetEntry.entryId ASC";
 	public static final String ORDER_BY_SQL = " ORDER BY AssetEntry.entryId ASC";
@@ -115,16 +121,16 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	public static final boolean COLUMN_BITMASK_ENABLED = GetterUtil.getBoolean(com.liferay.portal.util.PropsUtil.get(
 				"value.object.column.bitmask.enabled.com.liferay.portlet.asset.model.AssetEntry"),
 			true);
-	public static long CLASSNAMEID_COLUMN_BITMASK = 1L;
-	public static long CLASSPK_COLUMN_BITMASK = 2L;
-	public static long CLASSUUID_COLUMN_BITMASK = 4L;
-	public static long COMPANYID_COLUMN_BITMASK = 8L;
-	public static long EXPIRATIONDATE_COLUMN_BITMASK = 16L;
-	public static long GROUPID_COLUMN_BITMASK = 32L;
-	public static long LAYOUTUUID_COLUMN_BITMASK = 64L;
-	public static long PUBLISHDATE_COLUMN_BITMASK = 128L;
-	public static long VISIBLE_COLUMN_BITMASK = 256L;
-	public static long ENTRYID_COLUMN_BITMASK = 512L;
+	public static final long CLASSNAMEID_COLUMN_BITMASK = 1L;
+	public static final long CLASSPK_COLUMN_BITMASK = 2L;
+	public static final long CLASSUUID_COLUMN_BITMASK = 4L;
+	public static final long COMPANYID_COLUMN_BITMASK = 8L;
+	public static final long EXPIRATIONDATE_COLUMN_BITMASK = 16L;
+	public static final long GROUPID_COLUMN_BITMASK = 32L;
+	public static final long LAYOUTUUID_COLUMN_BITMASK = 64L;
+	public static final long PUBLISHDATE_COLUMN_BITMASK = 128L;
+	public static final long VISIBLE_COLUMN_BITMASK = 256L;
+	public static final long ENTRYID_COLUMN_BITMASK = 512L;
 
 	/**
 	 * Converts the soap model instance into a normal model instance.
@@ -150,6 +156,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 		model.setClassPK(soapModel.getClassPK());
 		model.setClassUuid(soapModel.getClassUuid());
 		model.setClassTypeId(soapModel.getClassTypeId());
+		model.setListable(soapModel.getListable());
 		model.setVisible(soapModel.getVisible());
 		model.setStartDate(soapModel.getStartDate());
 		model.setEndDate(soapModel.getEndDate());
@@ -192,8 +199,8 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	public static final String MAPPING_TABLE_ASSETENTRIES_ASSETCATEGORIES_NAME = "AssetEntries_AssetCategories";
 	public static final Object[][] MAPPING_TABLE_ASSETENTRIES_ASSETCATEGORIES_COLUMNS =
 		{
-			{ "entryId", Types.BIGINT },
-			{ "categoryId", Types.BIGINT }
+			{ "categoryId", Types.BIGINT },
+			{ "entryId", Types.BIGINT }
 		};
 	public static final String MAPPING_TABLE_ASSETENTRIES_ASSETCATEGORIES_SQL_CREATE =
 		"create table AssetEntries_AssetCategories (categoryId LONG not null,entryId LONG not null,primary key (categoryId, entryId))";
@@ -261,6 +268,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 		attributes.put("classPK", getClassPK());
 		attributes.put("classUuid", getClassUuid());
 		attributes.put("classTypeId", getClassTypeId());
+		attributes.put("listable", getListable());
 		attributes.put("visible", getVisible());
 		attributes.put("startDate", getStartDate());
 		attributes.put("endDate", getEndDate());
@@ -349,6 +357,12 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 
 		if (classTypeId != null) {
 			setClassTypeId(classTypeId);
+		}
+
+		Boolean listable = (Boolean)attributes.get("listable");
+
+		if (listable != null) {
+			setListable(listable);
 		}
 
 		Boolean visible = (Boolean)attributes.get("visible");
@@ -511,13 +525,19 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	}
 
 	@Override
-	public String getUserUuid() throws SystemException {
-		return PortalUtil.getUserValue(getUserId(), "uuid", _userUuid);
+	public String getUserUuid() {
+		try {
+			User user = UserLocalServiceUtil.getUserById(getUserId());
+
+			return user.getUuid();
+		}
+		catch (PortalException pe) {
+			return StringPool.BLANK;
+		}
 	}
 
 	@Override
 	public void setUserUuid(String userUuid) {
-		_userUuid = userUuid;
 	}
 
 	@JSON
@@ -659,6 +679,22 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	@Override
 	public void setClassTypeId(long classTypeId) {
 		_classTypeId = classTypeId;
+	}
+
+	@JSON
+	@Override
+	public boolean getListable() {
+		return _listable;
+	}
+
+	@Override
+	public boolean isListable() {
+		return _listable;
+	}
+
+	@Override
+	public void setListable(boolean listable) {
+		_listable = listable;
 	}
 
 	@JSON
@@ -1222,19 +1258,28 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 			return StringPool.BLANK;
 		}
 
-		return LocalizationUtil.getDefaultLanguageId(xml);
+		Locale defaultLocale = LocaleUtil.getSiteDefault();
+
+		return LocalizationUtil.getDefaultLanguageId(xml, defaultLocale);
 	}
 
 	@Override
 	public void prepareLocalizedFieldsForImport() throws LocaleException {
-		prepareLocalizedFieldsForImport(null);
+		Locale defaultLocale = LocaleUtil.fromLanguageId(getDefaultLanguageId());
+
+		Locale[] availableLocales = LocaleUtil.fromLanguageIds(getAvailableLanguageIds());
+
+		Locale defaultImportLocale = LocalizationUtil.getDefaultImportLocale(AssetEntry.class.getName(),
+				getPrimaryKey(), defaultLocale, availableLocales);
+
+		prepareLocalizedFieldsForImport(defaultImportLocale);
 	}
 
 	@Override
 	@SuppressWarnings("unused")
 	public void prepareLocalizedFieldsForImport(Locale defaultImportLocale)
 		throws LocaleException {
-		Locale defaultLocale = LocaleUtil.getDefault();
+		Locale defaultLocale = LocaleUtil.getSiteDefault();
 
 		String modelDefaultLanguageId = getDefaultLanguageId();
 
@@ -1292,6 +1337,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 		assetEntryImpl.setClassPK(getClassPK());
 		assetEntryImpl.setClassUuid(getClassUuid());
 		assetEntryImpl.setClassTypeId(getClassTypeId());
+		assetEntryImpl.setListable(getListable());
 		assetEntryImpl.setVisible(getVisible());
 		assetEntryImpl.setStartDate(getStartDate());
 		assetEntryImpl.setEndDate(getEndDate());
@@ -1452,6 +1498,8 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 
 		assetEntryCacheModel.classTypeId = getClassTypeId();
 
+		assetEntryCacheModel.listable = getListable();
+
 		assetEntryCacheModel.visible = getVisible();
 
 		Date startDate = getStartDate();
@@ -1551,7 +1599,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(53);
+		StringBundler sb = new StringBundler(55);
 
 		sb.append("{entryId=");
 		sb.append(getEntryId());
@@ -1575,6 +1623,8 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 		sb.append(getClassUuid());
 		sb.append(", classTypeId=");
 		sb.append(getClassTypeId());
+		sb.append(", listable=");
+		sb.append(getListable());
 		sb.append(", visible=");
 		sb.append(getVisible());
 		sb.append(", startDate=");
@@ -1612,7 +1662,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 
 	@Override
 	public String toXmlString() {
-		StringBundler sb = new StringBundler(82);
+		StringBundler sb = new StringBundler(85);
 
 		sb.append("<model><model-name>");
 		sb.append("com.liferay.portlet.asset.model.AssetEntry");
@@ -1661,6 +1711,10 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 		sb.append(
 			"<column><column-name>classTypeId</column-name><column-value><![CDATA[");
 		sb.append(getClassTypeId());
+		sb.append("]]></column-value></column>");
+		sb.append(
+			"<column><column-name>listable</column-name><column-value><![CDATA[");
+		sb.append(getListable());
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>visible</column-name><column-value><![CDATA[");
@@ -1728,8 +1782,8 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 		return sb.toString();
 	}
 
-	private static ClassLoader _classLoader = AssetEntry.class.getClassLoader();
-	private static Class<?>[] _escapedModelInterfaces = new Class[] {
+	private static final ClassLoader _classLoader = AssetEntry.class.getClassLoader();
+	private static final Class<?>[] _escapedModelInterfaces = new Class[] {
 			AssetEntry.class
 		};
 	private long _entryId;
@@ -1740,7 +1794,6 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	private long _originalCompanyId;
 	private boolean _setOriginalCompanyId;
 	private long _userId;
-	private String _userUuid;
 	private String _userName;
 	private Date _createDate;
 	private Date _modifiedDate;
@@ -1753,6 +1806,7 @@ public class AssetEntryModelImpl extends BaseModelImpl<AssetEntry>
 	private String _classUuid;
 	private String _originalClassUuid;
 	private long _classTypeId;
+	private boolean _listable;
 	private boolean _visible;
 	private boolean _originalVisible;
 	private boolean _setOriginalVisible;

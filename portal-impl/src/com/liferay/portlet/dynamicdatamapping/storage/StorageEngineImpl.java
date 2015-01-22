@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,7 +23,6 @@ import com.liferay.portlet.dynamicdatamapping.service.DDMStorageLinkLocalService
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.storage.query.Condition;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +30,19 @@ import java.util.Map;
  * @author Eduardo Lundgren
  */
 public class StorageEngineImpl implements StorageEngine {
+
+	@Override
+	public long create(
+			long companyId, long ddmStructureId, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws StorageException {
+
+		StorageAdapter storageAdapter = getStructureStorageAdapter(
+			ddmStructureId);
+
+		return storageAdapter.create(
+			companyId, ddmStructureId, ddmFormValues, serviceContext);
+	}
 
 	@Override
 	public long create(
@@ -63,6 +75,15 @@ public class StorageEngineImpl implements StorageEngine {
 	}
 
 	@Override
+	public DDMFormValues getDDMFormValues(long classPK)
+		throws StorageException {
+
+		StorageAdapter storageAdapter = getClassStorageAdapter(classPK);
+
+		return storageAdapter.getDDMFormValues(classPK);
+	}
+
+	@Override
 	public Fields getFields(long classPK) throws StorageException {
 		return getFields(classPK, null);
 	}
@@ -90,7 +111,7 @@ public class StorageEngineImpl implements StorageEngine {
 	@Override
 	public List<Fields> getFieldsList(
 			long ddmStructureId, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		StorageAdapter storageAdapter = getStructureStorageAdapter(
@@ -103,7 +124,7 @@ public class StorageEngineImpl implements StorageEngine {
 	@Override
 	public List<Fields> getFieldsList(
 			long ddmStructureId, long[] classPKs, List<String> fieldNames,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		StorageAdapter storageAdapter = getStructureStorageAdapter(
@@ -116,7 +137,7 @@ public class StorageEngineImpl implements StorageEngine {
 	@Override
 	public List<Fields> getFieldsList(
 			long ddmStructureId, long[] classPKs,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		StorageAdapter storageAdapter = getStructureStorageAdapter(
@@ -149,9 +170,14 @@ public class StorageEngineImpl implements StorageEngine {
 	}
 
 	@Override
+	public String getStorageType() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public List<Fields> query(
 			long ddmStructureId, List<String> fieldNames, Condition condition,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Fields> orderByComparator)
 		throws StorageException {
 
 		StorageAdapter storageAdapter = getStructureStorageAdapter(
@@ -171,14 +197,15 @@ public class StorageEngineImpl implements StorageEngine {
 		return storageAdapter.queryCount(ddmStructureId, condition);
 	}
 
-	public void setDefaultStorageAdapter(StorageAdapter defaultStorageAdapter) {
-		_defaultStorageAdapter = defaultStorageAdapter;
-	}
+	@Override
+	public void update(
+			long classPK, DDMFormValues ddmFormValues,
+			ServiceContext serviceContext)
+		throws StorageException {
 
-	public void setStorageAdapters(
-		Map<String, StorageAdapter> storageAdapters) {
+		StorageAdapter storageAdapter = getClassStorageAdapter(classPK);
 
-		_storageAdapters = storageAdapters;
+		storageAdapter.update(classPK, ddmFormValues, serviceContext);
 	}
 
 	@Override
@@ -220,13 +247,14 @@ public class StorageEngineImpl implements StorageEngine {
 	}
 
 	protected StorageAdapter getStorageAdapter(String storageType) {
-		StorageAdapter storageAdapter = _storageAdapters.get(storageType);
+		StorageAdapter storageAdapter =
+			StorageAdapterRegistryUtil.getStorageAdapter(storageType);
 
-		if (storageAdapter == null) {
-			storageAdapter = _defaultStorageAdapter;
+		if (storageAdapter != null) {
+			return storageAdapter;
 		}
 
-		return storageAdapter;
+		return StorageAdapterRegistryUtil.getDefaultStorageAdapter();
 	}
 
 	protected StorageAdapter getStructureStorageAdapter(long ddmStructureId)
@@ -245,9 +273,5 @@ public class StorageEngineImpl implements StorageEngine {
 			throw new StorageException(e);
 		}
 	}
-
-	private StorageAdapter _defaultStorageAdapter;
-	private Map<String, StorageAdapter> _storageAdapters =
-		new HashMap<String, StorageAdapter>();
 
 }

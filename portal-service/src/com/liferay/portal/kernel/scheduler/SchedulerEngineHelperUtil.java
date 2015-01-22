@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -237,13 +237,6 @@ public class SchedulerEngineHelperUtil {
 		getSchedulerEngineHelper().initialize();
 	}
 
-	public static String namespaceGroupName(
-		String groupName, StorageType storageType) {
-
-		return getSchedulerEngineHelper().namespaceGroupName(
-			groupName, storageType);
-	}
-
 	public static void pause(String groupName, StorageType storageType)
 		throws SchedulerException {
 
@@ -350,12 +343,6 @@ public class SchedulerEngineHelperUtil {
 		throws SchedulerException {
 
 		getSchedulerEngineHelper().update(trigger, storageType);
-	}
-
-	public static void updateMemorySchedulerClusterMaster()
-		throws SchedulerException {
-
-		getSchedulerEngineHelper().updateMemorySchedulerClusterMaster();
 	}
 
 	public void setSchedulerEngineHelper(

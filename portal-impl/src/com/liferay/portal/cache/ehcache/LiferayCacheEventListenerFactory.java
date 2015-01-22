@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,7 @@ package com.liferay.portal.cache.ehcache;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.Properties;
@@ -40,7 +41,7 @@ public class LiferayCacheEventListenerFactory
 		try {
 			_cacheEventListenerFactory =
 				(CacheEventListenerFactory)InstanceFactory.newInstance(
-					className);
+					PortalClassLoaderUtil.getClassLoader(), className);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
@@ -52,9 +53,9 @@ public class LiferayCacheEventListenerFactory
 		return _cacheEventListenerFactory.createCacheEventListener(properties);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayCacheEventListenerFactory.class);
 
-	private CacheEventListenerFactory _cacheEventListenerFactory;
+	private final CacheEventListenerFactory _cacheEventListenerFactory;
 
 }

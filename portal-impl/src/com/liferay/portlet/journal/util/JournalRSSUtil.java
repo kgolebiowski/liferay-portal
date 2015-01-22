@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,6 @@
 
 package com.liferay.portlet.journal.util;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
@@ -55,9 +54,7 @@ import java.util.Set;
  */
 public class JournalRSSUtil {
 
-	public static List<JournalArticle> getArticles(JournalFeed feed)
-		throws SystemException {
-
+	public static List<JournalArticle> getArticles(JournalFeed feed) {
 		long companyId = feed.getCompanyId();
 		long groupId = feed.getGroupId();
 		List<Long> folderIds = Collections.emptyList();
@@ -67,22 +64,16 @@ public class JournalRSSUtil {
 		String description = null;
 		String content = null;
 
-		String type = feed.getType();
+		String ddmStructureKey = feed.getDDMStructureKey();
 
-		if (Validator.isNull(type)) {
-			type = null;
+		if (Validator.isNull(ddmStructureKey)) {
+			ddmStructureKey = null;
 		}
 
-		String structureId = feed.getStructureId();
+		String ddmTemplateKey = feed.getDDMTemplateKey();
 
-		if (Validator.isNull(structureId)) {
-			structureId = null;
-		}
-
-		String templateId = feed.getTemplateId();
-
-		if (Validator.isNull(templateId)) {
-			templateId = null;
+		if (Validator.isNull(ddmTemplateKey)) {
+			ddmTemplateKey = null;
 		}
 
 		Date displayDateGT = null;
@@ -97,7 +88,8 @@ public class JournalRSSUtil {
 		String orderByType = feed.getOrderByType();
 		boolean orderByAsc = orderByType.equals("asc");
 
-		OrderByComparator obc = new ArticleModifiedDateComparator(orderByAsc);
+		OrderByComparator<JournalArticle> obc =
+			new ArticleModifiedDateComparator(orderByAsc);
 
 		if (orderByCol.equals("display-date")) {
 			obc = new ArticleDisplayDateComparator(orderByAsc);
@@ -106,7 +98,7 @@ public class JournalRSSUtil {
 		return JournalArticleLocalServiceUtil.search(
 			companyId, groupId, folderIds,
 			JournalArticleConstants.CLASSNAME_ID_DEFAULT, articleId, version,
-			title, description, content, type, structureId, templateId,
+			title, description, content, ddmStructureKey, ddmTemplateKey,
 			displayDateGT, displayDateLT, status, reviewDate, andOperator,
 			start, end, obc);
 	}
@@ -114,7 +106,7 @@ public class JournalRSSUtil {
 	public static List<SyndEnclosure> getDLEnclosures(
 		String portalURL, String url) {
 
-		List<SyndEnclosure> syndEnclosures = new ArrayList<SyndEnclosure>();
+		List<SyndEnclosure> syndEnclosures = new ArrayList<>();
 
 		FileEntry fileEntry = getFileEntry(url);
 
@@ -134,7 +126,7 @@ public class JournalRSSUtil {
 	}
 
 	public static List<SyndLink> getDLLinks(String portalURL, String url) {
-		List<SyndLink> syndLinks = new ArrayList<SyndLink>();
+		List<SyndLink> syndLinks = new ArrayList<>();
 
 		FileEntry fileEntry = getFileEntry(url);
 
@@ -175,7 +167,7 @@ public class JournalRSSUtil {
 			}
 			else if (pathArray.length == 5) {
 				folderId = GetterUtil.getLong(pathArray[3]);
-				title = HttpUtil.decodeURL(pathArray[4], true);
+				title = HttpUtil.decodeURL(pathArray[4]);
 			}
 			else if (pathArray.length > 5) {
 				uuid = pathArray[5];
@@ -236,7 +228,7 @@ public class JournalRSSUtil {
 	public static List<SyndEnclosure> getIGEnclosures(
 		String portalURL, String url) {
 
-		List<SyndEnclosure> syndEnclosures = new ArrayList<SyndEnclosure>();
+		List<SyndEnclosure> syndEnclosures = new ArrayList<>();
 
 		Object[] imageProperties = getImageProperties(url);
 
@@ -258,7 +250,7 @@ public class JournalRSSUtil {
 	}
 
 	public static List<SyndLink> getIGLinks(String portalURL, String url) {
-		List<SyndLink> syndLinks = new ArrayList<SyndLink>();
+		List<SyndLink> syndLinks = new ArrayList<>();
 
 		Object[] imageProperties = getImageProperties(url);
 
@@ -347,6 +339,6 @@ public class JournalRSSUtil {
 		return null;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(JournalRSSUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(JournalRSSUtil.class);
 
 }

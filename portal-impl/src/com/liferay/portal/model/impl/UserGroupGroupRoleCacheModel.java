@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,14 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.model.CacheModel;
+import com.liferay.portal.model.MVCCModel;
 import com.liferay.portal.model.UserGroupGroupRole;
+import com.liferay.portal.service.persistence.UserGroupGroupRolePK;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -30,8 +35,47 @@ import java.io.ObjectOutput;
  * @see UserGroupGroupRole
  * @generated
  */
+@ProviderType
 public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRole>,
-	Externalizable {
+	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof UserGroupGroupRoleCacheModel)) {
+			return false;
+		}
+
+		UserGroupGroupRoleCacheModel userGroupGroupRoleCacheModel = (UserGroupGroupRoleCacheModel)obj;
+
+		if (userGroupGroupRolePK.equals(
+					userGroupGroupRoleCacheModel.userGroupGroupRolePK) &&
+				(mvccVersion == userGroupGroupRoleCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, userGroupGroupRolePK);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
+	}
+
 	@Override
 	public String toString() {
 		StringBundler sb = new StringBundler(9);
@@ -69,6 +113,9 @@ public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRo
 		userGroupId = objectInput.readLong();
 		groupId = objectInput.readLong();
 		roleId = objectInput.readLong();
+
+		userGroupGroupRolePK = new UserGroupGroupRolePK(userGroupId, groupId,
+				roleId);
 	}
 
 	@Override
@@ -84,4 +131,5 @@ public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRo
 	public long userGroupId;
 	public long groupId;
 	public long roleId;
+	public transient UserGroupGroupRolePK userGroupGroupRolePK;
 }

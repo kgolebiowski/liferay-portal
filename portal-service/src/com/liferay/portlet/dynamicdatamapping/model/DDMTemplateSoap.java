@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.dynamicdatamapping.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.List;
  * @see com.liferay.portlet.dynamicdatamapping.service.http.DDMTemplateServiceSoap
  * @generated
  */
+@ProviderType
 public class DDMTemplateSoap implements Serializable {
 	public static DDMTemplateSoap toSoapModel(DDMTemplate model) {
 		DDMTemplateSoap soapModel = new DDMTemplateSoap();
@@ -41,7 +44,9 @@ public class DDMTemplateSoap implements Serializable {
 		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setClassNameId(model.getClassNameId());
 		soapModel.setClassPK(model.getClassPK());
+		soapModel.setSourceClassNameId(model.getSourceClassNameId());
 		soapModel.setTemplateKey(model.getTemplateKey());
+		soapModel.setVersion(model.getVersion());
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
 		soapModel.setType(model.getType());
@@ -184,12 +189,28 @@ public class DDMTemplateSoap implements Serializable {
 		_classPK = classPK;
 	}
 
+	public long getSourceClassNameId() {
+		return _sourceClassNameId;
+	}
+
+	public void setSourceClassNameId(long sourceClassNameId) {
+		_sourceClassNameId = sourceClassNameId;
+	}
+
 	public String getTemplateKey() {
 		return _templateKey;
 	}
 
 	public void setTemplateKey(String templateKey) {
 		_templateKey = templateKey;
+	}
+
+	public String getVersion() {
+		return _version;
+	}
+
+	public void setVersion(String version) {
+		_version = version;
 	}
 
 	public String getName() {
@@ -290,7 +311,9 @@ public class DDMTemplateSoap implements Serializable {
 	private Date _modifiedDate;
 	private long _classNameId;
 	private long _classPK;
+	private long _sourceClassNameId;
 	private String _templateKey;
+	private String _version;
 	private String _name;
 	private String _description;
 	private String _type;

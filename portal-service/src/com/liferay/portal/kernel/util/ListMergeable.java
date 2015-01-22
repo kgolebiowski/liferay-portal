@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -54,6 +54,6 @@ public class ListMergeable<T>
 
 	private static final long serialVersionUID = 1L;
 
-	private List<T> _list = new ArrayList<T>();
+	private final List<T> _list = new ArrayList<>();
 
 }

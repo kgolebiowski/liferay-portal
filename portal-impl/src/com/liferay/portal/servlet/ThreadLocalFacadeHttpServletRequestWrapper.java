@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -49,7 +49,7 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 
 		_nextHttpServletRequestThreadLocal.set(httpServletRequest);
 
-		_locales = new ArrayList<Locale>();
+		_locales = new ArrayList<>();
 
 		Enumeration<Locale> enumeration = httpServletRequest.getLocales();
 
@@ -123,7 +123,15 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 		HttpServletRequest httpServletRequest =
 			(HttpServletRequest)getRequest();
 
-		return httpServletRequest.getSession(create);
+		HttpSession httpSession = httpServletRequest.getSession(false);
+
+		if (!create || (httpSession != null)) {
+			return httpSession;
+		}
+
+		synchronized (httpServletRequest.getServletContext()) {
+			return httpServletRequest.getSession(true);
+		}
 	}
 
 	@Override
@@ -146,7 +154,7 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 			(HttpServletRequest)servletRequest);
 	}
 
-	private static ThreadLocal<HttpServletRequest>
+	private static final ThreadLocal<HttpServletRequest>
 		_nextHttpServletRequestThreadLocal =
 			new AutoResetThreadLocal<HttpServletRequest>(
 				ThreadLocalFacadeHttpServletRequestWrapper.class +
@@ -161,7 +169,7 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 
 			};
 
-	private List<Locale> _locales;
-	private ServletRequestWrapper _servletRequestWrapper;
+	private final List<Locale> _locales;
+	private final ServletRequestWrapper _servletRequestWrapper;
 
 }

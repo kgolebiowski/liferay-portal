@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -196,19 +196,20 @@ public interface SocialRelationModel extends BaseModel<SocialRelation> {
 	public Object clone();
 
 	@Override
-	public int compareTo(SocialRelation socialRelation);
+	public int compareTo(
+		com.liferay.portlet.social.model.SocialRelation socialRelation);
 
 	@Override
 	public int hashCode();
 
 	@Override
-	public CacheModel<SocialRelation> toCacheModel();
+	public CacheModel<com.liferay.portlet.social.model.SocialRelation> toCacheModel();
 
 	@Override
-	public SocialRelation toEscapedModel();
+	public com.liferay.portlet.social.model.SocialRelation toEscapedModel();
 
 	@Override
-	public SocialRelation toUnescapedModel();
+	public com.liferay.portlet.social.model.SocialRelation toUnescapedModel();
 
 	@Override
 	public String toString();

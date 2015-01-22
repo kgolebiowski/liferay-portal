@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,14 +15,17 @@
 package com.liferay.portal.kernel.repository;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.repository.capabilities.Capability;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
+import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.service.ServiceContext;
 
 import java.io.File;
 import java.io.InputStream;
+
+import java.util.List;
 
 /**
  * This class is designed for third party repository implementations. Since the
@@ -65,10 +68,40 @@ public class DefaultLocalRepositoryImpl implements LocalRepository {
 
 	@Override
 	public Folder addFolder(
-		long userId, long parentFolderId, String title, String description,
+		long userId, long parentFolderId, String name, String description,
 		ServiceContext serviceContext) {
 
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void checkInFileEntry(
+			long userId, long fileEntryId, boolean major, String changeLog,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		_repository.checkInFileEntry(
+			userId, fileEntryId, major, changeLog, serviceContext);
+	}
+
+	@Override
+	public void checkInFileEntry(
+			long userId, long fileEntryId, String lockUuid,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		_repository.checkInFileEntry(
+			userId, fileEntryId, lockUuid, serviceContext);
+	}
+
+	@Override
+	public FileEntry copyFileEntry(
+			long userId, long groupId, long fileEntryId, long destFolderId,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		return _repository.copyFileEntry(
+			userId, groupId, fileEntryId, destFolderId, serviceContext);
 	}
 
 	@Override
@@ -77,64 +110,76 @@ public class DefaultLocalRepositoryImpl implements LocalRepository {
 	}
 
 	@Override
-	public void deleteFileEntry(long fileEntryId)
-		throws PortalException, SystemException {
-
+	public void deleteFileEntry(long fileEntryId) throws PortalException {
 		_repository.deleteFileEntry(fileEntryId);
 	}
 
 	@Override
-	public void deleteFolder(long folderId)
-		throws PortalException, SystemException {
-
+	public void deleteFolder(long folderId) throws PortalException {
 		_repository.deleteFolder(folderId);
 	}
 
 	@Override
-	public FileEntry getFileEntry(long fileEntryId)
-		throws PortalException, SystemException {
+	public <T extends Capability> T getCapability(Class<T> capabilityClass) {
+		return _repository.getCapability(capabilityClass);
+	}
 
+	@Override
+	public FileEntry getFileEntry(long fileEntryId) throws PortalException {
 		return _repository.getFileEntry(fileEntryId);
 	}
 
 	@Override
 	public FileEntry getFileEntry(long folderId, String title)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return _repository.getFileEntry(folderId, title);
 	}
 
 	@Override
-	public FileEntry getFileEntryByUuid(String uuid)
-		throws PortalException, SystemException {
-
+	public FileEntry getFileEntryByUuid(String uuid) throws PortalException {
 		return _repository.getFileEntryByUuid(uuid);
 	}
 
 	@Override
 	public FileVersion getFileVersion(long fileVersionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return _repository.getFileVersion(fileVersionId);
 	}
 
 	@Override
-	public Folder getFolder(long folderId)
-		throws PortalException, SystemException {
-
+	public Folder getFolder(long folderId) throws PortalException {
 		return _repository.getFolder(folderId);
 	}
 
 	@Override
-	public Folder getFolder(long parentFolderId, String title)
-		throws PortalException, SystemException {
+	public Folder getFolder(long parentFolderId, String name)
+		throws PortalException {
 
-		return _repository.getFolder(parentFolderId, title);
+		return _repository.getFolder(parentFolderId, name);
+	}
+
+	@Override
+	public List<FileEntry> getRepositoryFileEntries(
+			long userId, long rootFolderId, int start, int end,
+			OrderByComparator<FileEntry> obc)
+		throws PortalException {
+
+		return _repository.getRepositoryFileEntries(
+			userId, rootFolderId, start, end, obc);
 	}
 
 	@Override
 	public long getRepositoryId() {
 		return _repository.getRepositoryId();
+	}
+
+	@Override
+	public <T extends Capability> boolean isCapabilityProvided(
+		Class<T> capabilityClass) {
+
+		return _repository.isCapabilityProvided(capabilityClass);
 	}
 
 	@Override
@@ -153,6 +198,20 @@ public class DefaultLocalRepositoryImpl implements LocalRepository {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public void revertFileEntry(
+			long userId, long fileEntryId, String version,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		_repository.revertFileEntry(
+			userId, fileEntryId, version, serviceContext);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public void updateAsset(
 		long userId, FileEntry fileEntry, FileVersion fileVersion,
@@ -183,12 +242,12 @@ public class DefaultLocalRepositoryImpl implements LocalRepository {
 
 	@Override
 	public Folder updateFolder(
-		long folderId, long parentFolderId, String title, String description,
+		long folderId, long parentFolderId, String name, String description,
 		ServiceContext serviceContext) {
 
 		throw new UnsupportedOperationException();
 	}
 
-	private Repository _repository;
+	private final Repository _repository;
 
 }

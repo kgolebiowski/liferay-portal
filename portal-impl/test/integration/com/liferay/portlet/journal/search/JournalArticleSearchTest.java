@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,7 @@ package com.liferay.portlet.journal.search;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.BaseModel;
@@ -24,18 +24,21 @@ import com.liferay.portal.model.ClassedModel;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.search.BaseSearchTestCase;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationExecutionTestListener;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.TestPropsValues;
+import com.liferay.portlet.dynamicdatamapping.io.DDMFormXSDDeserializerUtil;
+import com.liferay.portlet.dynamicdatamapping.model.DDMForm;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.util.DDMIndexerUtil;
-import com.liferay.portlet.dynamicdatamapping.util.DDMStructureTestUtil;
-import com.liferay.portlet.dynamicdatamapping.util.DDMTemplateTestUtil;
+import com.liferay.portlet.dynamicdatamapping.util.test.DDMStructureTestUtil;
+import com.liferay.portlet.dynamicdatamapping.util.test.DDMTemplateTestUtil;
 import com.liferay.portlet.journal.asset.JournalArticleAssetRenderer;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalFolder;
@@ -43,23 +46,29 @@ import com.liferay.portlet.journal.model.JournalFolderConstants;
 import com.liferay.portlet.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portlet.journal.service.JournalArticleServiceUtil;
 import com.liferay.portlet.journal.service.JournalFolderServiceUtil;
-import com.liferay.portlet.journal.util.JournalTestUtil;
+import com.liferay.portlet.journal.util.test.JournalTestUtil;
 
+import java.util.Locale;
+import java.util.Map;
+
+import org.junit.ClassRule;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Juan Fernández
+ * @author Tibor Lipusz
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		SynchronousDestinationExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 @Sync
 public class JournalArticleSearchTest extends BaseSearchTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
 
 	@Ignore()
 	@Override
@@ -75,11 +84,12 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 
 		JournalFolder folder = (JournalFolder)parentBaseModel;
 
-		String xsd = DDMStructureTestUtil.getSampleStructureXSD("name");
+		String definition = DDMStructureTestUtil.getSampleStructureDefinition(
+			"name");
 
 		_ddmStructure = DDMStructureTestUtil.addStructure(
 			serviceContext.getScopeGroupId(), JournalArticle.class.getName(),
-			xsd);
+			definition);
 
 		DDMTemplate ddmTemplate = DDMTemplateTestUtil.addTemplate(
 			serviceContext.getScopeGroupId(), _ddmStructure.getStructureId());
@@ -90,6 +100,16 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 		return JournalTestUtil.addArticleWithXMLContent(
 			folder.getFolderId(), content, _ddmStructure.getStructureKey(),
 			ddmTemplate.getTemplateKey(), serviceContext);
+	}
+
+	@Override
+	protected BaseModel<?> addBaseModelWithWorkflow(
+			BaseModel<?> parentBaseModel, boolean approved,
+			Map<Locale, String> keywordsMap, ServiceContext serviceContext)
+		throws Exception {
+
+		return JournalTestUtil.addArticleWithWorkflow(
+			group.getGroupId(), keywordsMap, null, keywordsMap, approved);
 	}
 
 	@Override
@@ -107,7 +127,13 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 		}
 
 		return JournalTestUtil.addArticleWithWorkflow(
-			folderId, keywords, approved, serviceContext);
+			group.getGroupId(), folderId, keywords,
+			RandomTestUtil.randomString(50), approved, serviceContext);
+	}
+
+	@Override
+	protected void deleteBaseModel(BaseModel<?> baseModel) throws Exception {
+		JournalArticleLocalServiceUtil.deleteArticle((JournalArticle)baseModel);
 	}
 
 	@Override
@@ -156,7 +182,7 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 
 		return JournalTestUtil.addFolder(
 			(Long)parentBaseModel.getPrimaryKeyObj(),
-			ServiceTestUtil.randomString(), serviceContext);
+			RandomTestUtil.randomString(), serviceContext);
 	}
 
 	@Override
@@ -166,7 +192,7 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 
 		return JournalTestUtil.addFolder(
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			ServiceTestUtil.randomString(), serviceContext);
+			RandomTestUtil.randomString(), serviceContext);
 	}
 
 	@Override
@@ -180,8 +206,22 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 	}
 
 	@Override
+	protected boolean isCheckBaseModelPermission() {
+		return PropsValues.JOURNAL_ARTICLE_VIEW_PERMISSION_CHECK_ENABLED;
+	}
+
+	@Override
 	protected boolean isExpirableAllVersions() {
 		return PropsValues.JOURNAL_ARTICLE_EXPIRE_ALL_VERSIONS;
+	}
+
+	@Override
+	protected void moveBaseModelToTrash(long primaryKey) throws Exception {
+		JournalArticle article = JournalArticleLocalServiceUtil.getArticle(
+			primaryKey);
+
+		JournalArticleLocalServiceUtil.moveArticleToTrash(
+			TestPropsValues.getUserId(), article);
 	}
 
 	@Override
@@ -211,19 +251,23 @@ public class JournalArticleSearchTest extends BaseSearchTestCase {
 		JournalArticle article = (JournalArticle)baseModel;
 
 		return JournalTestUtil.updateArticle(
-			article, keywords, article.getContent(), serviceContext);
+			article, keywords, article.getContent(), false, true,
+			serviceContext);
 	}
 
 	@Override
 	protected void updateDDMStructure(ServiceContext serviceContext)
 		throws Exception {
 
-		String xsd = DDMStructureTestUtil.getSampleStructureXSD("title");
+		String definition = DDMStructureTestUtil.getSampleStructureDefinition(
+			"title");
+
+		DDMForm ddmForm = DDMFormXSDDeserializerUtil.deserialize(definition);
 
 		DDMStructureLocalServiceUtil.updateStructure(
 			_ddmStructure.getStructureId(),
 			_ddmStructure.getParentStructureId(), _ddmStructure.getNameMap(),
-			_ddmStructure.getDescriptionMap(), xsd, serviceContext);
+			_ddmStructure.getDescriptionMap(), ddmForm, serviceContext);
 	}
 
 	private DDMStructure _ddmStructure;

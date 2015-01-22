@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,6 +28,7 @@ public class InvokerPortletFactoryImpl implements InvokerPortletFactory {
 	public InvokerPortlet create(
 			com.liferay.portal.model.Portlet portletModel, Portlet portlet,
 			PortletConfig portletConfig, PortletContext portletContext,
+			InvokerFilterContainer invokerFilterContainer,
 			boolean checkAuthToken, boolean facesPortlet, boolean strutsPortlet,
 			boolean strutsBridgePortlet)
 		throws PortletException {
@@ -35,11 +36,8 @@ public class InvokerPortletFactoryImpl implements InvokerPortletFactory {
 		try {
 			return new InvokerPortletImpl(
 				portletModel, portlet, portletConfig, portletContext,
-				checkAuthToken, facesPortlet, strutsPortlet,
-				strutsBridgePortlet);
-		}
-		catch (PortletException pe) {
-			throw pe;
+				invokerFilterContainer, checkAuthToken, facesPortlet,
+				strutsPortlet, strutsBridgePortlet);
 		}
 		catch (Exception e) {
 			throw new PortletException(e);
@@ -49,15 +47,13 @@ public class InvokerPortletFactoryImpl implements InvokerPortletFactory {
 	@Override
 	public InvokerPortlet create(
 			com.liferay.portal.model.Portlet portletModel, Portlet portlet,
-			PortletContext portletContext)
+			PortletContext portletContext,
+			InvokerFilterContainer invokerFilterContainer)
 		throws PortletException {
 
 		try {
 			return new InvokerPortletImpl(
-				portletModel, portlet, portletContext);
-		}
-		catch (PortletException pe) {
-			throw pe;
+				portletModel, portlet, portletContext, invokerFilterContainer);
 		}
 		catch (Exception e) {
 			throw new PortletException(e);

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,11 +15,11 @@
 package com.liferay.portlet.journal.lar;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.PortletDataHandlerKeys;
 import com.liferay.portal.kernel.lar.UserIdStrategy;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.lar.BasePortletExportImportTestCase;
@@ -27,46 +27,49 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.StagedModel;
 import com.liferay.portal.service.CompanyLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.test.LiferayIntegrationTestRule;
+import com.liferay.portal.test.MainServletTestRule;
 import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationExecutionTestListener;
-import com.liferay.portal.test.TransactionalCallbackAwareExecutionTestListener;
+import com.liferay.portal.test.SynchronousDestinationTestRule;
 import com.liferay.portal.util.PortletKeys;
+import com.liferay.portal.util.test.RandomTestUtil;
+import com.liferay.portal.util.test.ServiceContextTestUtil;
+import com.liferay.portlet.asset.model.AssetEntry;
+import com.liferay.portlet.asset.service.AssetEntryLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.service.DDMTemplateLocalServiceUtil;
-import com.liferay.portlet.dynamicdatamapping.util.DDMStructureTestUtil;
-import com.liferay.portlet.dynamicdatamapping.util.DDMTemplateTestUtil;
+import com.liferay.portlet.dynamicdatamapping.util.test.DDMStructureTestUtil;
+import com.liferay.portlet.dynamicdatamapping.util.test.DDMTemplateTestUtil;
 import com.liferay.portlet.journal.model.JournalArticle;
-import com.liferay.portlet.journal.model.JournalArticleResource;
+import com.liferay.portlet.journal.model.JournalArticleConstants;
+import com.liferay.portlet.journal.model.JournalFolderConstants;
 import com.liferay.portlet.journal.service.JournalArticleLocalServiceUtil;
-import com.liferay.portlet.journal.service.JournalArticleResourceLocalServiceUtil;
-import com.liferay.portlet.journal.service.persistence.JournalArticleResourceUtil;
-import com.liferay.portlet.journal.util.JournalTestUtil;
+import com.liferay.portlet.journal.util.test.JournalTestUtil;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Juan Fernández
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		SynchronousDestinationExecutionTestListener.class,
-		TransactionalCallbackAwareExecutionTestListener.class
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 @Sync
-@Transactional
 public class JournalExportImportTest extends BasePortletExportImportTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE,
+			SynchronousDestinationTestRule.INSTANCE);
 
 	@Override
 	public String getNamespace() {
@@ -79,27 +82,43 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 	}
 
 	@Test
-	public void testExportImportBasicJournalArticle() throws Exception {
-		exportImportJournalArticle(false, false);
-	}
-
-	@Test
 	public void testExportImportCompanyScopeStructuredJournalArticle()
 		throws Exception {
 
-		exportImportJournalArticle(true, true);
+		exportImportJournalArticle(true);
 	}
 
 	@Test
 	public void testExportImportStructuredJournalArticle() throws Exception {
-		exportImportJournalArticle(true, false);
+		exportImportJournalArticle(false);
 	}
 
 	@Override
 	protected StagedModel addStagedModel(long groupId) throws Exception {
 		return JournalTestUtil.addArticle(
-			groupId, ServiceTestUtil.randomString(),
-			ServiceTestUtil.randomString());
+			groupId, RandomTestUtil.randomString(),
+			RandomTestUtil.randomString());
+	}
+
+	@Override
+	protected StagedModel addStagedModel(long groupId, Date createdDate)
+		throws Exception {
+
+		String title = RandomTestUtil.randomString();
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(groupId);
+
+		serviceContext.setCommand(Constants.ADD);
+		serviceContext.setCreateDate(createdDate);
+		serviceContext.setLayoutFullURL("http://localhost");
+		serviceContext.setModifiedDate(createdDate);
+
+		return JournalTestUtil.addArticle(
+			groupId, JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			JournalArticleConstants.CLASSNAME_ID_DEFAULT, title, title,
+			RandomTestUtil.randomString(), LocaleUtil.getSiteDefault(), false,
+			false, serviceContext);
 	}
 
 	@Override
@@ -108,8 +127,7 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 			(JournalArticle)stagedModel);
 	}
 
-	protected void exportImportJournalArticle(
-			boolean structuredContent, boolean companyScopeDependencies)
+	protected void exportImportJournalArticle(boolean companyScopeDependencies)
 		throws Exception {
 
 		JournalArticle article = null;
@@ -127,26 +145,17 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 			groupId = companyGroup.getGroupId();
 		}
 
-		if (structuredContent) {
-			ddmStructure = DDMStructureTestUtil.addStructure(
-				groupId, JournalArticle.class.getName());
+		ddmStructure = DDMStructureTestUtil.addStructure(
+			groupId, JournalArticle.class.getName());
 
-			ddmTemplate = DDMTemplateTestUtil.addTemplate(
-				groupId, ddmStructure.getStructureId());
+		ddmTemplate = DDMTemplateTestUtil.addTemplate(
+			groupId, ddmStructure.getStructureId());
 
-			String content = DDMStructureTestUtil.getSampleStructuredContent();
+		String content = DDMStructureTestUtil.getSampleStructuredContent();
 
-			article = JournalTestUtil.addArticleWithXMLContent(
-				group.getGroupId(), content, ddmStructure.getStructureKey(),
-				ddmTemplate.getTemplateKey());
-		}
-		else {
-			article = JournalTestUtil.addArticle(
-				group.getGroupId(), ServiceTestUtil.randomString(),
-				ServiceTestUtil.randomString());
-		}
-
-		String exportedResourceUuid = article.getArticleResourceUuid();
+		article = JournalTestUtil.addArticleWithXMLContent(
+			group.getGroupId(), content, ddmStructure.getStructureKey(),
+			ddmTemplate.getTemplateKey());
 
 		exportImportPortlet(PortletKeys.JOURNAL);
 
@@ -155,15 +164,11 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 
 		Assert.assertEquals(1, articlesCount);
 
-		JournalArticleResource importedJournalArticleResource =
-			JournalArticleResourceLocalServiceUtil.fetchArticleResource(
-				exportedResourceUuid, importedGroup.getGroupId());
+		JournalArticle groupArticle =
+			JournalArticleLocalServiceUtil.fetchJournalArticleByUuidAndGroupId(
+				article.getUuid(), importedGroup.getGroupId());
 
-		Assert.assertNotNull(importedJournalArticleResource);
-
-		if (!structuredContent) {
-			return;
-		}
+		Assert.assertNotNull(groupArticle);
 
 		groupId = importedGroup.getGroupId();
 
@@ -195,22 +200,30 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 
 		Assert.assertNotNull(dependentDDMTemplate);
 		Assert.assertEquals(
-			article.getStructureId(), dependentDDMStructure.getStructureKey());
+			article.getDDMStructureKey(),
+			dependentDDMStructure.getStructureKey());
 		Assert.assertEquals(
-			article.getTemplateId(), dependentDDMTemplate.getTemplateKey());
+			article.getDDMTemplateKey(), dependentDDMTemplate.getTemplateKey());
 		Assert.assertEquals(
 			dependentDDMTemplate.getClassPK(),
 			dependentDDMStructure.getStructureId());
 	}
 
+	@Override
+	protected AssetEntry getAssetEntry(StagedModel stagedModel)
+		throws PortalException {
+
+		JournalArticle article = (JournalArticle)stagedModel;
+
+		return AssetEntryLocalServiceUtil.getEntry(
+			article.getGroupId(), article.getArticleResourceUuid());
+	}
+
 	protected Map<String, String[]> getBaseParameterMap(long groupId, long plid)
 		throws Exception {
 
-		Map<String, String[]> parameterMap = new HashMap<String, String[]>();
+		Map<String, String[]> parameterMap = new HashMap<>();
 
-		parameterMap.put(
-			PortletDataHandlerKeys.CATEGORIES,
-			new String[] {Boolean.TRUE.toString()});
 		parameterMap.put(
 			PortletDataHandlerKeys.PERMISSIONS,
 			new String[] {Boolean.TRUE.toString()});
@@ -245,7 +258,7 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_DATA + StringPool.UNDERLINE +
 				PortletKeys.JOURNAL,
-			new String[] {Boolean.TRUE.toString()});
+			new String[]{Boolean.TRUE.toString()});
 
 		return parameterMap;
 	}
@@ -273,23 +286,10 @@ public class JournalExportImportTest extends BasePortletExportImportTestCase {
 	}
 
 	@Override
-	protected StagedModel getStagedModel(String uuid, long groupId)
-		throws PortalException, SystemException {
-
-		JournalArticleResource importedArticleResource =
-			JournalArticleResourceUtil.fetchByUUID_G(uuid, groupId);
-
-		return JournalArticleLocalServiceUtil.getLatestArticle(
-			importedArticleResource.getResourcePrimKey());
-	}
-
-	@Override
-	protected String getStagedModelUuid(StagedModel stagedModel)
-		throws PortalException, SystemException {
-
-		JournalArticle article = (JournalArticle)stagedModel;
-
-		return article.getArticleResourceUuid();
+	protected StagedModel getStagedModel(String uuid, long groupId) {
+		return
+			JournalArticleLocalServiceUtil.fetchJournalArticleByUuidAndGroupId(
+				uuid, groupId);
 	}
 
 	@Override

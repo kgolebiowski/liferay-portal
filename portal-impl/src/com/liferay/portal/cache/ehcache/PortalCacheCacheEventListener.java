@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -42,7 +42,7 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 
 	@Override
 	public Object clone() {
-		return new PortalCacheCacheEventListener<K, V>(
+		return new PortalCacheCacheEventListener<>(
 			_cacheListener, _portalCache);
 	}
 
@@ -62,8 +62,9 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 	public void notifyElementEvicted(Ehcache ehcache, Element element) {
 		K key = (K)element.getObjectKey();
 		V value = (V)element.getObjectValue();
+		int timeToLive = element.getTimeToLive();
 
-		_cacheListener.notifyEntryEvicted(_portalCache, key, value);
+		_cacheListener.notifyEntryEvicted(_portalCache, key, value, timeToLive);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Evicted " + key + " from " + ehcache.getName());
@@ -74,8 +75,9 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 	public void notifyElementExpired(Ehcache ehcache, Element element) {
 		K key = (K)element.getObjectKey();
 		V value = (V)element.getObjectValue();
+		int timeToLive = element.getTimeToLive();
 
-		_cacheListener.notifyEntryExpired(_portalCache, key, value);
+		_cacheListener.notifyEntryExpired(_portalCache, key, value, timeToLive);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Expired " + key + " from " + ehcache.getName());
@@ -88,8 +90,9 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 
 		K key = (K)element.getObjectKey();
 		V value = (V)element.getObjectValue();
+		int timeToLive = element.getTimeToLive();
 
-		_cacheListener.notifyEntryPut(_portalCache, key, value);
+		_cacheListener.notifyEntryPut(_portalCache, key, value, timeToLive);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Inserted " + key + " into " + ehcache.getName());
@@ -102,8 +105,9 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 
 		K key = (K)element.getObjectKey();
 		V value = (V)element.getObjectValue();
+		int timeToLive = element.getTimeToLive();
 
-		_cacheListener.notifyEntryRemoved(_portalCache, key, value);
+		_cacheListener.notifyEntryRemoved(_portalCache, key, value, timeToLive);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Removed " + key + " from " + ehcache.getName());
@@ -116,8 +120,9 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 
 		K key = (K)element.getObjectKey();
 		V value = (V)element.getObjectValue();
+		int timeToLive = element.getTimeToLive();
 
-		_cacheListener.notifyEntryUpdated(_portalCache, key, value);
+		_cacheListener.notifyEntryUpdated(_portalCache, key, value, timeToLive);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Updated " + key + " in " + ehcache.getName());
@@ -133,10 +138,10 @@ public class PortalCacheCacheEventListener<K extends Serializable, V>
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortalCacheCacheEventListener.class);
 
-	private CacheListener<K, V> _cacheListener;
-	private PortalCache<K, V> _portalCache;
+	private final CacheListener<K, V> _cacheListener;
+	private final PortalCache<K, V> _portalCache;
 
 }

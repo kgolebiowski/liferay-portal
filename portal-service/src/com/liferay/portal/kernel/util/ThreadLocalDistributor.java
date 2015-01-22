@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -135,13 +135,12 @@ public class ThreadLocalDistributor implements Externalizable {
 		objectOutput.writeObject(_threadLocalValues);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ThreadLocalDistributor.class);
 
 	private ClassLoader _classLoader;
 	private int _index;
-	private List<ThreadLocal<Serializable>> _threadLocals =
-		new ArrayList<ThreadLocal<Serializable>>();
+	private List<ThreadLocal<Serializable>> _threadLocals = new ArrayList<>();
 	private List<KeyValuePair> _threadLocalSources;
 	private Serializable[] _threadLocalValues;
 

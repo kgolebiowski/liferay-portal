@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -29,7 +29,6 @@ import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.UniqueList;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.spring.context.PortalContextLoaderListener;
 import com.liferay.portal.util.PropsUtil;
@@ -48,7 +47,8 @@ import java.security.Permissions;
 
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 
@@ -94,8 +94,8 @@ public class FileChecker extends BaseChecker {
 			"${com.sun.aas.instanceRoot}",
 			"${com.sun.aas.installRoot}",
 			"${file.separator}",
-			"${java.io.tmpdir}",
 			"${java.home}",
+			"${java.io.tmpdir}",
 			"${jboss.home.dir}",
 			"${jetty.home}",
 			"${jonas.base}",
@@ -133,10 +133,11 @@ public class FileChecker extends BaseChecker {
 			System.getProperty("com.sun.aas.instanceRoot"),
 			System.getProperty("com.sun.aas.installRoot"),
 			System.getProperty("file.separator"),
-			System.getProperty("java.io.tmpdir"), System.getenv("JAVA_HOME"),
+			System.getProperty("java.home"),
+			System.getProperty("java.io.tmpdir"),
 			System.getProperty("jboss.home.dir"),
 			System.getProperty("jetty.home"), System.getProperty("jonas.base"),
-			_portalDir, PropsValues.LIFERAY_HOME,
+			_PORTAL_DIR, PropsValues.LIFERAY_HOME,
 			System.getProperty("line.separator"),
 			System.getProperty("org.apache.geronimo.home.dir"),
 			System.getProperty("path.separator"), getServletContextName(),
@@ -215,7 +216,7 @@ public class FileChecker extends BaseChecker {
 		return false;
 	}
 
-	protected void addCanonicalPath(List<String> paths, String path) {
+	protected void addCanonicalPath(Set<String> paths, String path) {
 		Iterator<String> itr = paths.iterator();
 
 		while (itr.hasNext()) {
@@ -241,7 +242,7 @@ public class FileChecker extends BaseChecker {
 		paths.add(path);
 	}
 
-	protected void addCanonicalPaths(List<String> paths, File directory)
+	protected void addCanonicalPaths(Set<String> paths, File directory)
 		throws IOException {
 
 		addCanonicalPath(
@@ -268,7 +269,7 @@ public class FileChecker extends BaseChecker {
 		}
 	}
 
-	protected void addDefaultReadPaths(List<String> paths, String selector) {
+	protected void addDefaultReadPaths(Set<String> paths, String selector) {
 		String[] pathsArray = PropsUtil.getArray(
 			PropsKeys.PORTAL_SECURITY_MANAGER_FILE_CHECKER_DEFAULT_READ_PATHS,
 			new Filter(selector));
@@ -348,7 +349,7 @@ public class FileChecker extends BaseChecker {
 		// Plugin can do anything, except execute, in its own work folder
 
 		ServletContext servletContext = ServletContextPool.get(
-			PortalContextLoaderListener.getPortalServlerContextName());
+			PortalContextLoaderListener.getPortalServletContextName());
 
 		if (!actions.equals(FILE_PERMISSION_ACTION_EXECUTE) &&
 			(_workDir != null)) {
@@ -382,7 +383,7 @@ public class FileChecker extends BaseChecker {
 			return;
 		}
 
-		List<String> paths = new UniqueList<String>();
+		Set<String> paths = new LinkedHashSet<>();
 
 		// JDK
 
@@ -453,8 +454,8 @@ public class FileChecker extends BaseChecker {
 
 		// Shared libs
 
-		if (Validator.isNotNull(_globalSharedLibDir)) {
-			paths.add(_globalSharedLibDir + "-");
+		if (Validator.isNotNull(_GLOBAL_SHARED_LIB_DIR)) {
+			paths.add(_GLOBAL_SHARED_LIB_DIR + "-");
 		}
 
 		// Plugin
@@ -486,14 +487,17 @@ public class FileChecker extends BaseChecker {
 
 	private static final String _ENV_PREFIX = "${env:";
 
-	private static Log _log = LogFactoryUtil.getLog(FileChecker.class);
+	private static final String _GLOBAL_SHARED_LIB_DIR =
+		PropsValues.LIFERAY_LIB_GLOBAL_SHARED_DIR;
+
+	private static final String _PORTAL_DIR =
+		PropsValues.LIFERAY_WEB_PORTAL_DIR;
+
+	private static final Log _log = LogFactoryUtil.getLog(FileChecker.class);
 
 	private String[] _defaultReadPathsFromArray;
 	private String[] _defaultReadPathsToArray;
-	private String _globalSharedLibDir =
-		PropsValues.LIFERAY_LIB_GLOBAL_SHARED_DIR;
-	private Permissions _permissions = new Permissions();
-	private String _portalDir = PropsValues.LIFERAY_WEB_PORTAL_DIR;
+	private final Permissions _permissions = new Permissions();
 	private String _rootDir;
 	private String _workDir;
 

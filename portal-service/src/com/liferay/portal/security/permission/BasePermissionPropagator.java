@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,6 @@
 package com.liferay.portal.security.permission;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.ResourceConstants;
@@ -45,7 +44,7 @@ public abstract class BasePermissionPropagator implements PermissionPropagator {
 	protected Set<String> getAvailableActionIds(
 			long companyId, String className, long primKey, long roleId,
 			Set<String> actionIds)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		List<String> availableActionIds =
 			ResourcePermissionLocalServiceUtil.
@@ -59,7 +58,7 @@ public abstract class BasePermissionPropagator implements PermissionPropagator {
 	protected void propagateRolePermissions(
 			ActionRequest actionRequest, long roleId, String parentClassName,
 			long parentPrimKey, String childClassName, long childPrimKey)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -67,7 +66,7 @@ public abstract class BasePermissionPropagator implements PermissionPropagator {
 		Set<String> parentActionIds = getActionIds(parentClassName);
 		Set<String> childActionIds = getActionIds(childClassName);
 
-		Set<String> parentAndChildCommonActionIds = new HashSet<String>();
+		Set<String> parentAndChildCommonActionIds = new HashSet<>();
 
 		for (String actionId : childActionIds) {
 			if (parentActionIds.contains(actionId)) {
@@ -82,7 +81,7 @@ public abstract class BasePermissionPropagator implements PermissionPropagator {
 			themeDisplay.getCompanyId(), childClassName, childPrimKey, roleId,
 			childActionIds);
 
-		List<String> actionIds = new ArrayList<String>();
+		List<String> actionIds = new ArrayList<>();
 
 		for (String actionId : parentAndChildCommonActionIds) {
 			if (parentAvailableActionIds.contains(actionId)) {

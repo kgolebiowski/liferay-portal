@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -45,7 +45,7 @@ public class ActionURLLogic extends RuntimeLogic {
 	}
 
 	public String getLifecycle() {
-		return _lifecycle;
+		return _LIFECYCLE;
 	}
 
 	@Override
@@ -84,7 +84,8 @@ public class ActionURLLogic extends RuntimeLogic {
 		return liferayPortletURL.toString();
 	}
 
-	private String _lifecycle = PortletRequest.ACTION_PHASE;
-	private RenderResponseImpl _renderResponseImpl;
+	private static final String _LIFECYCLE = PortletRequest.ACTION_PHASE;
+
+	private final RenderResponseImpl _renderResponseImpl;
 
 }

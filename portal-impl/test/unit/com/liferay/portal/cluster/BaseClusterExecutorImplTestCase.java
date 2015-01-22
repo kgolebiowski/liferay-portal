@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,29 +14,22 @@
 
 package com.liferay.portal.cluster;
 
-import com.liferay.portal.bean.BeanLocatorImpl;
-import com.liferay.portal.kernel.bean.BeanLocator;
-import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
-import com.liferay.portal.kernel.bean.PortletBeanLocatorUtil;
 import com.liferay.portal.kernel.cluster.Address;
-import com.liferay.portal.kernel.cluster.BaseClusterResponseCallback;
 import com.liferay.portal.kernel.cluster.ClusterEvent;
 import com.liferay.portal.kernel.cluster.ClusterEventListener;
 import com.liferay.portal.kernel.cluster.ClusterEventType;
 import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.cluster.ClusterNodeResponse;
 import com.liferay.portal.kernel.cluster.ClusterNodeResponses;
-import com.liferay.portal.kernel.cluster.ClusterRequest;
+import com.liferay.portal.kernel.cluster.ClusterResponseCallback;
 import com.liferay.portal.kernel.cluster.FutureClusterResponses;
+import com.liferay.portal.kernel.concurrent.NoticeableFuture;
 import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
 import com.liferay.portal.kernel.executor.PortalExecutorManager;
 import com.liferay.portal.kernel.executor.PortalExecutorManagerUtil;
-import com.liferay.portal.kernel.portlet.PortletClassLoaderUtil;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
-import com.liferay.portal.kernel.util.ClassLoaderPool;
 import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.util.PortalImpl;
 import com.liferay.portal.util.PortalUtil;
@@ -47,28 +40,23 @@ import java.lang.reflect.InvocationTargetException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 
-import org.jgroups.Channel;
 import org.jgroups.JChannel;
-import org.jgroups.Message;
 import org.jgroups.Receiver;
 import org.jgroups.View;
 
 import org.junit.Assert;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 /**
  * @author Tina Tian
@@ -108,44 +96,86 @@ public abstract class BaseClusterExecutorImplTestCase
 	}
 
 	@Aspect
-	public static class InetAddressUtilExceptionAdvice {
+	public static class SetBadPortalInetSocketAddressAdvice {
+
+		public static final String BAD_ADDRESS = "bad address";
+
+		public static void setPort(int port) {
+			_port = port;
+		}
 
 		@Around(
-			"call(* com.liferay.portal.kernel.util.InetAddressUtil." +
-				"getLocalInetAddress())")
-		public Object throwException(ProceedingJoinPoint proceedingJoinPoint)
+			"set(* com.liferay.portal.util.PropsValues." +
+				"PORTAL_INSTANCE_HTTP_INET_SOCKET_ADDRESS)")
+		public Object setPortalInetSocketAddress(
+				ProceedingJoinPoint proceedingJoinPoint)
 			throws Throwable {
 
-			throw new Exception();
+			String address = BAD_ADDRESS;
+
+			if (_port != null) {
+				address = address.concat(StringPool.COLON).concat(
+					_port.toString());
+			}
+
+			return proceedingJoinPoint.proceed(new Object[] {address});
 		}
+
+		@Around(
+			"set(* com.liferay.portal.util.PropsValues." +
+				"PORTAL_INSTANCE_HTTPS_INET_SOCKET_ADDRESS)")
+		public Object setSecurePortalInetSocketAddress(
+				ProceedingJoinPoint proceedingJoinPoint)
+			throws Throwable {
+
+			String address = BAD_ADDRESS;
+
+			if (_port != null) {
+				address = address.concat(StringPool.COLON).concat(
+					_port.toString());
+			}
+
+			return proceedingJoinPoint.proceed(new Object[] {address});
+		}
+
+		private static Integer _port;
 
 	}
 
 	@Aspect
-	public static class SetPortalPortAdvice {
+	public static class SetPortalInetSocketAddressAdvice {
+
+		public static final String PORTAL_ADDRESS = "127.0.0.1";
 
 		public static final int PORTAL_PORT = 80;
+
+		public static final String SECURE_PORTAL_ADDRESS = "127.0.1.1";
 
 		public static final int SECURE_PORTAL_PORT = 81;
 
 		@Around(
 			"set(* com.liferay.portal.util.PropsValues." +
-				"PORTAL_INSTANCE_HTTP_PORT)")
-		public Object setPortalPort(ProceedingJoinPoint proceedingJoinPoint)
-			throws Throwable {
-
-			return proceedingJoinPoint.proceed(new Object[] {PORTAL_PORT});
-		}
-
-		@Around(
-			"set(* com.liferay.portal.util.PropsValues." +
-				"PORTAL_INSTANCE_HTTPS_PORT)")
-		public Object setSecurePortalPort(
+				"PORTAL_INSTANCE_HTTP_INET_SOCKET_ADDRESS)")
+		public Object setPortalInetSocketAddress(
 				ProceedingJoinPoint proceedingJoinPoint)
 			throws Throwable {
 
 			return proceedingJoinPoint.proceed(
-				new Object[] {SECURE_PORTAL_PORT});
+				new Object[] {PORTAL_ADDRESS + StringPool.COLON + PORTAL_PORT});
+		}
+
+		@Around(
+			"set(* com.liferay.portal.util.PropsValues." +
+				"PORTAL_INSTANCE_HTTPS_INET_SOCKET_ADDRESS)")
+		public Object setSecurePortalInetSocketAddress(
+				ProceedingJoinPoint proceedingJoinPoint)
+			throws Throwable {
+
+			return proceedingJoinPoint.proceed(
+				new Object[] {
+					SECURE_PORTAL_ADDRESS + StringPool.COLON +
+						SECURE_PORTAL_PORT
+					});
 		}
 
 	}
@@ -185,7 +215,7 @@ public abstract class BaseClusterExecutorImplTestCase
 	protected void assertFutureClusterResponsesWithException(
 			FutureClusterResponses futureClusterResponses, String expectedUUID,
 			Address expectedAddress, String expectedExceptionMessage)
-		throws Exception {
+		throws InterruptedException {
 
 		ClusterNodeResponses clusterNodeResponses =
 			futureClusterResponses.get();
@@ -229,7 +259,7 @@ public abstract class BaseClusterExecutorImplTestCase
 			Object exceptedResult, Address expectedAddress)
 		throws Exception {
 
-		List<Address> expectedAddresses = new ArrayList<Address>();
+		List<Address> expectedAddresses = new ArrayList<>();
 
 		expectedAddresses.add(expectedAddress);
 
@@ -260,26 +290,12 @@ public abstract class BaseClusterExecutorImplTestCase
 		}
 	}
 
-	protected ClusterExecutorImpl getClusterExecutorImpl(
-			boolean useMockReceiver, boolean loadSpringXML)
-		throws Exception {
-
-		_initialize(loadSpringXML);
+	protected ClusterExecutorImpl getClusterExecutorImpl() {
+		_initialize();
 
 		ClusterExecutorImpl clusterExecutorImpl = new ClusterExecutorImpl();
 
 		clusterExecutorImpl.afterPropertiesSet();
-
-		clusterExecutorImpl.setShortcutLocalMethod(true);
-
-		if (useMockReceiver) {
-			Channel channel = clusterExecutorImpl.getControlChannel();
-
-			channel.setReceiver(
-				new MockClusterRequestReceiver(clusterExecutorImpl));
-
-			ClusterExecutorImpl.bindInetAddress = null;
-		}
 
 		clusterExecutorImpl.initialize();
 
@@ -295,8 +311,7 @@ public abstract class BaseClusterExecutorImplTestCase
 
 		org.jgroups.Address jAddress = localJChannel.getAddress();
 
-		List<org.jgroups.Address> jAddresses =
-			new ArrayList<org.jgroups.Address>();
+		List<org.jgroups.Address> jAddresses = new ArrayList<>();
 
 		jAddresses.add(jAddress);
 
@@ -334,8 +349,6 @@ public abstract class BaseClusterExecutorImplTestCase
 		TestBean.class, "testMethod2");
 	protected static MethodKey testMethod3MethodKey = new MethodKey(
 		TestBean.class, "testMethod3", String.class);
-	protected static MethodKey testMethod4MethodKey = new MethodKey(
-		TestBean.class, "testMethod4");
 
 	protected class MockClusterEventListener implements ClusterEventListener {
 
@@ -376,74 +389,28 @@ public abstract class BaseClusterExecutorImplTestCase
 			}
 		}
 
-		private Exchanger<ClusterEvent> _departMessageExchanger =
-			new Exchanger<ClusterEvent>();
-		private Exchanger<ClusterEvent> _joinMessageExchanger =
-			new Exchanger<ClusterEvent>();
-
-	}
-
-	protected class MockClusterRequestReceiver extends ClusterRequestReceiver {
-
-		public MockClusterRequestReceiver(
-			ClusterExecutorImpl clusterExecutorImpl) {
-
-			super(clusterExecutorImpl);
-
-			_clusterExecutorImpl = clusterExecutorImpl;
-		}
-
-		public ClusterRequest waitLocalRequestMessage() throws Exception {
-			try {
-				return _localRequestExchanger.exchange(
-					null, 1000, TimeUnit.MILLISECONDS);
-			}
-			catch (TimeoutException te) {
-				return null;
-			}
-		}
-
-		@Override
-		public void receive(Message message) {
-			super.receive(message);
-
-			Object object = message.getObject();
-
-			try {
-				org.jgroups.Address srcJAddress = message.getSrc();
-
-				Address clusterNodeAddress =
-					_clusterExecutorImpl.getLocalClusterNodeAddress();
-
-				if (srcJAddress.equals(clusterNodeAddress.getRealAddress())) {
-					if (object instanceof ClusterRequest) {
-						_localRequestExchanger.exchange((ClusterRequest)object);
-					}
-				}
-			}
-			catch (InterruptedException ie) {
-			}
-		}
-
-		private ClusterExecutorImpl _clusterExecutorImpl;
-		private Exchanger<ClusterRequest> _localRequestExchanger =
-			new Exchanger<ClusterRequest>();
+		private final Exchanger<ClusterEvent> _departMessageExchanger =
+			new Exchanger<>();
+		private final Exchanger<ClusterEvent> _joinMessageExchanger =
+			new Exchanger<>();
 
 	}
 
 	protected class MockClusterResponseCallback
-		extends BaseClusterResponseCallback {
+		implements ClusterResponseCallback {
 
 		@Override
-		public void callback(ClusterNodeResponses clusterNodeResponses) {
+		public void callback(BlockingQueue<ClusterNodeResponse> blockingQueue) {
 			try {
-				_messageExchanger.exchange(clusterNodeResponses);
+				_messageExchanger.exchange(blockingQueue);
 			}
 			catch (Exception e) {
 			}
 		}
 
-		public ClusterNodeResponses waitMessage() throws Exception {
+		public BlockingQueue<ClusterNodeResponse> waitMessage()
+			throws Exception {
+
 			try {
 				return _messageExchanger.exchange(
 					null, 1000, TimeUnit.MILLISECONDS);
@@ -453,61 +420,17 @@ public abstract class BaseClusterExecutorImplTestCase
 			}
 		}
 
-		public TimeoutException waitTimeoutException() throws Exception {
-			try {
-				return _timeoutExceptionExchanger.exchange(
-					null, 2000, TimeUnit.MILLISECONDS);
-			}
-			catch (TimeoutException te) {
-				return null;
-			}
-		}
-
-		public InterruptedException waitInterruptedException()
-			throws Exception {
-
-			try {
-				return _interruptedExceptionExchanger.exchange(
-					null, 1000, TimeUnit.MILLISECONDS);
-			}
-			catch (TimeoutException te) {
-				return null;
-			}
-		}
-
-		@Override
-		public void processInterruptedException(
-			InterruptedException interruptedException) {
-
-			try {
-				_interruptedExceptionExchanger.exchange(interruptedException);
-			}
-			catch (Exception e) {
-			}
-		}
-
-		@Override
-		public void processTimeoutException(TimeoutException timeoutException) {
-			try {
-				_timeoutExceptionExchanger.exchange(timeoutException);
-			}
-			catch (Exception e) {
-			}
-		}
-
-		private Exchanger<ClusterNodeResponses> _messageExchanger =
-			new Exchanger<ClusterNodeResponses>();
-		private Exchanger<InterruptedException> _interruptedExceptionExchanger =
-			new Exchanger<InterruptedException>();
-		private Exchanger<TimeoutException> _timeoutExceptionExchanger =
-			new Exchanger<TimeoutException>();
+		private final Exchanger<BlockingQueue<ClusterNodeResponse>>
+			_messageExchanger = new Exchanger<>();
 
 	}
 
 	protected class MockPortalExecutorManager implements PortalExecutorManager {
 
 		@Override
-		public <T> Future<T> execute(String name, Callable<T> callable) {
+		public <T> NoticeableFuture<T> execute(
+			String name, Callable<T> callable) {
+
 			return _threadPoolExecutor.submit(callable);
 		}
 
@@ -571,12 +494,12 @@ public abstract class BaseClusterExecutorImplTestCase
 			}
 		}
 
-		private ThreadPoolExecutor _threadPoolExecutor = new ThreadPoolExecutor(
-			10, 10);
+		private final ThreadPoolExecutor _threadPoolExecutor =
+			new ThreadPoolExecutor(10, 10);
 
 	}
 
-	private void _initialize(boolean loadSpringXML) {
+	private void _initialize() {
 		if (_initialized) {
 			return;
 		}
@@ -596,39 +519,6 @@ public abstract class BaseClusterExecutorImplTestCase
 
 		portalExecutorManagerUtil.setPortalExecutorManager(
 			new MockPortalExecutorManager());
-
-		if (loadSpringXML) {
-			String servletContextName = StringUtil.randomId();
-
-			Class<?> clazz = getClass();
-
-			ClassLoader classLoader = clazz.getClassLoader();
-
-			ClassLoaderPool.register(servletContextName, classLoader);
-			PortletClassLoaderUtil.setServletContextName(servletContextName);
-
-			try {
-				ApplicationContext applicationContext =
-					new FileSystemXmlApplicationContext(
-						"portal-impl/test/unit/com/liferay/portal/cluster/" +
-							"test-spring.xml");
-
-				BeanLocator beanLocator = new BeanLocatorImpl(
-					classLoader, applicationContext);
-
-				PortalBeanLocatorUtil.setBeanLocator(beanLocator);
-
-				PortletBeanLocatorUtil.setBeanLocator(
-					SERVLET_CONTEXT_NAME, beanLocator);
-			}
-			finally {
-				ClassLoaderPool.unregister(servletContextName);
-				PortletClassLoaderUtil.setServletContextName(null);
-			}
-		}
-
-		JDKLoggerTestUtil.configureJDKLogger(
-			ClusterBase.class.getName(), Level.FINE);
 
 		_initialized = true;
 	}

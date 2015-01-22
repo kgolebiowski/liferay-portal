@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -27,9 +27,9 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.ac.AccessControlUtil;
 import com.liferay.portal.security.auth.AccessControlContext;
-import com.liferay.portal.security.auth.AuthSettingsUtil;
 import com.liferay.portal.security.auth.AuthVerifierPipeline;
 import com.liferay.portal.security.auth.AuthVerifierResult;
+import com.liferay.portal.security.sso.SSOUtil;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
 import com.liferay.portal.util.PropsUtil;
 
@@ -49,7 +49,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * <p>
- * See http://issues.liferay.com/browse/LPS-27888.
+ * See https://issues.liferay.com/browse/LPS-27888.
  * </p>
  *
  * @author Tomas Polesovsky
@@ -180,7 +180,7 @@ public class AuthVerifierFilter extends BasePortalFilter {
 
 		String remoteAddr = request.getRemoteAddr();
 
-		if (AuthSettingsUtil.isAccessAllowed(request, _hostsAllowed)) {
+		if (SSOUtil.isAccessAllowed(request, _hostsAllowed)) {
 			if (_log.isDebugEnabled()) {
 				_log.debug("Access allowed for " + remoteAddr);
 			}
@@ -235,12 +235,11 @@ public class AuthVerifierFilter extends BasePortalFilter {
 		return true;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		AuthVerifierFilter.class.getName());
 
-	private Set<String> _hostsAllowed = new HashSet<String>();
+	private final Set<String> _hostsAllowed = new HashSet<>();
 	private boolean _httpsRequired;
-	private Map<String, Object> _initParametersMap =
-		new HashMap<String, Object>();
+	private final Map<String, Object> _initParametersMap = new HashMap<>();
 
 }

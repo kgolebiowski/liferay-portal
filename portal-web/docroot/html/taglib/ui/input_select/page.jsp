@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,7 +25,7 @@ boolean disabled = GetterUtil.getBoolean((String)request.getAttribute("liferay-u
 boolean value = ParamUtil.getBoolean(request, param, defaultValue.booleanValue());
 %>
 
-<select class="<%= cssClass %>" <%= disabled ? "disabled=\"disabled\"" : "" %> name="<%= namespace %><%= param %>">
+<select class="form-control <%= cssClass %>" <%= disabled ? "disabled=\"disabled\"" : "" %> name="<%= namespace %><%= param %>">
 	<option <%= (value) ? "selected" : "" %> value="1"><liferay-ui:message key="yes" /></option>
 	<option <%= (!value) ? "selected" : "" %> value="0"><liferay-ui:message key="no" /></option>
 </select>

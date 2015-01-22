@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -68,7 +68,7 @@ public class JournalDDMDisplay extends BaseDDMDisplay {
 			String.valueOf(PortalUtil.getClassNameId(DDMStructure.class)));
 		portletURL.setParameter(
 			"classPK", String.valueOf(structure.getStructureId()));
-		portletURL.setParameter("structureId", structure.getStructureKey());
+		portletURL.setParameter("ddmStructureKey", structure.getStructureKey());
 		portletURL.setWindowState(LiferayWindowState.POP_UP);
 
 		return portletURL.toString();
@@ -154,13 +154,13 @@ public class JournalDDMDisplay extends BaseDDMDisplay {
 		return true;
 	}
 
-	private static Set<String> _templateLanguageTypes =
+	private static final Set<String> _templateLanguageTypes =
 		SetUtil.fromArray(
 			new String[] {
 				TemplateConstants.LANG_TYPE_FTL, TemplateConstants.LANG_TYPE_VM,
 				TemplateConstants.LANG_TYPE_XSL
 			});
-	private static Set<String> _viewTemplateExcludedColumnNames =
+	private static final Set<String> _viewTemplateExcludedColumnNames =
 		SetUtil.fromArray(new String[] {"mode"});
 
 }

@@ -189,7 +189,27 @@
 		<tag-class>com.liferay.taglib.portletext.IconPortletTag</tag-class>
 		<body-content>JSP</body-content>
 		<attribute>
+			<name>ariaRole</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>id</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>label</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
 			<name>portlet</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>url</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
@@ -207,6 +227,11 @@
 	<tag>
 		<name>icon-refresh</name>
 		<tag-class>com.liferay.taglib.portletext.IconRefreshTag</tag-class>
+		<body-content>JSP</body-content>
+	</tag>
+	<tag>
+		<name>icon-staging</name>
+		<tag-class>com.liferay.taglib.portletext.IconStagingTag</tag-class>
 		<body-content>JSP</body-content>
 	</tag>
 	<tag>

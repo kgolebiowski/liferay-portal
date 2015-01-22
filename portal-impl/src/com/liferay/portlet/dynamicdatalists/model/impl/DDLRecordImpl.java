@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,20 +15,19 @@
 package com.liferay.portlet.dynamicdatalists.model.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecordSet;
 import com.liferay.portlet.dynamicdatalists.model.DDLRecordVersion;
-import com.liferay.portlet.dynamicdatalists.service.DDLRecordLocalServiceUtil;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordSetLocalServiceUtil;
+import com.liferay.portlet.dynamicdatalists.service.DDLRecordVersionLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
-import com.liferay.portlet.dynamicdatamapping.storage.Field;
-import com.liferay.portlet.dynamicdatamapping.storage.Fields;
+import com.liferay.portlet.dynamicdatamapping.storage.DDMFormFieldValue;
+import com.liferay.portlet.dynamicdatamapping.storage.DDMFormValues;
 import com.liferay.portlet.dynamicdatamapping.storage.StorageEngineUtil;
 
 import java.io.Serializable;
 
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 /**
  * @author Brian Wing Shun Chan
@@ -36,30 +35,32 @@ import java.util.Locale;
  */
 public class DDLRecordImpl extends DDLRecordBaseImpl {
 
-	public DDLRecordImpl() {
+	@Override
+	public List<DDMFormFieldValue> getDDMFormFieldValues(String fieldName)
+		throws PortalException {
+
+		DDMFormValues ddmFormValues = getDDMFormValues();
+
+		Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap =
+			ddmFormValues.getDDMFormFieldValuesMap();
+
+		return ddmFormFieldValuesMap.get(fieldName);
 	}
 
 	@Override
-	public Field getField(String fieldName) throws PortalException {
-		Fields fields = getFields();
-
-		return fields.get(fieldName);
+	public DDMFormValues getDDMFormValues() throws PortalException {
+		return StorageEngineUtil.getDDMFormValues(getDDMStorageId());
 	}
 
 	@Override
 	public Serializable getFieldDataType(String fieldName)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		DDLRecordSet recordSet = getRecordSet();
 
 		DDMStructure ddmStructure = recordSet.getDDMStructure();
 
 		return ddmStructure.getFieldDataType(fieldName);
-	}
-
-	@Override
-	public Fields getFields() throws PortalException {
-		return StorageEngineUtil.getFields(getDDMStorageId());
 	}
 
 	@Override
@@ -72,71 +73,31 @@ public class DDLRecordImpl extends DDLRecordBaseImpl {
 	}
 
 	@Override
-	public Serializable getFieldValue(String fieldName) throws PortalException {
-		Field field = getField(fieldName);
-
-		if (field == null) {
-			return null;
-		}
-
-		return field.getValue();
+	public DDLRecordVersion getLatestRecordVersion() throws PortalException {
+		return DDLRecordVersionLocalServiceUtil.getLatestRecordVersion(
+			getRecordId());
 	}
 
 	@Override
-	public Serializable getFieldValue(String fieldName, Locale locale)
-		throws PortalException {
-
-		Field field = getField(fieldName);
-
-		if (field == null) {
-			return null;
-		}
-
-		return field.getValue(locale);
-	}
-
-	@Override
-	public List<Serializable> getFieldValues(String fieldName, Locale locale)
-		throws PortalException {
-
-		Field field = getField(fieldName);
-
-		if (field == null) {
-			return null;
-		}
-
-		return field.getValues(locale);
-	}
-
-	@Override
-	public DDLRecordVersion getLatestRecordVersion()
-		throws PortalException, SystemException {
-
-		return DDLRecordLocalServiceUtil.getLatestRecordVersion(getRecordId());
-	}
-
-	@Override
-	public DDLRecordSet getRecordSet() throws PortalException, SystemException {
+	public DDLRecordSet getRecordSet() throws PortalException {
 		return DDLRecordSetLocalServiceUtil.getRecordSet(getRecordSetId());
 	}
 
 	@Override
-	public DDLRecordVersion getRecordVersion()
-		throws PortalException, SystemException {
-
+	public DDLRecordVersion getRecordVersion() throws PortalException {
 		return getRecordVersion(getVersion());
 	}
 
 	@Override
 	public DDLRecordVersion getRecordVersion(String version)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		return DDLRecordLocalServiceUtil.getRecordVersion(
+		return DDLRecordVersionLocalServiceUtil.getRecordVersion(
 			getRecordId(), version);
 	}
 
 	@Override
-	public int getStatus() throws PortalException, SystemException {
+	public int getStatus() throws PortalException {
 		DDLRecordVersion recordVersion = getRecordVersion();
 
 		return recordVersion.getStatus();

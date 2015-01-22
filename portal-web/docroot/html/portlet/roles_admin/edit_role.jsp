@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
+
 String backURL = ParamUtil.getString(request, "backURL", redirect);
 
 Role role = (Role)request.getAttribute(WebKeys.ROLE);
@@ -67,21 +68,17 @@ String subtype = BeanParamUtil.getString(role, request, "subtype");
 				</aui:select>
 			</c:when>
 			<c:when test="<%= (role == null) %>">
-				<aui:field-wrapper label="type">
-					<liferay-ui:input-resource url="<%= LanguageUtil.get(pageContext, RoleConstants.getTypeLabel(type)) %>" />
-				</aui:field-wrapper>
+				<aui:input label="type" name="typeLabel" type="resource" value="<%= LanguageUtil.get(request, RoleConstants.getTypeLabel(type)) %>" />
 
 				<aui:input name="type" type="hidden" value="<%= String.valueOf(type) %>" />
 			</c:when>
 			<c:otherwise>
-				<aui:field-wrapper label="type">
-					<liferay-ui:input-resource url="<%= LanguageUtil.get(pageContext, role.getTypeLabel()) %>" />
-				</aui:field-wrapper>
+				<aui:input label="type" name="typeLabel" type="resource" value="<%= LanguageUtil.get(request, role.getTypeLabel()) %>" />
 			</c:otherwise>
 		</c:choose>
 
 		<c:choose>
-			<c:when test="<%= (role != null) && PortalUtil.isSystemRole(role.getName()) %>">
+			<c:when test="<%= (role != null) && role.isSystem() %>">
 				<aui:input name="name" type="hidden" value="<%= role.getName() %>" />
 			</c:when>
 			<c:otherwise>
@@ -148,5 +145,5 @@ String subtype = BeanParamUtil.getString(role, request, "subtype");
 </aui:form>
 
 <%
-PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, ((role == null) ? "add-role" : "edit")), currentURL);
+PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, ((role == null) ? "add-role" : "edit")), currentURL);
 %>

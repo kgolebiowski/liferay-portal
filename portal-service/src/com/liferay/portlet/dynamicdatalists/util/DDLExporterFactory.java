@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,7 +40,7 @@ public class DDLExporterFactory {
 	public void setDDLExporters(Map<String, DDLExporter> exporters) {
 		PortalRuntimePermission.checkSetBeanProperty(getClass());
 
-		_exporters = new HashMap<DDLExportFormat, DDLExporter>();
+		_exporters = new HashMap<>();
 
 		for (Map.Entry<String, DDLExporter> entry : exporters.entrySet()) {
 			DDLExportFormat exportFormat = DDLExportFormat.parse(

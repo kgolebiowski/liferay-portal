@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,13 +19,10 @@ import com.liferay.portal.kernel.util.CamelCaseUtil;
 import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextFactory;
 
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,11 +59,7 @@ public class JSONWebServiceActionParameters {
 	}
 
 	public List<NameValue<String, Object>> getInnerParameters(String baseName) {
-		if (_innerParameters == null) {
-			return null;
-		}
-
-		return _innerParameters.get(baseName);
+		return _jsonWebServiceActionParameters.getInnerParameters(baseName);
 	}
 
 	public JSONRPCRequest getJSONRPCRequest() {
@@ -74,15 +67,15 @@ public class JSONWebServiceActionParameters {
 	}
 
 	public Object getParameter(String name) {
-		return _parameters.get(name);
+		return _jsonWebServiceActionParameters.get(name);
 	}
 
 	public String[] getParameterNames() {
-		String[] names = new String[_parameters.size()];
+		String[] names = new String[_jsonWebServiceActionParameters.size()];
 
 		int i = 0;
 
-		for (String key : _parameters.keySet()) {
+		for (String key : _jsonWebServiceActionParameters.keySet()) {
 			names[i] = key;
 
 			i++;
@@ -92,19 +85,19 @@ public class JSONWebServiceActionParameters {
 	}
 
 	public String getParameterTypeName(String name) {
-		if (_parameterTypes == null) {
-			return null;
-		}
-
-		return _parameterTypes.get(name);
+		return _jsonWebServiceActionParameters.getParameterTypeName(name);
 	}
 
 	public ServiceContext getServiceContext() {
 		return _serviceContext;
 	}
 
+	public boolean includeDefaultParameters() {
+		return _jsonWebServiceActionParameters.includeDefaultParameters();
+	}
+
 	private void _addDefaultParameters() {
-		_parameters.put("serviceContext", Void.TYPE);
+		_jsonWebServiceActionParameters.put("serviceContext", Void.TYPE);
 	}
 
 	private void _collectDefaultsFromRequestAttributes(
@@ -117,7 +110,8 @@ public class JSONWebServiceActionParameters {
 
 			Object value = request.getAttribute(attributeName);
 
-			_parameters.put(attributeName, value);
+			_jsonWebServiceActionParameters.putDefaultParameter(
+				attributeName, value);
 		}
 	}
 
@@ -133,7 +127,7 @@ public class JSONWebServiceActionParameters {
 
 			parameterName = CamelCaseUtil.normalizeCamelCase(parameterName);
 
-			_parameters.put(parameterName, value);
+			_jsonWebServiceActionParameters.put(parameterName, value);
 		}
 	}
 
@@ -147,7 +141,7 @@ public class JSONWebServiceActionParameters {
 
 			Object value = entry.getValue();
 
-			_parameters.put(parameterName, value);
+			_jsonWebServiceActionParameters.put(parameterName, value);
 		}
 	}
 
@@ -192,7 +186,7 @@ public class JSONWebServiceActionParameters {
 
 			name = CamelCaseUtil.toCamelCase(name);
 
-			_parameters.put(name, value);
+			_jsonWebServiceActionParameters.put(name, value);
 
 			i++;
 		}
@@ -230,76 +224,14 @@ public class JSONWebServiceActionParameters {
 
 			name = CamelCaseUtil.normalizeCamelCase(name);
 
-			_parameters.put(name, value);
+			_jsonWebServiceActionParameters.put(name, value);
 		}
 	}
 
-	private Map<String, List<NameValue<String, Object>>> _innerParameters;
 	private JSONRPCRequest _jsonRPCRequest;
-
-	private Map<String, Object> _parameters = new HashMap<String, Object>() {
-
-		@Override
-		public Object put(String key, Object value) {
-			if (key.startsWith(StringPool.DASH)) {
-				key = key.substring(1);
-
-				value = null;
-			}
-			else if (key.startsWith(StringPool.PLUS)) {
-				key = key.substring(1);
-
-				int pos = key.indexOf(CharPool.COLON);
-
-				if (pos != -1) {
-					value = key.substring(pos + 1);
-
-					key = key.substring(0, pos);
-				}
-
-				if (Validator.isNotNull(value)) {
-					if (_parameterTypes == null) {
-						_parameterTypes = new HashMap<String, String>();
-					}
-
-					_parameterTypes.put(key, value.toString());
-				}
-
-				value = Void.TYPE;
-			}
-
-			int pos = key.indexOf(CharPool.PERIOD);
-
-			if (pos != -1) {
-				String baseName = key.substring(0, pos);
-
-				String innerName = key.substring(pos + 1);
-
-				if (_innerParameters == null) {
-					_innerParameters =
-						new HashMap<String, List<NameValue<String, Object>>>();
-				}
-
-				List<NameValue<String, Object>> values = _innerParameters.get(
-					baseName);
-
-				if (values == null) {
-					values = new ArrayList<NameValue<String, Object>>();
-
-					_innerParameters.put(baseName, values);
-				}
-
-				values.add(new NameValue<String, Object>(innerName, value));
-
-				return value;
-			}
-
-			return super.put(key, value);
-		}
-
-	};
-
-	private Map<String, String> _parameterTypes;
+	private final JSONWebServiceActionParametersMap
+		_jsonWebServiceActionParameters =
+			new JSONWebServiceActionParametersMap();
 	private ServiceContext _serviceContext;
 
 }

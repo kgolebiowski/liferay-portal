@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2013 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -407,7 +407,7 @@ public class SessionErrors {
 			map = (Map<String, Object>)session.getAttribute(_CLASS_NAME);
 
 			if ((map == null) && createIfAbsent) {
-				map = new LinkedHashMap<String, Object>();
+				map = new LinkedHashMap<>();
 
 				session.setAttribute(_CLASS_NAME, map);
 			}
@@ -434,7 +434,7 @@ public class SessionErrors {
 			map = (Map<String, Object>)portletSession.getAttribute(_CLASS_NAME);
 
 			if ((map == null) && createIfAbsent) {
-				map = new LinkedHashMap<String, Object>();
+				map = new LinkedHashMap<>();
 
 				portletSession.setAttribute(_CLASS_NAME, map);
 			}
