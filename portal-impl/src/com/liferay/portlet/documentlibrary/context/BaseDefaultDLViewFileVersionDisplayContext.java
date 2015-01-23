@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.servlet.taglib.ui.DeleteMenuItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.JavascriptMenuItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.JavascriptToolbarItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.JavascriptUIItem;
+import com.liferay.portal.kernel.servlet.taglib.ui.Menu;
 import com.liferay.portal.kernel.servlet.taglib.ui.MenuItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.ToolbarItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.URLMenuItem;
@@ -127,6 +128,54 @@ public abstract class BaseDefaultDLViewFileVersionDisplayContext
 	}
 
 	@Override
+	public Menu getMenu() throws PortalException {
+		Menu menu = new Menu();
+
+		String direction = "left";
+
+		DLActionsDisplayContext dlActionsDisplayContext =
+			_getDLActionsDisplayContext();
+
+		if (dlActionsDisplayContext.isShowMinimalActionsButton()) {
+			direction = "down";
+		}
+
+		menu.setDirection(direction);
+
+		boolean extended = true;
+
+		if (dlActionsDisplayContext.isShowMinimalActionsButton()) {
+			extended = false;
+		}
+
+		menu.setExtended(extended);
+
+		String icon = StringPool.BLANK;
+
+		if (dlActionsDisplayContext.isShowMinimalActionsButton()) {
+			icon = null;
+		}
+
+		menu.setIcon(icon);
+
+		menu.setMenuItems(getMenuItems());
+
+		String message = StringPool.BLANK;
+
+		if (dlActionsDisplayContext.isShowMinimalActionsButton()) {
+			message = "actions";
+		}
+
+		menu.setMessage(message);
+
+		menu.setShowWhenSingleIcon(
+			dlActionsDisplayContext.isShowWhenSingleIconActionButton());
+		menu.setTriggerCssClass("btn btn-default");
+
+		return menu;
+	}
+
+	@Override
 	public List<MenuItem> getMenuItems() throws PortalException {
 		List<MenuItem> menuItems = new ArrayList<>();
 
@@ -175,7 +224,7 @@ public abstract class BaseDefaultDLViewFileVersionDisplayContext
 	}
 
 	@Override
-	public boolean isVersionInfoVisible() throws PortalException {
+	public boolean isVersionInfoVisible() {
 		return true;
 	}
 
