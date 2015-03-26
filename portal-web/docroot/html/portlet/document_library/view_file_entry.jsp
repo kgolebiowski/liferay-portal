@@ -84,7 +84,7 @@ AssetEntry layoutAssetEntry = AssetEntryLocalServiceUtil.fetchEntry(DLFileEntryC
 
 request.setAttribute(WebKeys.LAYOUT_ASSET_ENTRY, layoutAssetEntry);
 
-DLActionsDisplayContext dlActionsDisplayContext = new DLActionsDisplayContext(request, dlPortletInstanceSettings);
+DLPortletInstanceSettingsHelper dlPortletInstanceSettingsHelper = new DLPortletInstanceSettingsHelper(dlRequestHelper);
 DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayContextProviderUtil.getDLViewFileVersionDisplayContext(request, response, fileVersion);
 %>
 
@@ -107,7 +107,7 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 </c:if>
 
 <div class="view">
-	<c:if test="<%= dlActionsDisplayContext.isShowActions() %>">
+	<c:if test="<%= dlPortletInstanceSettingsHelper.isShowActions() %>">
 		<liferay-ui:app-view-toolbar>
 			<aui:button-row cssClass="edit-toolbar" id='<%= renderResponse.getNamespace() + "fileEntryToolbar" %>' />
 		</liferay-ui:app-view-toolbar>
@@ -115,7 +115,7 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 
 	<aui:row>
 		<aui:col cssClass="lfr-asset-column-details" width="<%= 70 %>">
-			<c:if test="<%= dlActionsDisplayContext.isShowActions() %>">
+			<c:if test="<%= dlPortletInstanceSettingsHelper.isShowActions() %>">
 				<liferay-ui:app-view-toolbar>
 					<aui:button-row cssClass="edit-toolbar" id='<%= renderResponse.getNamespace() + "fileEntryToolbar" %>' />
 				</liferay-ui:app-view-toolbar>
@@ -245,17 +245,22 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 
 				</c:if>
 
-				<c:if test="<%= PropsValues.DL_FILE_ENTRY_COMMENTS_ENABLED %>">
+				<c:if test="<%= PropsValues.DL_FILE_ENTRY_COMMENTS_ENABLED && showComments %>">
 					<liferay-ui:panel collapsible="<%= true %>" cssClass="lfr-document-library-comments" extended="<%= true %>" persistState="<%= true %>" title="comments">
 						<portlet:actionURL var="discussionURL">
 							<portlet:param name="struts_action" value="/document_library/edit_file_entry_discussion" />
 						</portlet:actionURL>
+
+						<portlet:resourceURL var="discussionPaginationURL">
+							<portlet:param name="struts_action" value="/document_library/edit_file_entry_discussion" />
+						</portlet:resourceURL>
 
 						<liferay-ui:discussion
 							className="<%= DLFileEntryConstants.getClassName() %>"
 							classPK="<%= fileEntryId %>"
 							formAction="<%= discussionURL %>"
 							formName="fm2"
+							paginationURL="<%= discussionPaginationURL %>"
 							ratingsEnabled="<%= dlPortletInstanceSettings.isEnableCommentRatings() %>"
 							redirect="<%= currentURL %>"
 							userId="<%= fileEntry.getUserId() %>"
@@ -274,11 +279,9 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 						</h3>
 					</c:if>
 
-					<c:if test="<%= !portletId.equals(PortletKeys.TRASH) %>">
-						<div>
-							<aui:workflow-status model="<%= DLFileEntry.class %>" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= fileVersion.getStatus() %>" />
-						</div>
-					</c:if>
+					<div>
+						<aui:workflow-status model="<%= DLFileEntry.class %>" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= fileVersion.getStatus() %>" />
+					</div>
 
 					<div class="icon-user lfr-asset-icon">
 						<liferay-ui:message arguments="<%= HtmlUtil.escape(fileVersion.getStatusByUserName()) %>" key="last-updated-by-x" translateArguments="<%= false %>" />
@@ -424,7 +427,9 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 								try {
 									DLFileEntryMetadata fileEntryMetadata = DLFileEntryMetadataLocalServiceUtil.getFileEntryMetadata(ddmStructure.getStructureId(), fileVersionId);
 
-									fields = StorageEngineUtil.getFields(fileEntryMetadata.getDDMStorageId());
+									DDMFormValues ddmFormValues = StorageEngineUtil.getDDMFormValues(fileEntryMetadata.getDDMStorageId());
+
+									fields = DDMFormValuesToFieldsConverterUtil.convert(ddmStructure, ddmFormValues);
 								}
 								catch (Exception e) {
 								}
@@ -517,7 +522,7 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 											value="<%= (TextFormatter.formatStorageSize(curFileVersion.getSize(), locale)) %>"
 										/>
 
-										<c:if test="<%= showNonApprovedDocuments && !portletId.equals(PortletKeys.TRASH) %>">
+										<c:if test="<%= showNonApprovedDocuments %>">
 											<liferay-ui:search-container-column-status property="status" />
 										</c:if>
 
@@ -614,7 +619,7 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 	<%@ include file="/html/portlet/document_library/action/open_document_js.jspf" %>
 </c:if>
 
-<c:if test="<%= dlActionsDisplayContext.isShowActions() %>">
+<c:if test="<%= dlPortletInstanceSettingsHelper.isShowActions() %>">
 	<aui:script use="aui-toolbar">
 		var buttonRow = A.one('#<portlet:namespace />fileEntryToolbar');
 
@@ -667,7 +672,5 @@ DLViewFileVersionDisplayContext dlViewFileVersionDisplayContext = DLDisplayConte
 </aui:script>
 
 <%
-if (!portletId.equals(PortletKeys.TRASH)) {
-	DLUtil.addPortletBreadcrumbEntries(fileEntry, request, renderResponse);
-}
+DLUtil.addPortletBreadcrumbEntries(fileEntry, request, renderResponse);
 %>

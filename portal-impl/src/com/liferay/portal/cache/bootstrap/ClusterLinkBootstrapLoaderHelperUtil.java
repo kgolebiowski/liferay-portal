@@ -18,9 +18,8 @@ import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManager;
 import com.liferay.portal.kernel.cache.PortalCacheProvider;
-import com.liferay.portal.kernel.cluster.Address;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
-import com.liferay.portal.kernel.cluster.ClusterLinkUtil;
+import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.cluster.ClusterNodeResponse;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
 import com.liferay.portal.kernel.cluster.FutureClusterResponses;
@@ -68,9 +67,12 @@ public class ClusterLinkBootstrapLoaderHelperUtil {
 			String portalCacheManagerName, List<String> portalCacheNames)
 		throws Exception {
 
+		ClusterNode localClusterNode =
+			ClusterExecutorUtil.getLocalClusterNode();
+
 		ServerSocketChannel serverSocketChannel =
 			SocketUtil.createServerSocketChannel(
-				ClusterLinkUtil.getBindInetAddress(),
+				localClusterNode.getBindInetAddress(),
 				PropsValues.EHCACHE_SOCKET_START_PORT,
 				_serverSocketConfigurator);
 
@@ -86,50 +88,11 @@ public class ClusterLinkBootstrapLoaderHelperUtil {
 		return serverSocket.getLocalSocketAddress();
 	}
 
-	public static synchronized void start() {
-		if (!_started) {
-			_started = true;
-		}
-
-		if (_deferredPortalCaches.isEmpty()) {
-			return;
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Loading deferred caches");
-		}
-
-		try {
-			for (Map.Entry<String, List<String>> entry :
-					_deferredPortalCaches.entrySet()) {
-
-				List<String> portalCacheNames = entry.getValue();
-
-				if (portalCacheNames.isEmpty()) {
-					continue;
-				}
-
-				loadCachesFromCluster(
-					entry.getKey(),
-					portalCacheNames.toArray(
-						new String[portalCacheNames.size()]));
-			}
-		}
-		catch (Exception e) {
-			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to load cache data from the cluster", e);
-			}
-		}
-		finally {
-			_deferredPortalCaches.clear();
-		}
-	}
-
-	protected static boolean isSkipped() {
+	public static boolean isSkipped() {
 		return _skipBootstrapLoaderThreadLocal.get();
 	}
 
-	protected static void loadCachesFromCluster(
+	public static void loadCachesFromCluster(
 			String portalCacheManagerName, String ... portalCacheNames)
 		throws Exception {
 
@@ -151,14 +114,13 @@ public class ClusterLinkBootstrapLoaderHelperUtil {
 			}
 		}
 
-		List<Address> clusterNodeAddresses =
-			ClusterExecutorUtil.getClusterNodeAddresses();
+		List<ClusterNode> clusterNodes = ClusterExecutorUtil.getClusterNodes();
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Cluster node addresses " + clusterNodeAddresses);
+			_log.info("Cluster nodes " + clusterNodes);
 		}
 
-		if (clusterNodeAddresses.size() <= 1) {
+		if (clusterNodes.size() <= 1) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Not loading cache from cluster because a cluster peer " +
@@ -289,6 +251,45 @@ public class ClusterLinkBootstrapLoaderHelperUtil {
 			if (socket != null) {
 				socket.close();
 			}
+		}
+	}
+
+	public static synchronized void start() {
+		if (!_started) {
+			_started = true;
+		}
+
+		if (_deferredPortalCaches.isEmpty()) {
+			return;
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Loading deferred caches");
+		}
+
+		try {
+			for (Map.Entry<String, List<String>> entry :
+					_deferredPortalCaches.entrySet()) {
+
+				List<String> portalCacheNames = entry.getValue();
+
+				if (portalCacheNames.isEmpty()) {
+					continue;
+				}
+
+				loadCachesFromCluster(
+					entry.getKey(),
+					portalCacheNames.toArray(
+						new String[portalCacheNames.size()]));
+			}
+		}
+		catch (Exception e) {
+			if (_log.isWarnEnabled()) {
+				_log.warn("Unable to load cache data from the cluster", e);
+			}
+		}
+		finally {
+			_deferredPortalCaches.clear();
 		}
 	}
 

@@ -38,8 +38,8 @@ import com.liferay.portal.kernel.resiliency.spi.agent.SPIAgentFactoryUtil;
 import com.liferay.portal.kernel.resiliency.spi.remote.RemoteSPI;
 import com.liferay.portal.kernel.resiliency.spi.remote.RemoteSPIProxy;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.resiliency.spi.SPIRegistryImpl;
@@ -95,10 +95,9 @@ public class BaseSPIProviderTest {
 
 	@Test
 	public void testCreateSPI() throws PortalResiliencyException {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			MPIHelperUtil.class.getName(), Level.OFF);
-
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					MPIHelperUtil.class.getName(), Level.OFF)) {
 
 			// Timeout
 
@@ -174,9 +173,6 @@ public class BaseSPIProviderTest {
 				Assert.assertSame(ProcessException.class, throwable.getClass());
 				Assert.assertEquals("ProcessException", throwable.getMessage());
 			}
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 

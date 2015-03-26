@@ -16,13 +16,11 @@ package com.liferay.portlet.asset.service.persistence;
 
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -59,9 +57,7 @@ public class AssetEntryQuery {
 	public static String checkOrderByCol(String orderByCol) {
 		if (ArrayUtil.contains(ORDER_BY_COLUMNS, orderByCol) ||
 			((orderByCol != null) &&
-			 orderByCol.startsWith(
-				DDMIndexer.DDM_FIELD_NAMESPACE +
-					StringPool.DOUBLE_UNDERLINE))) {
+			 orderByCol.startsWith(DDMIndexer.DDM_FIELD_PREFIX))) {
 
 			return orderByCol;
 		}
@@ -123,8 +119,7 @@ public class AssetEntryQuery {
 	}
 
 	public AssetEntryQuery(
-			long[] classNameIds, SearchContainer<?> searchContainer)
-		throws PortalException {
+		long[] classNameIds, SearchContainer<?> searchContainer) {
 
 		this();
 
@@ -160,8 +155,8 @@ public class AssetEntryQuery {
 		}
 	}
 
-	public AssetEntryQuery(String className, SearchContainer<?> searchContainer)
-		throws PortalException {
+	public AssetEntryQuery(
+		String className, SearchContainer<?> searchContainer) {
 
 		this(
 			new long[] {PortalUtil.getClassNameId(className)}, searchContainer);

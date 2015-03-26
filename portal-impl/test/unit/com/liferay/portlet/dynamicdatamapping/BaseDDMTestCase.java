@@ -18,6 +18,7 @@ import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
@@ -30,7 +31,6 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.util.HtmlImpl;
 import com.liferay.portal.util.LocalizationImpl;
-import com.liferay.portal.util.test.RandomTestUtil;
 import com.liferay.portal.xml.SAXReaderImpl;
 import com.liferay.portlet.dynamicdatamapping.io.DDMFormXSDDeserializerImpl;
 import com.liferay.portlet.dynamicdatamapping.io.DDMFormXSDDeserializerUtil;
@@ -53,6 +53,8 @@ import com.liferay.portlet.dynamicdatamapping.storage.DDMFormValues;
 import com.liferay.portlet.dynamicdatamapping.storage.Field;
 import com.liferay.portlet.dynamicdatamapping.storage.Fields;
 import com.liferay.portlet.dynamicdatamapping.util.DDMImpl;
+import com.liferay.portlet.dynamicdatamapping.util.DDMXMLImplTest;
+import com.liferay.portlet.dynamicdatamapping.util.test.DDMStructureTestUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -603,13 +605,34 @@ public abstract class BaseDDMTestCase extends PowerMockito {
 			"yyyyMMddHHmmss"
 		);
 
+		when(
+			props.get(PropsKeys.XML_SECURITY_ENABLED)
+		).thenReturn(
+			Boolean.TRUE.toString()
+		);
+
+		when(
+			props.getArray(PropsKeys.XML_SECURITY_WHITELIST)
+		).thenReturn(
+			new String[] {
+				DDMStructureTestUtil.class.getName(),
+				DDMXMLImplTest.class.getName()
+			}
+		);
+
 		PropsUtil.setProps(props);
 	}
 
 	protected void setUpSAXReaderUtil() {
 		SAXReaderUtil saxReaderUtil = new SAXReaderUtil();
 
-		saxReaderUtil.setSAXReader(new SAXReaderImpl());
+		SAXReaderImpl secureSAXReader = new SAXReaderImpl();
+
+		secureSAXReader.setSecure(true);
+
+		saxReaderUtil.setSecureSAXReader(secureSAXReader);
+
+		saxReaderUtil.setUnsecureSAXReader(new SAXReaderImpl());
 	}
 
 	protected void whenLanguageGet(

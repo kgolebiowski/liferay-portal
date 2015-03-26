@@ -15,9 +15,11 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.RequiredUserException;
-import com.liferay.portal.ReservedUserEmailAddressException;
+import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.UserFieldException;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -104,11 +106,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			return;
 		}
 
-		try {
-			GroupPermissionUtil.check(
-				getPermissionChecker(), groupId, ActionKeys.ASSIGN_MEMBERS);
-		}
-		catch (PrincipalException pe) {
+		if (!GroupPermissionUtil.contains(
+				getPermissionChecker(), groupId, ActionKeys.ASSIGN_MEMBERS)) {
 
 			// Allow any user to join open sites
 
@@ -307,8 +306,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			long companyId, boolean autoPassword, String password1,
 			String password2, boolean autoScreenName, String screenName,
 			String emailAddress, long facebookId, String openId, Locale locale,
-			String firstName, String middleName, String lastName, int prefixId,
-			int suffixId, boolean male, int birthdayMonth, int birthdayDay,
+			String firstName, String middleName, String lastName, long prefixId,
+			long suffixId, boolean male, int birthdayMonth, int birthdayDay,
 			int birthdayYear, String jobTitle, long[] groupIds,
 			long[] organizationIds, long[] roleIds, long[] userGroupIds,
 			boolean sendEmail, ServiceContext serviceContext)
@@ -390,8 +389,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			long companyId, boolean autoPassword, String password1,
 			String password2, boolean autoScreenName, String screenName,
 			String emailAddress, long facebookId, String openId, Locale locale,
-			String firstName, String middleName, String lastName, int prefixId,
-			int suffixId, boolean male, int birthdayMonth, int birthdayDay,
+			String firstName, String middleName, String lastName, long prefixId,
+			long suffixId, boolean male, int birthdayMonth, int birthdayDay,
 			int birthdayYear, String jobTitle, long[] groupIds,
 			long[] organizationIds, long[] roleIds, long[] userGroupIds,
 			List<Address> addresses, List<EmailAddress> emailAddresses,
@@ -502,8 +501,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			long companyId, boolean autoPassword, String password1,
 			String password2, boolean autoScreenName, String screenName,
 			String emailAddress, long facebookId, String openId, Locale locale,
-			String firstName, String middleName, String lastName, int prefixId,
-			int suffixId, boolean male, int birthdayMonth, int birthdayDay,
+			String firstName, String middleName, String lastName, long prefixId,
+			long suffixId, boolean male, int birthdayMonth, int birthdayDay,
 			int birthdayYear, String jobTitle, long[] groupIds,
 			long[] organizationIds, long[] roleIds, long[] userGroupIds,
 			boolean sendEmail, ServiceContext serviceContext)
@@ -515,6 +514,9 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			creatorUserId = getGuestOrUserId();
 		}
 		catch (PrincipalException pe) {
+			if (_log.isWarnEnabled()) {
+				_log.warn("Unable to get guest or current user ID", pe);
+			}
 		}
 
 		checkAddUserPermission(
@@ -598,8 +600,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			long companyId, boolean autoPassword, String password1,
 			String password2, boolean autoScreenName, String screenName,
 			String emailAddress, long facebookId, String openId, Locale locale,
-			String firstName, String middleName, String lastName, int prefixId,
-			int suffixId, boolean male, int birthdayMonth, int birthdayDay,
+			String firstName, String middleName, String lastName, long prefixId,
+			long suffixId, boolean male, int birthdayMonth, int birthdayDay,
 			int birthdayYear, String jobTitle, long[] groupIds,
 			long[] organizationIds, long[] roleIds, long[] userGroupIds,
 			List<Address> addresses, List<EmailAddress> emailAddresses,
@@ -944,11 +946,9 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 	public boolean hasGroupUser(long groupId, long userId)
 		throws PortalException {
 
-		try {
-			UserPermissionUtil.check(
-				getPermissionChecker(), userId, ActionKeys.VIEW);
-		}
-		catch (PrincipalException pe) {
+		if (!UserPermissionUtil.contains(
+				getPermissionChecker(), userId, ActionKeys.VIEW)) {
+
 			GroupPermissionUtil.check(
 				getPermissionChecker(), groupId, ActionKeys.VIEW_MEMBERS);
 		}
@@ -970,11 +970,9 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 	public boolean hasRoleUser(long roleId, long userId)
 		throws PortalException {
 
-		try {
-			UserPermissionUtil.check(
-				getPermissionChecker(), userId, ActionKeys.VIEW);
-		}
-		catch (PrincipalException pe) {
+		if (!UserPermissionUtil.contains(
+				getPermissionChecker(), userId, ActionKeys.VIEW)) {
+
 			RolePermissionUtil.check(
 				getPermissionChecker(), roleId, ActionKeys.VIEW_MEMBERS);
 		}
@@ -1001,11 +999,9 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			long companyId, String name, long userId, boolean inherited)
 		throws PortalException {
 
-		try {
-			UserPermissionUtil.check(
-				getPermissionChecker(), userId, ActionKeys.VIEW);
-		}
-		catch (PrincipalException pe) {
+		if (!UserPermissionUtil.contains(
+				getPermissionChecker(), userId, ActionKeys.VIEW)) {
+
 			Role role = roleLocalService.getRole(companyId, name);
 
 			RolePermissionUtil.check(
@@ -1234,11 +1230,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			return;
 		}
 
-		try {
-			GroupPermissionUtil.check(
-				getPermissionChecker(), groupId, ActionKeys.ASSIGN_MEMBERS);
-		}
-		catch (PrincipalException pe) {
+		if (!GroupPermissionUtil.contains(
+				getPermissionChecker(), groupId, ActionKeys.ASSIGN_MEMBERS)) {
 
 			// Allow any user to leave open and restricted sites
 
@@ -1505,8 +1498,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			long companyId, boolean autoPassword, String password1,
 			String password2, boolean autoScreenName, String screenName,
 			String emailAddress, long facebookId, String openId, Locale locale,
-			String firstName, String middleName, String lastName, int prefixId,
-			int suffixId, boolean male, int birthdayMonth, int birthdayDay,
+			String firstName, String middleName, String lastName, long prefixId,
+			long suffixId, boolean male, int birthdayMonth, int birthdayDay,
 			int birthdayYear, String jobTitle, boolean updateUserInformation,
 			boolean sendEmail, ServiceContext serviceContext)
 		throws PortalException {
@@ -1517,6 +1510,9 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			creatorUserId = getGuestOrUserId();
 		}
 		catch (PrincipalException pe) {
+			if (_log.isWarnEnabled()) {
+				_log.warn("Unable to get guest or current user ID", pe);
+			}
 		}
 
 		checkAddUserPermission(
@@ -1807,7 +1803,7 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			String openId, boolean portrait, byte[] portraitBytes,
 			String languageId, String timeZoneId, String greeting,
 			String comments, String firstName, String middleName,
-			String lastName, int prefixId, int suffixId, boolean male,
+			String lastName, long prefixId, long suffixId, boolean male,
 			int birthdayMonth, int birthdayDay, int birthdayYear, String smsSn,
 			String aimSn, String facebookSn, String icqSn, String jabberSn,
 			String msnSn, String mySpaceSn, String skypeSn, String twitterSn,
@@ -2175,7 +2171,7 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			String screenName, String emailAddress, long facebookId,
 			String openId, String languageId, String timeZoneId,
 			String greeting, String comments, String firstName,
-			String middleName, String lastName, int prefixId, int suffixId,
+			String middleName, String lastName, long prefixId, long suffixId,
 			boolean male, int birthdayMonth, int birthdayDay, int birthdayYear,
 			String smsSn, String aimSn, String facebookSn, String icqSn,
 			String jabberSn, String msnSn, String mySpaceSn, String skypeSn,
@@ -2265,7 +2261,7 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			String screenName, String emailAddress, long facebookId,
 			String openId, String languageId, String timeZoneId,
 			String greeting, String comments, String firstName,
-			String middleName, String lastName, int prefixId, int suffixId,
+			String middleName, String lastName, long prefixId, long suffixId,
 			boolean male, int birthdayMonth, int birthdayDay, int birthdayYear,
 			String smsSn, String aimSn, String facebookSn, String icqSn,
 			String jabberSn, String msnSn, String mySpaceSn, String skypeSn,
@@ -2333,7 +2329,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			if (!company.isStrangersWithMx() &&
 				company.hasCompanyMx(emailAddress)) {
 
-				throw new ReservedUserEmailAddressException();
+				throw new UserEmailAddressException.MustNotUseCompanyMx(
+					emailAddress);
 			}
 		}
 	}
@@ -2448,10 +2445,10 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 						permissionChecker, organization,
 						ActionKeys.ASSIGN_MEMBERS) ||
 					 OrganizationMembershipPolicyUtil.isMembershipProtected(
-						permissionChecker, userId,
-						organization.getOrganizationId()) ||
+						 permissionChecker, userId,
+						 organization.getOrganizationId()) ||
 					 OrganizationMembershipPolicyUtil.isMembershipRequired(
-						userId, organization.getOrganizationId()))) {
+						 userId, organization.getOrganizationId()))) {
 
 					organizationIds = ArrayUtil.append(
 						organizationIds, organization.getOrganizationId());
@@ -2506,7 +2503,7 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 						permissionChecker, role.getRoleId(),
 						ActionKeys.ASSIGN_MEMBERS) ||
 					 RoleMembershipPolicyUtil.isRoleRequired(
-						userId, role.getRoleId()))) {
+						 userId, role.getRoleId()))) {
 
 					roleIds = ArrayUtil.append(roleIds, role.getRoleId());
 				}
@@ -2562,7 +2559,7 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 						permissionChecker, userGroup.getUserGroupId(),
 						ActionKeys.ASSIGN_MEMBERS) ||
 					 UserGroupMembershipPolicyUtil.isMembershipRequired(
-						userId, userGroup.getUserGroupId()))) {
+						 userId, userGroup.getUserGroupId()))) {
 
 					userGroupIds = ArrayUtil.append(
 						userGroupIds, userGroup.getUserGroupId());
@@ -2709,7 +2706,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 				user.getCompanyId());
 
 			if (!company.isStrangersWithMx()) {
-				throw new ReservedUserEmailAddressException();
+				throw new UserEmailAddressException.MustNotUseCompanyMx(
+					emailAddress);
 			}
 		}
 	}
@@ -2750,7 +2748,7 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 
 	protected void validateUpdatePermission(
 			User user, String screenName, String emailAddress, String firstName,
-			String middleName, String lastName, int prefixId, int suffixId,
+			String middleName, String lastName, long prefixId, long suffixId,
 			int birthdayMonth, int birthdayDay, int birthdayYear, boolean male,
 			String jobTitle)
 		throws PortalException {
@@ -2822,5 +2820,8 @@ public class UserServiceImpl extends UserServiceBaseImpl {
 			throw ufe;
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		UserServiceImpl.class);
 
 }

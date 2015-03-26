@@ -22,13 +22,13 @@ import com.liferay.portal.fabric.netty.fileserver.handlers.FileServerTestUtil;
 import com.liferay.portal.fabric.netty.util.NettyUtilAdvice;
 import com.liferay.portal.kernel.concurrent.AsyncBroker;
 import com.liferay.portal.kernel.concurrent.NoticeableFuture;
-import com.liferay.portal.kernel.test.AggregateTestRule;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
-import com.liferay.portal.kernel.test.NewEnv;
-import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJNewEnvTestRule;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.rule.NewEnv;
+import com.liferay.portal.test.rule.AdviseWith;
+import com.liferay.portal.test.rule.AspectJNewEnvTestRule;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -145,7 +145,7 @@ public class NettyRepositoryTest {
 		Path tempFilePath = FileServerTestUtil.createFileWithData(
 			Paths.get("tempFile"));
 
-		Map<Path, Path> pathMap =  _nettyRepository.pathMap;
+		Map<Path, Path> pathMap = _nettyRepository.pathMap;
 
 		FileServerTestUtil.createFileWithData(tempFilePath);
 
@@ -198,7 +198,7 @@ public class NettyRepositoryTest {
 		Path tempFilePath = FileServerTestUtil.createFileWithData(
 			Paths.get("tempFile"));
 
-		Map<Path, Path> pathMap =  _nettyRepository.pathMap;
+		Map<Path, Path> pathMap = _nettyRepository.pathMap;
 
 		try (CaptureHandler captureHandler =
 				JDKLoggerTestUtil.configureJDKLogger(
@@ -412,7 +412,7 @@ public class NettyRepositoryTest {
 		Path remoteFilePath = Paths.get("remoteFile");
 		Path cachedLocalFilePath = Paths.get("cacheLocalFile");
 
-		Map<Path, Path> pathMap =  _nettyRepository.pathMap;
+		Map<Path, Path> pathMap = _nettyRepository.pathMap;
 
 		pathMap.put(remoteFilePath, cachedLocalFilePath);
 
@@ -556,7 +556,8 @@ public class NettyRepositoryTest {
 	@AdviseWith(
 		adviceClasses = {
 			NettyUtilAdvice.class, DefaultNoticeableFutureAdvice.class
-		})
+		}
+	)
 	@Test
 	public void testGetFilesCovertCausedException() throws Exception {
 		Map<Path, Path> pathMap = new HashMap<>();
@@ -686,7 +687,8 @@ public class NettyRepositoryTest {
 
 		@Around(
 			"execution(public void com.liferay.portal.kernel.concurrent." +
-				"DefaultNoticeableFuture.set(Object))")
+				"DefaultNoticeableFuture.set(Object))"
+		)
 		public void set(ProceedingJoinPoint proceedingJoinPoint)
 			throws Throwable {
 

@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.concurrent;
 
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -195,16 +195,16 @@ public class DefaultNoticeableFutureTest {
 		Assert.assertSame(flag, defaultNoticeableFuture.get());
 		Assert.assertTrue(flag.get());
 
-		defaultNoticeableFuture =
-			new DefaultNoticeableFuture<Object>(
-				new Runnable() {
+		defaultNoticeableFuture = new DefaultNoticeableFuture<Object>(
+			new Runnable() {
 
-					@Override
-					public void run() {
-						flag.set(false);
-					}
+				@Override
+				public void run() {
+					flag.set(false);
+				}
 
-				}, flag);
+			},
+			flag);
 
 		defaultNoticeableFuture.run();
 

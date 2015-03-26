@@ -44,7 +44,7 @@
 			INNER JOIN
 				(
 					SELECT
-						scope, primKey, roleId, ownerId
+						primKey
 					FROM
 						ResourcePermission
 					WHERE
@@ -53,6 +53,8 @@
 						(ResourcePermission.scope = [$RESOURCE_SCOPE_INDIVIDUAL$]) AND
 						(MOD(ResourcePermission.actionIds, 2) = 1) AND
 						[$ROLE_IDS_OR_OWNER_ID$]
+					GROUP BY
+						primKey
 				)
 			InlineSQLResourcePermission ON
 				[$PRIM_KEYS$]
@@ -1449,7 +1451,7 @@
 	<sql id="com.liferay.portal.service.persistence.UserFinder.findByC_FN_MN_LN_SN_EA_S">
 		<![CDATA[
 			SELECT
-				DISTINCT User_.userId AS userId, User_.firstName AS firstName, User_.middleName AS middleName, User_.lastName AS lastName
+				DISTINCT User_.userId AS userId, User_.screenName AS screenName, User_.firstName AS firstName, User_.middleName AS middleName, User_.lastName AS lastName
 			FROM
 				User_
 			[$JOIN$]

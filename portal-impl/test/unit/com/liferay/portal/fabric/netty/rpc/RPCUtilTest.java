@@ -21,9 +21,9 @@ import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
 import com.liferay.portal.kernel.concurrent.NoticeableFuture;
 import com.liferay.portal.kernel.process.ProcessException;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.StringPool;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -139,11 +139,10 @@ public class RPCUtilTest {
 
 		// Channel closed failure, no match key
 
-		Attribute<AsyncBroker<Long, String>> attribute =
-			_embeddedChannel.attr(
-				ReflectionTestUtil.
-					<AttributeKey<AsyncBroker<Long, String>>>getFieldValue(
-						NettyChannelAttributes.class, "_asyncBrokerKey"));
+		Attribute<AsyncBroker<Long, String>> attribute = _embeddedChannel.attr(
+			ReflectionTestUtil.
+				<AttributeKey<AsyncBroker<Long, String>>>getFieldValue(
+					NettyChannelAttributes.class, "_asyncBrokerKey"));
 
 		final AtomicLong keyRef = new AtomicLong();
 

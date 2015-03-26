@@ -15,13 +15,13 @@
 package com.liferay.portlet.expando.service;
 
 import com.liferay.counter.service.CounterLocalServiceUtil;
-import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.test.DeleteAfterTestRun;
-import com.liferay.portal.test.LiferayIntegrationTestRule;
-import com.liferay.portal.test.MainServletTestRule;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.MainServletTestRule;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.test.TestPropsValues;
 import com.liferay.portlet.blogs.model.BlogsEntry;
 import com.liferay.portlet.expando.ValueDataException;
 import com.liferay.portlet.expando.model.ExpandoColumn;
@@ -198,9 +198,9 @@ public class ExpandoValueLocalServiceTest {
 
 		Assert.assertEquals(_ptLocale, availableLocales.get(0));
 		Assert.assertEquals(_enLocale, availableLocales.get(1));
-		Assert.assertEquals("um" , value.getString(_ptLocale));
-		Assert.assertEquals("one" , value.getString(_enLocale));
-		Assert.assertEquals("um" , value.getString(_frLocale));
+		Assert.assertEquals("um", value.getString(_ptLocale));
+		Assert.assertEquals("one", value.getString(_enLocale));
+		Assert.assertEquals("um", value.getString(_frLocale));
 	}
 
 	@Test

@@ -25,8 +25,8 @@ import com.liferay.portal.kernel.nio.intraband.blocking.ExecutorIntraband.Readin
 import com.liferay.portal.kernel.nio.intraband.blocking.ExecutorIntraband.WritingCallable;
 import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.Time;
 
 import java.io.File;
@@ -496,10 +496,10 @@ public class ExecutorIntrabandTest {
 
 		// Callback timeout, with log
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			BaseIntraband.class.getName(), Level.WARNING);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					BaseIntraband.class.getName(), Level.WARNING)) {
 
-		try {
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
 			recordCompletionHandler = new RecordCompletionHandler<>();
@@ -525,9 +525,6 @@ public class ExecutorIntrabandTest {
 
 			gatheringByteChannel.close();
 			scatteringByteChannel.close();
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 

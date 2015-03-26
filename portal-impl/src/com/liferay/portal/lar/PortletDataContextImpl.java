@@ -17,9 +17,12 @@ package com.liferay.portal.lar;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.NoSuchTeamException;
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
+import com.liferay.portal.kernel.dao.orm.Conjunction;
+import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.ExportImportClassedModelUtil;
@@ -92,6 +95,8 @@ import com.liferay.portlet.messageboards.model.MBMessage;
 import com.liferay.portlet.ratings.model.RatingsEntry;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.core.ClassLoaderReference;
+import com.thoughtworks.xstream.io.xml.XppDriver;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -307,17 +312,15 @@ public class PortletDataContextImpl implements PortletDataContext {
 	 */
 	@Override
 	public void addDateRangeCriteria(
-		DynamicQuery dynamicQuery, String modifiedDatePropertyName) {
+		DynamicQuery dynamicQuery, String propertyName) {
 
-		if (!hasDateRange()) {
+		Criterion criterion = getDateRangeCriteria(propertyName);
+
+		if (criterion == null) {
 			return;
 		}
 
-		Property modifiedDateProperty = PropertyFactoryUtil.forName(
-			modifiedDatePropertyName);
-
-		dynamicQuery.add(modifiedDateProperty.ge(_startDate));
-		dynamicQuery.add(modifiedDateProperty.le(_endDate));
+		dynamicQuery.add(criterion);
 	}
 
 	@Override
@@ -819,6 +822,22 @@ public class PortletDataContextImpl implements PortletDataContext {
 	}
 
 	@Override
+	public Criterion getDateRangeCriteria(String propertyName) {
+		if (!hasDateRange()) {
+			return null;
+		}
+
+		Conjunction conjunction = RestrictionsFactoryUtil.conjunction();
+
+		Property property = PropertyFactoryUtil.forName(propertyName);
+
+		conjunction.add(property.le(_endDate));
+		conjunction.add(property.ge(_startDate));
+
+		return conjunction;
+	}
+
+	@Override
 	public Set<StagedModelType> getDeletionSystemEventStagedModelTypes() {
 		return _deletionSystemEventModelTypes;
 	}
@@ -886,7 +905,7 @@ public class PortletDataContextImpl implements PortletDataContext {
 				(StagedGroupedModel)classedModel;
 
 			element.addAttribute(
-				"group-id",String.valueOf(stagedGroupedModel.getGroupId()));
+				"group-id", String.valueOf(stagedGroupedModel.getGroupId()));
 			element.addAttribute("uuid", stagedGroupedModel.getUuid());
 		}
 		else if (classedModel instanceof StagedModel) {
@@ -1003,6 +1022,11 @@ public class PortletDataContextImpl implements PortletDataContext {
 		}
 
 		return map;
+	}
+
+	@Override
+	public Map<String, Map<?, ?>> getNewPrimaryKeysMaps() {
+		return _newPrimaryKeysMaps;
 	}
 
 	/**
@@ -2400,7 +2424,11 @@ public class PortletDataContextImpl implements PortletDataContext {
 	}
 
 	protected void initXStream() {
-		_xStream = new XStream();
+		_xStream = new XStream(
+			null, new XppDriver(),
+			new ClassLoaderReference(
+				XStreamAliasRegistryUtil.getAliasesClassLoader(
+					XStream.class.getClassLoader())));
 
 		Map<Class<?>, String> aliases = XStreamAliasRegistryUtil.getAliases();
 
@@ -2444,14 +2472,14 @@ public class PortletDataContextImpl implements PortletDataContext {
 	private Date _endDate;
 	private final Map<String, List<ExpandoColumn>> _expandoColumnsMap =
 		new HashMap<>();
-	private Element _exportDataRootElement;
+	private transient Element _exportDataRootElement;
 	private long _groupId;
-	private Element _importDataRootElement;
-	private final Map<String, Lock> _locksMap = new HashMap<>();
-	private ManifestSummary _manifestSummary = new ManifestSummary();
-	private final Set<String> _missingReferences = new HashSet<>();
-	private Element _missingReferencesElement;
-	private List<Layout> _newLayouts;
+	private transient Element _importDataRootElement;
+	private transient final Map<String, Lock> _locksMap = new HashMap<>();
+	private transient ManifestSummary _manifestSummary = new ManifestSummary();
+	private transient final Set<String> _missingReferences = new HashSet<>();
+	private transient Element _missingReferencesElement;
+	private transient List<Layout> _newLayouts;
 	private final Map<String, Map<?, ?>> _newPrimaryKeysMaps = new HashMap<>();
 	private final Set<String> _notUniquePerLayout = new HashSet<>();
 	private long _oldPlid;
@@ -2473,10 +2501,10 @@ public class PortletDataContextImpl implements PortletDataContext {
 	private long _sourceGroupId;
 	private long _sourceUserPersonalSiteGroupId;
 	private Date _startDate;
-	private UserIdStrategy _userIdStrategy;
+	private transient UserIdStrategy _userIdStrategy;
 	private long _userPersonalSiteGroupId;
-	private XStream _xStream;
-	private ZipReader _zipReader;
-	private ZipWriter _zipWriter;
+	private transient XStream _xStream;
+	private transient ZipReader _zipReader;
+	private transient ZipWriter _zipWriter;
 
 }

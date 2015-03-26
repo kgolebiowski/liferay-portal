@@ -30,9 +30,9 @@ import com.liferay.portal.kernel.process.local.LocalProcessLauncher.ProcessConte
 import com.liferay.portal.kernel.process.local.LocalProcessLauncher.ShutdownHook;
 import com.liferay.portal.kernel.process.log.ProcessOutputStream;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.InetAddressUtil;
 import com.liferay.portal.kernel.util.SocketUtil;
@@ -408,10 +408,10 @@ public class LocalProcessExecutorTest {
 
 	@Test
 	public void testBrokenPiping() throws Exception {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LocalProcessExecutor.class.getName(), Level.SEVERE);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LocalProcessExecutor.class.getName(), Level.SEVERE)) {
 
-		try {
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
 			BrokenPipingProcessCallable brokenPipingProcessCallable =
@@ -459,9 +459,6 @@ public class LocalProcessExecutorTest {
 
 			file.delete();
 		}
-		finally {
-			captureHandler.close();
-		}
 	}
 
 	@Test
@@ -469,10 +466,9 @@ public class LocalProcessExecutorTest {
 		ReturnWithoutExitProcessCallable returnWithoutExitProcessCallable =
 			new ReturnWithoutExitProcessCallable("");
 
-		ProcessChannel<String> processChannel =
-			_localProcessExecutor.execute(
-				_createJPDAProcessConfig(_JPDA_OPTIONS1),
-				returnWithoutExitProcessCallable);
+		ProcessChannel<String> processChannel = _localProcessExecutor.execute(
+			_createJPDAProcessConfig(_JPDA_OPTIONS1),
+			returnWithoutExitProcessCallable);
 
 		Future<String> future = processChannel.getProcessNoticeableFuture();
 
@@ -538,10 +534,9 @@ public class LocalProcessExecutorTest {
 
 	@Test
 	public void testCrash() throws Exception {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LocalProcessExecutor.class.getName(), Level.OFF);
-
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LocalProcessExecutor.class.getName(), Level.OFF)) {
 
 			// One crash
 
@@ -607,9 +602,6 @@ public class LocalProcessExecutorTest {
 
 				Assert.assertSame(EOFException.class, throwable.getClass());
 			}
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 
@@ -743,10 +735,9 @@ public class LocalProcessExecutorTest {
 		RuntimeExceptionProcessCallable runtimeExceptionProcessCallable =
 			new RuntimeExceptionProcessCallable();
 
-		processChannel =
-			_localProcessExecutor.execute(
-				_createJPDAProcessConfig(_JPDA_OPTIONS1),
-				runtimeExceptionProcessCallable);
+		processChannel = _localProcessExecutor.execute(
+			_createJPDAProcessConfig(_JPDA_OPTIONS1),
+			runtimeExceptionProcessCallable);
 
 		future = processChannel.getProcessNoticeableFuture();
 
@@ -777,10 +768,10 @@ public class LocalProcessExecutorTest {
 		ExceptionPipingBackProcessCallable exceptionPipingBackProcessCallable =
 			new ExceptionPipingBackProcessCallable();
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LocalProcessExecutor.class.getName(), Level.SEVERE);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LocalProcessExecutor.class.getName(), Level.SEVERE)) {
 
-		try {
 			ProcessChannel<Serializable> processChannel =
 				_localProcessExecutor.execute(
 					_createJPDAProcessConfig(_JPDA_OPTIONS1),
@@ -807,9 +798,6 @@ public class LocalProcessExecutorTest {
 			Assert.assertEquals(
 				DummyExceptionProcessCallable.class.getName(),
 				throwable.getMessage());
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 
@@ -948,10 +936,9 @@ public class LocalProcessExecutorTest {
 
 	@Test
 	public void testLeadingLog() throws Exception {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LocalProcessExecutor.class.getName(), Level.WARNING);
-
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LocalProcessExecutor.class.getName(), Level.WARNING)) {
 
 			// Warn level
 
@@ -1036,9 +1023,6 @@ public class LocalProcessExecutorTest {
 			Assert.assertTrue(future.isDone());
 
 			Assert.assertEquals(0, logRecords.size());
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 
@@ -1276,10 +1260,10 @@ public class LocalProcessExecutorTest {
 			}
 		}
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LocalProcessExecutor.class.getName(), Level.OFF);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LocalProcessExecutor.class.getName(), Level.OFF)) {
 
-		try {
 			_localProcessExecutor.destroy();
 
 			try {
@@ -1292,9 +1276,6 @@ public class LocalProcessExecutorTest {
 				Assert.assertTrue(future.isDone());
 			}
 		}
-		finally {
-			captureHandler.close();
-		}
 	}
 
 	@Test
@@ -1303,10 +1284,10 @@ public class LocalProcessExecutorTest {
 			unserializablePipingBackProcessCallable =
 				new UnserializablePipingBackProcessCallable();
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LocalProcessExecutor.class.getName(), Level.SEVERE);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LocalProcessExecutor.class.getName(), Level.SEVERE)) {
 
-		try {
 			ProcessChannel<Serializable> processChannel =
 				_localProcessExecutor.execute(
 					_createJPDAProcessConfig(_JPDA_OPTIONS1),
@@ -1340,9 +1321,6 @@ public class LocalProcessExecutorTest {
 				Assert.assertSame(
 					NotSerializableException.class, cause.getClass());
 			}
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 
@@ -2444,7 +2422,7 @@ public class LocalProcessExecutorTest {
 
 							break;
 
-						case  _CODE_INTERRUPT :
+						case _CODE_INTERRUPT :
 							Thread heartbeatThread = _getHeartbeatThread(false);
 
 							heartbeatThread.interrupt();

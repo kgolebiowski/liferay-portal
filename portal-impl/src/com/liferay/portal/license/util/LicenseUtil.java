@@ -141,7 +141,8 @@ public class LicenseUtil {
 				futureClusterResponses.get(20000, TimeUnit.MILLISECONDS);
 
 			ClusterNodeResponse clusterNodeResponse =
-				clusterNodeResponses.getClusterResponse(clusterNode);
+				clusterNodeResponses.getClusterResponse(
+					clusterNode.getClusterNodeId());
 
 			return (Map<String, String>)clusterNodeResponse.getResult();
 		}
@@ -302,8 +303,7 @@ public class LicenseUtil {
 				catch (Exception e) {
 					_log.error(e, e);
 
-					InetAddress inetAddress =
-						clusterNode.getPortalInetAddress();
+					InetAddress inetAddress = clusterNode.getBindInetAddress();
 
 					String message =
 						"Error contacting " + inetAddress.getHostName();
@@ -628,7 +628,8 @@ public class LicenseUtil {
 			20000, TimeUnit.MILLISECONDS);
 
 		ClusterNodeResponse clusterNodeResponse =
-			clusterNodeResponses.getClusterResponse(clusterNode);
+			clusterNodeResponses.getClusterResponse(
+				clusterNode.getClusterNodeId());
 
 		Map<String, Object> attributes =
 			(Map<String, Object>)clusterNodeResponse.getResult();

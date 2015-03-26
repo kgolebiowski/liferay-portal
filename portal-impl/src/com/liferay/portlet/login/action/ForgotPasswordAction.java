@@ -100,7 +100,7 @@ public class ForgotPasswordAction extends PortletAction {
 					sendRedirect(actionRequest, actionResponse);
 				}
 				else {
-					SessionErrors.add(actionRequest, e.getClass());
+					SessionErrors.add(actionRequest, e.getClass(), e);
 				}
 			}
 			else {
@@ -225,10 +225,7 @@ public class ForgotPasswordAction extends PortletAction {
 			throw new UserActiveException();
 		}
 
-		if (user.isLockout()) {
-			throw new UserLockoutException.PasswordPolicyLockout(
-				user, user.getPasswordPolicy());
-		}
+		UserLocalServiceUtil.checkLockout(user);
 
 		return user;
 	}

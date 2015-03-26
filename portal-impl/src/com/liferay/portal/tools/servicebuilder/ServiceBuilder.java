@@ -42,6 +42,7 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.model.CacheField;
 import com.liferay.portal.model.ModelHintsUtil;
+import com.liferay.portal.security.auth.PrincipalException;
 import com.liferay.portal.security.permission.ResourceActionsUtil;
 import com.liferay.portal.tools.ArgumentsUtil;
 import com.liferay.portal.tools.ToolDependencies;
@@ -219,32 +220,39 @@ public class ServiceBuilder {
 		return false;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		Map<String, String> arguments = ArgumentsUtil.parseArguments(args);
 
 		ToolDependencies.wireServiceBuilder();
 
 		String apiDir = arguments.get("service.api.dir");
-		boolean autoImportDefaultReferences = GetterUtil.getBoolean(arguments.get("service.auto.import.default.references"), true);
-		boolean autoNamespaceTables = GetterUtil.getBoolean(arguments.get("service.auto.namespace.tables"));
+		boolean autoImportDefaultReferences = GetterUtil.getBoolean(
+			arguments.get("service.auto.import.default.references"), true);
+		boolean autoNamespaceTables = GetterUtil.getBoolean(
+			arguments.get("service.auto.namespace.tables"));
 		String beanLocatorUtil = arguments.get("service.bean.locator.util");
-		long buildNumber = GetterUtil.getLong(arguments.get("service.build.number"), 1);
-		boolean buildNumberIncrement = GetterUtil.getBoolean(arguments.get("service.build.number.increment"), true);
+		long buildNumber = GetterUtil.getLong(
+			arguments.get("service.build.number"), 1);
+		boolean buildNumberIncrement = GetterUtil.getBoolean(
+			arguments.get("service.build.number.increment"), true);
 		String hbmFileName = arguments.get("service.hbm.file");
 		String implDir = arguments.get("service.impl.dir");
 		String inputFileName = arguments.get("service.input.file");
 		String modelHintsFileName = arguments.get("service.model.hints.file");
-		boolean osgiModule = GetterUtil.getBoolean(arguments.get("service.osgi.module"));
+		boolean osgiModule = GetterUtil.getBoolean(
+			arguments.get("service.osgi.module"));
 		String pluginName = arguments.get("service.plugin.name");
 		String propsUtil = arguments.get("service.props.util");
 		String remotingFileName = arguments.get("service.remoting.file");
 		String resourcesDir = arguments.get("service.resources.dir");
 		String springFileName = arguments.get("service.spring.file");
-		String[] springNamespaces = StringUtil.split(arguments.get("service.spring.namespaces"));
+		String[] springNamespaces = StringUtil.split(
+			arguments.get("service.spring.namespaces"));
 		String sqlDir = arguments.get("service.sql.dir");
 		String sqlFileName = arguments.get("service.sql.file");
 		String sqlIndexesFileName = arguments.get("service.sql.indexes.file");
-		String sqlSequencesFileName = arguments.get("service.sql.sequences.file");
+		String sqlSequencesFileName = arguments.get(
+			"service.sql.sequences.file");
 		String targetEntityName = arguments.get("service.target.entity.name");
 		String testDir = arguments.get("service.test.dir");
 
@@ -258,7 +266,7 @@ public class ServiceBuilder {
 				sqlIndexesFileName, sqlSequencesFileName, targetEntityName,
 				testDir, true);
 		}
-		catch (RuntimeException re) {
+		catch (Exception e) {
 			System.out.println(
 				"Please set these arguments. Sample values are:\n" +
 				"\n" +
@@ -332,7 +340,7 @@ public class ServiceBuilder {
 				"\t-Dservice.tpl.spring_xml=" + _TPL_ROOT + "spring_xml.ftl\n"+
 				"\t-Dservice.tpl.spring_xml_session=" + _TPL_ROOT + "spring_xml_session.ftl");
 
-			throw re;
+			ArgumentsUtil.processMainException(arguments, e);
 		}
 
 		try {
@@ -517,15 +525,16 @@ public class ServiceBuilder {
 	}
 
 	public ServiceBuilder(
-		String apiDir, boolean autoImportDefaultReferences,
-		boolean autoNamespaceTables, String beanLocatorUtil, long buildNumber,
-		boolean buildNumberIncrement, String hbmFileName, String implDir,
-		String inputFileName, String modelHintsFileName, boolean osgiModule,
-		String pluginName, String propsUtil, String remotingFileName,
-		String resourcesDir, String springFileName, String[] springNamespaces,
-		String sqlDir, String sqlFileName, String sqlIndexesFileName,
-		String sqlSequencesFileName, String targetEntityName, String testDir,
-		boolean build) {
+			String apiDir, boolean autoImportDefaultReferences,
+			boolean autoNamespaceTables, String beanLocatorUtil,
+			long buildNumber, boolean buildNumberIncrement, String hbmFileName,
+			String implDir, String inputFileName, String modelHintsFileName,
+			boolean osgiModule, String pluginName, String propsUtil,
+			String remotingFileName, String resourcesDir, String springFileName,
+			String[] springNamespaces, String sqlDir, String sqlFileName,
+			String sqlIndexesFileName, String sqlSequencesFileName,
+			String targetEntityName, String testDir, boolean build)
+		throws Exception {
 
 		_tplBadAliasNames = _getTplProperty(
 			"bad_alias_names", _tplBadAliasNames);
@@ -837,7 +846,8 @@ public class ServiceBuilder {
 						}
 						else {
 							_removeServiceImpl(entity, _SESSION_TYPE_REMOTE);
-							_removeServiceBaseImpl(entity, _SESSION_TYPE_REMOTE);
+							_removeServiceBaseImpl(
+								entity, _SESSION_TYPE_REMOTE);
 							_removeService(entity, _SESSION_TYPE_REMOTE);
 							_removeServiceUtil(entity, _SESSION_TYPE_REMOTE);
 
@@ -889,20 +899,19 @@ public class ServiceBuilder {
 		catch (FileNotFoundException fnfe) {
 			System.out.println(fnfe.getMessage());
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public ServiceBuilder(
-		String apiDir, boolean autoImportDefaultReferences,
-		boolean autoNamespaceTables, String beanLocatorUtil, String hbmFileName,
-		String implDir, String inputFileName, String modelHintsFileName,
-		boolean osgiModule, String pluginName, String propsUtil,
-		String remotingFileName, String resourcesDir, String springFileName,
-		String[] springNamespaces, String sqlDir, String sqlFileName,
-		String sqlIndexesFileName, String sqlSequencesFileName,
-		String targetEntityName, String testDir) {
+			String apiDir, boolean autoImportDefaultReferences,
+			boolean autoNamespaceTables, String beanLocatorUtil,
+			String hbmFileName, String implDir, String inputFileName,
+			String modelHintsFileName, boolean osgiModule, String pluginName,
+			String propsUtil, String remotingFileName, String resourcesDir,
+			String springFileName, String[] springNamespaces, String sqlDir,
+			String sqlFileName, String sqlIndexesFileName,
+			String sqlSequencesFileName, String targetEntityName,
+			String testDir)
+		throws Exception {
 
 		this(
 			apiDir, autoImportDefaultReferences, autoNamespaceTables,
@@ -1043,7 +1052,7 @@ public class ServiceBuilder {
 	}
 
 	public String getCreateMappingTableSQL(EntityMapping entityMapping)
-		throws IOException {
+		throws Exception {
 
 		String createMappingTableSQL = _getCreateMappingTableSQL(entityMapping);
 
@@ -1082,7 +1091,7 @@ public class ServiceBuilder {
 		return getDimensions(GetterUtil.getInteger(dims));
 	}
 
-	public Entity getEntity(String name) throws IOException {
+	public Entity getEntity(String name) throws Exception {
 		Entity entity = _entityPool.get(name);
 
 		if (entity != null) {
@@ -1248,7 +1257,7 @@ public class ServiceBuilder {
 	}
 
 	public List<EntityColumn> getMappingEntities(String mappingTable)
-		throws IOException {
+		throws Exception {
 
 		List<EntityColumn> mappingEntitiesPKList = new ArrayList<>();
 
@@ -1337,7 +1346,7 @@ public class ServiceBuilder {
 	}
 
 	public String getReturnType(JavaMethod method) {
-		Type returnType = method.getReturns();
+		Type returnType = method.getReturnType();
 
 		return getTypeGenericsName(returnType);
 	}
@@ -1588,14 +1597,10 @@ public class ServiceBuilder {
 		String methodName = method.getName();
 
 		if (methodName.equals("afterPropertiesSet") ||
-			methodName.equals("destroy") ||
-			methodName.equals("equals") ||
-			methodName.equals("getClass") ||
-			methodName.equals("hashCode") ||
-			methodName.equals("notify") ||
-			methodName.equals("notifyAll") ||
-			methodName.equals("toString") ||
-			methodName.equals("wait")) {
+			methodName.equals("destroy") || methodName.equals("equals") ||
+			methodName.equals("getClass") || methodName.equals("hashCode") ||
+			methodName.equals("notify") || methodName.equals("notifyAll") ||
+			methodName.equals("toString") || methodName.equals("wait")) {
 
 			return false;
 		}
@@ -1682,7 +1687,7 @@ public class ServiceBuilder {
 	}
 
 	public boolean isSoapMethod(JavaMethod method) {
-		Type returnType = method.getReturns();
+		Type returnType = method.getReturnType();
 
 		String returnTypeGenericsName = getTypeGenericsName(returnType);
 		String returnValueName = returnType.getValue();
@@ -2585,10 +2590,20 @@ public class ServiceBuilder {
 		// Write file
 
 		File ejbFile = new File(
-			_testOutputPath + "/service/persistence/" + entity.getName() +
+			_testOutputPath + "/service/persistence/test/" + entity.getName() +
 				"PersistenceTest.java");
 
 		writeFile(ejbFile, content, _author);
+
+		ejbFile = new File(
+			_testOutputPath + "/service/persistence/" + entity.getName() +
+				"PersistenceTest.java");
+
+		if (ejbFile.exists()) {
+			System.out.println("Relocating " + ejbFile);
+
+			ejbFile.delete();
+		}
 	}
 
 	private void _createPersistenceUtil(Entity entity) throws Exception {
@@ -2841,7 +2856,7 @@ public class ServiceBuilder {
 
 		context.put("entity", entity);
 		context.put("methods", methods);
-		context.put("sessionTypeName",_getSessionTypeName(sessionType));
+		context.put("sessionTypeName", _getSessionTypeName(sessionType));
 		context.put("referenceList", _mergeReferenceList(entity));
 
 		context = _putDeprecatedKeys(context, javaClass);
@@ -3268,7 +3283,7 @@ public class ServiceBuilder {
 		}
 	}
 
-	private void _createSQLIndexes() throws IOException {
+	private void _createSQLIndexes() throws Exception {
 		if (!FileUtil.exists(_sqlDir)) {
 			return;
 		}
@@ -3303,7 +3318,8 @@ public class ServiceBuilder {
 					IndexMetadataFactoryUtil.createIndexMetadata(indexSQL);
 
 				_addIndexMetadata(
-					indexMetadataMap, indexMetadata.getTableName(), indexMetadata);
+					indexMetadataMap, indexMetadata.getTableName(),
+					indexMetadata);
 			}
 		}
 
@@ -3533,7 +3549,7 @@ public class ServiceBuilder {
 		FileUtil.write(sqlFile, sb.toString(), true);
 	}
 
-	private void _createSQLTables() throws IOException {
+	private void _createSQLTables() throws Exception {
 		if (!FileUtil.exists(_sqlDir)) {
 			return;
 		}
@@ -3743,11 +3759,28 @@ public class ServiceBuilder {
 		}
 
 		for (DocletTag tag : tags) {
+			String tagValue = tag.getValue();
+
 			sb.append(indentation);
 			sb.append(" * @");
 			sb.append(tag.getName());
 			sb.append(" ");
-			sb.append(tag.getValue());
+
+			if (_currentTplName.equals(_tplServiceSoap)) {
+				if (tagValue.startsWith(PortalException.class.getName())) {
+					tagValue = tagValue.replaceFirst(
+						PortalException.class.getName(), "RemoteException");
+				}
+				else if (tagValue.startsWith(
+							PrincipalException.class.getName())) {
+
+					tagValue = tagValue.replaceFirst(
+						PrincipalException.class.getName(), "RemoteException");
+				}
+			}
+
+			sb.append(tagValue);
+
 			sb.append("\n");
 		}
 
@@ -3855,7 +3888,7 @@ public class ServiceBuilder {
 	private void _getCreateMappingTableIndex(
 			EntityMapping entityMapping,
 			Map<String, List<IndexMetadata>> indexMetadataMap)
-		throws IOException {
+		throws Exception {
 
 		Entity[] entities = new Entity[2];
 
@@ -3887,7 +3920,7 @@ public class ServiceBuilder {
 	}
 
 	private String _getCreateMappingTableSQL(EntityMapping entityMapping)
-		throws IOException {
+		throws Exception {
 
 		Entity[] entities = new Entity[2];
 
@@ -3940,8 +3973,7 @@ public class ServiceBuilder {
 
 					sb.append("DOUBLE");
 				}
-				else if (colType.equals("int") ||
-						 colType.equals("Integer") ||
+				else if (colType.equals("int") || colType.equals("Integer") ||
 						 StringUtil.equalsIgnoreCase(colType, "short")) {
 
 					sb.append("INTEGER");
@@ -4058,8 +4090,7 @@ public class ServiceBuilder {
 
 				sb.append("DOUBLE");
 			}
-			else if (colType.equals("int") ||
-					 colType.equals("Integer") ||
+			else if (colType.equals("int") || colType.equals("Integer") ||
 					 StringUtil.equalsIgnoreCase(colType, "short")) {
 
 				sb.append("INTEGER");
@@ -4211,7 +4242,7 @@ public class ServiceBuilder {
 		StringBundler sb = new StringBundler();
 
 		if (!javaMethod.isConstructor()) {
-			sb.append(getTypeGenericsName(javaMethod.getReturns()));
+			sb.append(getTypeGenericsName(javaMethod.getReturnType()));
 			sb.append(StringPool.SPACE);
 		}
 
@@ -4900,10 +4931,8 @@ public class ServiceBuilder {
 					finderColumnElement.attributeValue("case-sensitive"), true);
 				String finderColComparator = GetterUtil.getString(
 					finderColumnElement.attributeValue("comparator"), "=");
-				String finderColArrayableOperator =
-					GetterUtil.getString(
-						finderColumnElement.attributeValue(
-							"arrayable-operator"));
+				String finderColArrayableOperator = GetterUtil.getString(
+					finderColumnElement.attributeValue("arrayable-operator"));
 
 				EntityColumn col = Entity.getColumn(finderColName, columnList);
 
@@ -5003,6 +5032,8 @@ public class ServiceBuilder {
 
 	private String _processTemplate(String name, Map<String, Object> context)
 		throws Exception {
+
+		_currentTplName = name;
 
 		return StringUtil.strip(FreeMarkerUtil.process(name, context), '\r');
 	}
@@ -5110,7 +5141,7 @@ public class ServiceBuilder {
 				_getSessionTypeName(sessionType) + "ServiceWrapper.java");
 	}
 
-	private void _resolveEntity(Entity entity) throws IOException {
+	private void _resolveEntity(Entity entity) throws Exception {
 		if (entity.isResolved()) {
 			return;
 		}
@@ -5170,6 +5201,7 @@ public class ServiceBuilder {
 	private boolean _build;
 	private long _buildNumber;
 	private boolean _buildNumberIncrement;
+	private String _currentTplName;
 	private List<Entity> _ejbList;
 	private Map<String, EntityMapping> _entityMappings;
 	private Map<String, Entity> _entityPool = new HashMap<>();

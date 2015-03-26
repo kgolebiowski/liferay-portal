@@ -77,7 +77,7 @@ import com.liferay.portal.service.ServiceContextFactory;
 import com.liferay.portal.service.ServiceContextThreadLocal;
 import com.liferay.portal.service.TeamLocalServiceUtil;
 import com.liferay.portal.spring.transaction.TransactionAttributeBuilder;
-import com.liferay.portal.spring.transaction.TransactionalCallableUtil;
+import com.liferay.portal.spring.transaction.TransactionHandlerUtil;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
@@ -134,7 +134,7 @@ public class EditGroupAction extends PortletAction {
 				Callable<Group> groupCallable = new GroupCallable(
 					actionRequest);
 
-				Group group = TransactionalCallableUtil.call(
+				Group group = TransactionHandlerUtil.invoke(
 					_transactionAttribute, groupCallable);
 
 				if (cmd.equals(Constants.ADD)) {
@@ -458,8 +458,7 @@ public class EditGroupAction extends PortletAction {
 			(groupId == themeDisplay.getScopeGroupId()) ||
 			(groupId == getRefererGroupId(themeDisplay))) {
 
-			throw new RequiredGroupException(
-				String.valueOf(groupId), RequiredGroupException.CURRENT_GROUP);
+			throw new RequiredGroupException.MustNotDeleteCurrentGroup(groupId);
 		}
 
 		Group group = GroupServiceUtil.getGroup(groupId);
@@ -838,7 +837,7 @@ public class EditGroupAction extends PortletAction {
 
 	private final TransactionAttribute _transactionAttribute =
 		TransactionAttributeBuilder.build(
-			Propagation.REQUIRED, new Class<?>[]{Exception.class});
+			Propagation.REQUIRED, new Class<?>[] {Exception.class});
 
 	private class GroupCallable implements Callable<Group> {
 

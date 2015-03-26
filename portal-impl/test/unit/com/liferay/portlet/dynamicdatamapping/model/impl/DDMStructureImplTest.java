@@ -44,7 +44,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 	{
 		DDMStructureLocalServiceUtil.class, DDMTemplateLocalServiceUtil.class,
 		LocaleUtil.class
-	})
+	}
+)
 public class DDMStructureImplTest extends BaseDDMTestCase {
 
 	@Before
@@ -73,7 +74,7 @@ public class DDMStructureImplTest extends BaseDDMTestCase {
 
 		Assert.assertEquals(2, actualAvailableLanguageIds.length);
 
-		for (String actualAvailableLanguageId :  actualAvailableLanguageIds) {
+		for (String actualAvailableLanguageId : actualAvailableLanguageIds) {
 			Locale actualAvailableLocale = LocaleUtil.fromLanguageId(
 				actualAvailableLanguageId);
 

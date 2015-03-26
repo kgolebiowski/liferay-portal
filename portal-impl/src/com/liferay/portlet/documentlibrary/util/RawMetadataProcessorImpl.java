@@ -36,10 +36,11 @@ import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryConstants;
+import com.liferay.portlet.documentlibrary.model.DLProcessorConstants;
 import com.liferay.portlet.documentlibrary.service.DLFileEntryMetadataLocalServiceUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureLocalServiceUtil;
-import com.liferay.portlet.dynamicdatamapping.storage.Fields;
+import com.liferay.portlet.dynamicdatamapping.storage.DDMFormValues;
 
 import java.io.File;
 import java.io.InputStream;
@@ -92,6 +93,11 @@ public class RawMetadataProcessorImpl
 	}
 
 	@Override
+	public String getType() {
+		return DLProcessorConstants.RAW_METADATA_PROCESSOR;
+	}
+
+	@Override
 	public void importGeneratedFiles(
 		PortletDataContext portletDataContext, FileEntry fileEntry,
 		FileEntry importedFileEntry, Element fileEntryElement) {
@@ -112,7 +118,7 @@ public class RawMetadataProcessorImpl
 
 	@Override
 	public void saveMetadata(FileVersion fileVersion) throws PortalException {
-		Map<String, Fields> rawMetadataMap = null;
+		Map<String, DDMFormValues> rawMetadataMap = null;
 
 		if (fileVersion instanceof LiferayFileVersion) {
 			try {

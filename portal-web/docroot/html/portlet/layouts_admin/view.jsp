@@ -104,7 +104,7 @@ Group selGroup = layoutsAdminDisplayContext.getSelGroup();
 
 	</c:when>
 	<c:otherwise>
-		<liferay-ui:breadcrumb displayStyle="horizontal" showGuestGroup="<%= false %>" showLayout="<%= false %>" showParentGroups="<%= false %>" showPortletBreadcrumb="<%= true %>" />
+		<liferay-ui:breadcrumb showGuestGroup="<%= false %>" showLayout="<%= false %>" showParentGroups="<%= false %>" showPortletBreadcrumb="<%= true %>" />
 	</c:otherwise>
 </c:choose>
 
@@ -117,7 +117,7 @@ Group selGroup = layoutsAdminDisplayContext.getSelGroup();
 				Group stagingGroup = layoutsAdminDisplayContext.getStagingGroup();
 				%>
 
-				<c:if test="<%= stagingGroup.isStagingGroup() %>">
+				<c:if test="<%= stagingGroup.isStaged() %>">
 
 					<%
 					long layoutSetBranchId = ParamUtil.getLong(request, "layoutSetBranchId");

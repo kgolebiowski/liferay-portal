@@ -19,14 +19,15 @@ import aQute.bnd.annotation.metatype.Meta;
 /**
  * @author Julio Camarero
  */
-@Meta.OCD(id = "com.liferay.ip.geocoder")
+@Meta.OCD(id = "com.liferay.ip.geocoder.internal.IPGeocoderConfiguration")
 public interface IPGeocoderConfiguration {
 
 	@Meta.AD(
 		description =
 			"The path where the database will be stored, with a default path " +
 				"of ${java.io.tmpdir}/liferay/geoip/GeoIPCity.dat",
-		name = "File Path", required = false)
+		name = "File Path", required = false
+	)
 	public String filePath();
 
 	@Meta.AD(
@@ -34,7 +35,8 @@ public interface IPGeocoderConfiguration {
 			"http://cdn.mirrors.liferay.com/geolite.maxmind.com/download/" +
 				"geoip/database/GeoLiteCity.dat.xz",
 		description = "The URL of the Geo IP City database", name = "File URL",
-		required = true)
+		required = false
+	)
 	public String fileURL();
 
 }

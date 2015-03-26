@@ -14,8 +14,8 @@
 
 package com.liferay.taglib.util;
 
+import com.liferay.portal.kernel.provider.PortletProvider;
 import com.liferay.portal.kernel.servlet.taglib.ui.Menu;
-import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.Portlet;
 import com.liferay.taglib.aui.ColumnTag;
@@ -99,9 +99,9 @@ public interface VelocityTaglib {
 	public void breadcrumb() throws Exception;
 
 	public void breadcrumb(
-			String displayStyle, boolean showGuestGroup,
-			boolean showParentGroups, boolean showLayout,
-			boolean showPortletBreadcrumb)
+			long ddmTemplateGroupId, String ddmTemplateKey,
+			boolean showGuestGroup, boolean showParentGroups,
+			boolean showLayout, boolean showPortletBreadcrumb)
 		throws Exception;
 
 	public void discussion(
@@ -128,12 +128,12 @@ public interface VelocityTaglib {
 			String message, long reportedUserId)
 		throws Exception;
 
-	public AssetCategoriesSummaryTag getAssetCategoriesSummaryTag()
+	public AssetCategoriesSummaryTag<?> getAssetCategoriesSummaryTag()
 		throws Exception;
 
 	public AssetLinksTag getAssetLinksTag() throws Exception;
 
-	public AssetTagsSummaryTag getAssetTagsSummaryTag() throws Exception;
+	public AssetTagsSummaryTag<?> getAssetTagsSummaryTag() throws Exception;
 
 	public BreadcrumbTag getBreadcrumbTag() throws Exception;
 
@@ -271,8 +271,7 @@ public interface VelocityTaglib {
 
 	public void journalContentSearch() throws Exception;
 
-	public void journalContentSearch(
-			boolean showListed, String targetPortletId, String type)
+	public void journalContentSearch(boolean showListed, String targetPortletId)
 		throws Exception;
 
 	public void language() throws Exception;
@@ -404,6 +403,11 @@ public interface VelocityTaglib {
 
 	public void runtime(String portletName) throws Exception;
 
+	public void runtime(
+			String portletProviderClassName,
+			PortletProvider.Action portletProviderAction)
+		throws Exception;
+
 	public void runtime(String portletName, String queryString)
 		throws Exception;
 
@@ -412,8 +416,6 @@ public interface VelocityTaglib {
 		throws Exception;
 
 	public void search() throws Exception;
-
-	public void setTemplate(Template template);
 
 	public void sitesDirectory() throws Exception;
 

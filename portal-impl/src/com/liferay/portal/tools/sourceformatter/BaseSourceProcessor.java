@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.xml.SAXReader;
 import com.liferay.portal.util.FileImpl;
 import com.liferay.portal.xml.SAXReaderImpl;
 
@@ -36,6 +37,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -188,6 +195,36 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 		errorMessages.add(message);
 
 		_errorMessagesMap.put(fileName, errorMessages);
+	}
+
+	protected static String stripQuotes(String s, char delimeter) {
+		boolean insideQuotes = false;
+
+		StringBundler sb = new StringBundler();
+
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+
+			if (insideQuotes) {
+				if (c == delimeter) {
+					if ((c > 1) && (s.charAt(i - 1) == CharPool.BACK_SLASH) &&
+						(s.charAt(i - 2) != CharPool.BACK_SLASH)) {
+
+						continue;
+					}
+
+					insideQuotes = false;
+				}
+			}
+			else if (c == delimeter) {
+				insideQuotes = true;
+			}
+			else {
+				sb.append(c);
+			}
+		}
+
+		return sb.toString();
 	}
 
 	protected void checkEmptyCollection(
@@ -1340,7 +1377,15 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 
 			String currentAttributeAndValue = sb.toString();
 
-			String newLine = formatTagAttributeType(
+			String newLine = sortHTMLAttributes(
+				line, value, currentAttributeAndValue);
+
+			if (!newLine.equals(line)) {
+				return sortAttributes(
+					fileName, newLine, lineCount, allowApostropheDelimeter);
+			}
+
+			newLine = formatTagAttributeType(
 				line, tag, currentAttributeAndValue);
 
 			if (!newLine.equals(line)) {
@@ -1390,50 +1435,10 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 		}
 	}
 
-	protected String stripLine(
-		String s, char startDelimeter, char endDelimeter) {
+	protected String sortHTMLAttributes(
+		String line, String value, String attributeAndValue) {
 
-		boolean insideDelimeters = false;
-		int level = 0;
-
-		StringBundler sb = new StringBundler();
-
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-
-			if (insideDelimeters) {
-				if (c == endDelimeter) {
-					if (level > 0) {
-						level -= 1;
-					}
-					else {
-						if ((c > 1) &&
-							(s.charAt(i - 1) == CharPool.BACK_SLASH) &&
-							(s.charAt(i - 2) != CharPool.BACK_SLASH)) {
-
-							continue;
-						}
-
-						insideDelimeters = false;
-					}
-				}
-				else if (c == startDelimeter) {
-					level += 1;
-				}
-			}
-			else if (c == startDelimeter) {
-				insideDelimeters = true;
-			}
-			else {
-				sb.append(c);
-			}
-		}
-
-		return sb.toString();
-	}
-
-	protected String stripQuotes(String s, char delimeter) {
-		return stripLine(s, delimeter, delimeter);
+		return line;
 	}
 
 	protected String stripRedundantParentheses(String s) {
@@ -1526,11 +1531,49 @@ public abstract class BaseSourceProcessor implements SourceProcessor {
 		"[a-z]+[-_a-zA-Z0-9]*");
 	protected static Pattern emptyCollectionPattern = Pattern.compile(
 		"Collections\\.EMPTY_(LIST|MAP|SET)");
-	protected static FileImpl fileUtil = FileImpl.getInstance();
+
+	protected static FileImpl fileUtil = new FileImpl() {
+
+		@Override
+		public String read(File file, boolean raw) throws IOException {
+			byte[] bytes = getBytes(file);
+
+			if (bytes == null) {
+				return null;
+			}
+
+			Charset charset = Charset.forName(StringPool.UTF8);
+
+			CharsetDecoder charsetDecoder = charset.newDecoder();
+
+			CharBuffer charBuffer = null;
+
+			try {
+				charBuffer = charsetDecoder.decode(ByteBuffer.wrap(bytes));
+			}
+			catch (CharacterCodingException cce) {
+				throw new Error(
+					file.getCanonicalPath() +
+						" contains invalid UTF-8 byte sequence",
+					cce);
+			}
+
+			String content = charBuffer.toString();
+
+			if (!raw) {
+				content = StringUtil.replace(
+					content, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
+			}
+
+			return content;
+		}
+
+	};
+
 	protected static Pattern languageKeyPattern = Pattern.compile(
 		"LanguageUtil.(?:get|format)\\([^;%]+|Liferay.Language.get\\('([^']+)");
 	protected static boolean portalSource;
-	protected static SAXReaderImpl saxReaderUtil = SAXReaderImpl.getInstance();
+	protected static final SAXReader saxReader = new SAXReaderImpl();
 	protected static Pattern sessionKeyPattern = Pattern.compile(
 		"SessionErrors.(?:add|contains|get)\\([^;%&|!]+|".concat(
 			"SessionMessages.(?:add|contains|get)\\([^;%&|!]+"),

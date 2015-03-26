@@ -15,6 +15,11 @@
 package com.liferay.portal.util.test;
 
 import com.liferay.portal.NoSuchLayoutException;
+import com.liferay.portal.kernel.test.randomizerbumpers.NumericStringRandomizerBumper;
+import com.liferay.portal.kernel.test.randomizerbumpers.UniqueStringRandomizerBumper;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringPool;
@@ -34,8 +39,6 @@ import com.liferay.portal.service.LayoutServiceUtil;
 import com.liferay.portal.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.test.randomizerbumpers.FriendlyURLRandomizerBumper;
-import com.liferay.portal.test.randomizerbumpers.NumericStringRandomizerBumper;
-import com.liferay.portal.test.randomizerbumpers.UniqueStringRandomizerBumper;
 import com.liferay.portlet.PortletPreferencesFactoryUtil;
 
 import java.util.HashMap;

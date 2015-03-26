@@ -194,6 +194,8 @@ import com.liferay.portlet.RenderResponseImpl;
 import com.liferay.portlet.StateAwareResponseImpl;
 import com.liferay.portlet.UserAttributes;
 import com.liferay.portlet.admin.util.OmniadminUtil;
+import com.liferay.portlet.asset.AssetRendererFactoryRegistryUtil;
+import com.liferay.portlet.asset.model.AssetRendererFactory;
 import com.liferay.portlet.asset.model.AssetTag;
 import com.liferay.portlet.asset.service.AssetTagLocalServiceUtil;
 import com.liferay.portlet.blogs.model.BlogsEntry;
@@ -205,7 +207,6 @@ import com.liferay.portlet.expando.ValueDataException;
 import com.liferay.portlet.expando.model.ExpandoBridge;
 import com.liferay.portlet.expando.model.ExpandoColumnConstants;
 import com.liferay.portlet.journal.NoSuchFeedException;
-import com.liferay.portlet.journal.asset.JournalArticleAssetRendererFactory;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.JournalArticleConstants;
 import com.liferay.portlet.journal.model.JournalFolder;
@@ -218,7 +219,6 @@ import com.liferay.portlet.sites.util.Sites;
 import com.liferay.portlet.sites.util.SitesUtil;
 import com.liferay.portlet.social.model.SocialRelationConstants;
 import com.liferay.portlet.social.util.FacebookUtil;
-import com.liferay.portlet.wiki.model.WikiPage;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceReference;
@@ -279,6 +279,8 @@ import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 import javax.portlet.PreferencesValidator;
 import javax.portlet.RenderRequest;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
 import javax.portlet.StateAwareResponse;
 import javax.portlet.ValidatorException;
 import javax.portlet.WindowState;
@@ -1416,7 +1418,7 @@ public class PortalImpl implements Portal {
 
 		if ((groupFriendlyURL.contains(layoutFriendlyURL) ||
 			 groupFriendlyURL.contains(
-				StringPool.SLASH + layout.getLayoutId())) &&
+				 StringPool.SLASH + layout.getLayoutId())) &&
 			(!layout.isFirstParent() || Validator.isNotNull(parametersURL))) {
 
 			canonicalLayoutFriendlyURL = defaultLayoutFriendlyURL;
@@ -1874,7 +1876,16 @@ public class PortalImpl implements Portal {
 	public long[] getCurrentAndAncestorSiteGroupIds(long groupId)
 		throws PortalException {
 
-		List<Group> groups = getCurrentAndAncestorSiteGroups(groupId);
+		return getCurrentAndAncestorSiteGroupIds(groupId, false);
+	}
+
+	@Override
+	public long[] getCurrentAndAncestorSiteGroupIds(
+			long groupId, boolean checkContentSharingWithChildrenEnabled)
+		throws PortalException {
+
+		List<Group> groups = getCurrentAndAncestorSiteGroups(
+			groupId, checkContentSharingWithChildrenEnabled);
 
 		long[] groupIds = new long[groups.size()];
 
@@ -1891,7 +1902,16 @@ public class PortalImpl implements Portal {
 	public long[] getCurrentAndAncestorSiteGroupIds(long[] groupIds)
 		throws PortalException {
 
-		List<Group> groups = getCurrentAndAncestorSiteGroups(groupIds);
+		return getCurrentAndAncestorSiteGroupIds(groupIds, false);
+	}
+
+	@Override
+	public long[] getCurrentAndAncestorSiteGroupIds(
+			long[] groupIds, boolean checkContentSharingWithChildrenEnabled)
+		throws PortalException {
+
+		List<Group> groups = getCurrentAndAncestorSiteGroups(
+			groupIds, checkContentSharingWithChildrenEnabled);
 
 		long[] currentAndAncestorSiteGroupIds = new long[groups.size()];
 
@@ -1908,6 +1928,14 @@ public class PortalImpl implements Portal {
 	public List<Group> getCurrentAndAncestorSiteGroups(long groupId)
 		throws PortalException {
 
+		return getCurrentAndAncestorSiteGroups(groupId, false);
+	}
+
+	@Override
+	public List<Group> getCurrentAndAncestorSiteGroups(
+			long groupId, boolean checkContentSharingWithChildrenEnabled)
+		throws PortalException {
+
 		Set<Group> groups = new LinkedHashSet<>();
 
 		Group siteGroup = doGetCurrentSiteGroup(groupId);
@@ -1916,7 +1944,9 @@ public class PortalImpl implements Portal {
 			groups.add(siteGroup);
 		}
 
-		groups.addAll(doGetAncestorSiteGroups(groupId, false));
+		groups.addAll(
+			doGetAncestorSiteGroups(
+				groupId, checkContentSharingWithChildrenEnabled));
 
 		return new ArrayList<>(groups);
 	}
@@ -1925,10 +1955,20 @@ public class PortalImpl implements Portal {
 	public List<Group> getCurrentAndAncestorSiteGroups(long[] groupIds)
 		throws PortalException {
 
+		return getCurrentAndAncestorSiteGroups(groupIds, false);
+	}
+
+	@Override
+	public List<Group> getCurrentAndAncestorSiteGroups(
+			long[] groupIds, boolean checkContentSharingWithChildrenEnabled)
+		throws PortalException {
+
 		Set<Group> groups = new LinkedHashSet<>();
 
 		for (int i = 0; i < groupIds.length; i++) {
-			groups.addAll(getCurrentAndAncestorSiteGroups(groupIds[i]));
+			groups.addAll(
+				getCurrentAndAncestorSiteGroups(
+					groupIds[i], checkContentSharingWithChildrenEnabled));
 		}
 
 		return new ArrayList<>(groups);
@@ -2760,7 +2800,8 @@ public class PortalImpl implements Portal {
 			String instanceId = PortletConstants.generateInstanceId();
 
 			defaultAssetPublisherPortletId = PortletConstants.assemblePortletId(
-				PortletKeys.ASSET_PUBLISHER, instanceId);
+				"com_liferay_asset_publisher_web_AssetPublisherPortlet",
+				instanceId);
 		}
 
 		HttpServletRequest request = (HttpServletRequest)requestContext.get(
@@ -2790,11 +2831,15 @@ public class PortalImpl implements Portal {
 		String namespace = getPortletNamespace(defaultAssetPublisherPortletId);
 
 		actualParams.put(
-			namespace + "mvcPath",
-			new String[] {"/html/portlet/asset_publisher/view_content.jsp"});
+			namespace + "mvcPath", new String[] {"/view_content.jsp"});
+
+		AssetRendererFactory assetRendererFactory =
+			AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(
+				JournalArticle.class.getName());
+
 		actualParams.put(
-			namespace + "type",
-			new String[] {JournalArticleAssetRendererFactory.TYPE});
+			namespace + "type", new String[] {assetRendererFactory.getType()});
+
 		actualParams.put(
 			namespace + "urlTitle",
 			new String[] {journalArticle.getUrlTitle()});
@@ -3707,7 +3752,7 @@ public class PortalImpl implements Portal {
 	 */
 	@Deprecated
 	@Override
-	public long getParentGroupId(long groupId) throws PortalException {
+	public long getParentGroupId(long groupId) {
 		return getSiteGroupId(groupId);
 	}
 
@@ -5147,12 +5192,16 @@ public class PortalImpl implements Portal {
 	}
 
 	@Override
-	public long getSiteGroupId(long groupId) throws PortalException {
+	public long getSiteGroupId(long groupId) {
 		if (groupId <= 0) {
 			return 0;
 		}
 
-		Group group = GroupLocalServiceUtil.getGroup(groupId);
+		Group group = GroupLocalServiceUtil.fetchGroup(groupId);
+
+		if (group == null) {
+			return 0;
+		}
 
 		long siteGroupId = groupId;
 
@@ -6020,7 +6069,6 @@ public class PortalImpl implements Portal {
 				"MBMESSAGE$]",
 			"[$CLASS_NAME_ID_COM.LIFERAY.PORTLET.MESSAGEBOARDS.MODEL." +
 				"MBTHREAD$]",
-			"[$CLASS_NAME_ID_COM.LIFERAY.PORTLET.WIKI.MODEL.WIKIPAGE$]",
 			"[$RESOURCE_SCOPE_COMPANY$]", "[$RESOURCE_SCOPE_GROUP$]",
 			"[$RESOURCE_SCOPE_GROUP_TEMPLATE$]",
 			"[$RESOURCE_SCOPE_INDIVIDUAL$]",
@@ -6047,8 +6095,7 @@ public class PortalImpl implements Portal {
 			getClassNameId(DLFileEntry.class), getClassNameId(DLFolder.class),
 			getClassNameId(JournalFolder.class),
 			getClassNameId(MBMessage.class), getClassNameId(MBThread.class),
-			getClassNameId(WikiPage.class), ResourceConstants.SCOPE_COMPANY,
-			ResourceConstants.SCOPE_GROUP,
+			ResourceConstants.SCOPE_COMPANY, ResourceConstants.SCOPE_GROUP,
 			ResourceConstants.SCOPE_GROUP_TEMPLATE,
 			ResourceConstants.SCOPE_INDIVIDUAL,
 			SocialRelationConstants.TYPE_BI_COWORKER,
@@ -6108,6 +6155,16 @@ public class PortalImpl implements Portal {
 
 		_editDiscussionAction.processAction(
 			null, null, portletConfig, actionRequest, actionResponse);
+	}
+
+	@Override
+	public void invokeTaglibDiscussionPagination(
+			PortletConfig portletConfig, ResourceRequest resourceRequest,
+			ResourceResponse resourceResponse)
+		throws IOException, PortletException {
+
+		_editDiscussionAction.serveResource(
+			null, null, portletConfig, resourceRequest, resourceResponse);
 	}
 
 	/**
@@ -6859,15 +6916,7 @@ public class PortalImpl implements Portal {
 			}
 
 			if (status == 0) {
-
-				// LPS-5352
-
-				if (PropsValues.TCK_URL) {
-					status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-				}
-				else {
-					status = HttpServletResponse.SC_BAD_REQUEST;
-				}
+				status = HttpServletResponse.SC_BAD_REQUEST;
 			}
 		}
 
@@ -6881,7 +6930,7 @@ public class PortalImpl implements Portal {
 		}
 		else if ((e instanceof NoSuchLayoutException) &&
 				 Validator.isNotNull(
-					PropsValues.LAYOUT_FRIENDLY_URL_PAGE_NOT_FOUND)) {
+					 PropsValues.LAYOUT_FRIENDLY_URL_PAGE_NOT_FOUND)) {
 
 			redirect = PropsValues.LAYOUT_FRIENDLY_URL_PAGE_NOT_FOUND;
 		}
@@ -7533,7 +7582,11 @@ public class PortalImpl implements Portal {
 
 		long siteGroupId = getSiteGroupId(groupId);
 
-		Group siteGroup = GroupLocalServiceUtil.getGroup(siteGroupId);
+		Group siteGroup = GroupLocalServiceUtil.fetchGroup(siteGroupId);
+
+		if (siteGroup == null) {
+			return groups;
+		}
 
 		for (Group group : siteGroup.getAncestors()) {
 			if (checkContentSharingWithChildrenEnabled &&
@@ -8278,7 +8331,7 @@ public class PortalImpl implements Portal {
 
 			if (local) {
 				portalInetSocketAddressEventListener.
-					portalLocalInetSockAddressConfigured(
+					portalLocalInetSocketAddressConfigured(
 						inetSocketAddress, secure);
 			}
 			else {
@@ -8292,7 +8345,7 @@ public class PortalImpl implements Portal {
 	/**
 	 * @deprecated As of 7.0.0, replaced by {@link
 	 *             #notifyPortalInetSocketAddressEventListeners(
-	 *             InetSocketAddress, boolean)}
+	 *             InetSocketAddress, boolean, boolean)}
 	 */
 	@Deprecated
 	protected void notifyPortalPortEventListeners(int portalPort) {

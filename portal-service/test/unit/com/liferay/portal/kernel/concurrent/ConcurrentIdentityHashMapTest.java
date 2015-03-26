@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.concurrent;
 
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -83,15 +83,14 @@ public class ConcurrentIdentityHashMapTest {
 			new ConcurrentHashMap<>();
 
 		ConcurrentIdentityHashMap<String, Object> concurrentIdentityHashMap =
-			new ConcurrentIdentityHashMap<String, Object>(innerConcurrentMap);
+			new ConcurrentIdentityHashMap<>(innerConcurrentMap);
 
 		Assert.assertSame(
 			innerConcurrentMap, concurrentIdentityHashMap.innerConcurrentMap);
 
 		Map<String, Object> dataMap = createDataMap();
 
-		concurrentIdentityHashMap =
-			new ConcurrentIdentityHashMap<String, Object>(dataMap);
+		concurrentIdentityHashMap = new ConcurrentIdentityHashMap<>(dataMap);
 
 		Assert.assertEquals(dataMap, concurrentIdentityHashMap);
 

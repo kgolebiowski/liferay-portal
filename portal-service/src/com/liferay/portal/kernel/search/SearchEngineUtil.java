@@ -297,33 +297,8 @@ public class SearchEngineUtil {
 		indexWriter.deleteDocuments(searchContext, uids);
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link
-	 *             #deletePortletDocuments(String, long, String, boolean)}
-	 */
-	@Deprecated
-	public static void deletePortletDocuments(long companyId, String portletId)
-		throws SearchException {
-
-		for (String searchEngineId : _searchEngines.keySet()) {
-			deletePortletDocuments(searchEngineId, companyId, portletId, true);
-		}
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #deletePortletDocuments(String, long, String, boolean)}
-	 */
-	@Deprecated
-	public static void deletePortletDocuments(
-			String searchEngineId, long companyId, String portletId)
-		throws SearchException {
-
-		deletePortletDocuments(searchEngineId, companyId, portletId, false);
-	}
-
-	public static void deletePortletDocuments(
-			String searchEngineId, long companyId, String portletId,
+	public static void deleteEntityDocuments(
+			String searchEngineId, long companyId, String className,
 			boolean commitImmediately)
 		throws SearchException {
 
@@ -345,7 +320,32 @@ public class SearchEngineUtil {
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
-		indexWriter.deletePortletDocuments(searchContext, portletId);
+		indexWriter.deleteEntityDocuments(searchContext, className);
+	}
+
+	/**
+	 * @deprecated As of 6.2.0, replaced by {@link
+	 *             #deleteEntityDocuments(String, long, String, boolean)}
+	 */
+	@Deprecated
+	public static void deletePortletDocuments(long companyId, String portletId)
+		throws SearchException {
+
+		for (String searchEngineId : _searchEngines.keySet()) {
+			deleteEntityDocuments(searchEngineId, companyId, portletId, true);
+		}
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link
+	 *             #deleteEntityDocuments(String, long, String, boolean)}
+	 */
+	@Deprecated
+	public static void deletePortletDocuments(
+			String searchEngineId, long companyId, String portletId)
+		throws SearchException {
+
+		deleteEntityDocuments(searchEngineId, companyId, portletId, false);
 	}
 
 	public static String getDefaultSearchEngineId() {
@@ -360,7 +360,7 @@ public class SearchEngineUtil {
 		Set<String> assetEntryClassNames = new HashSet<>();
 
 		for (Indexer indexer : IndexerRegistryUtil.getIndexers()) {
-			for (String className : indexer.getClassNames()) {
+			for (String className : indexer.getSearchClassNames()) {
 				if (!_excludedEntryClassNames.contains(className)) {
 					assetEntryClassNames.add(className);
 				}
@@ -369,6 +369,26 @@ public class SearchEngineUtil {
 
 		return assetEntryClassNames.toArray(
 			new String[assetEntryClassNames.size()]);
+	}
+
+	public static String getQueryString(
+		SearchContext searchContext, Query query) {
+
+		SearchEngine searchEngine = getSearchEngine(
+			searchContext.getSearchEngineId());
+
+		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
+
+		try {
+			return indexSearcher.getQueryString(searchContext, query);
+		}
+		catch (ParseException pe) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to parse query " + query, pe);
+			}
+		}
+
+		return StringPool.BLANK;
 	}
 
 	/**
@@ -786,7 +806,7 @@ public class SearchEngineUtil {
 		throws SearchException {
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Search query " + query.toString());
+			_log.debug("Search query " + getQueryString(searchContext, query));
 		}
 
 		SearchEngine searchEngine = getSearchEngine(

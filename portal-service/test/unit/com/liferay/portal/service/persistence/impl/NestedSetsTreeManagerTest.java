@@ -14,7 +14,7 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.NestedSetsTreeNodeModel;
@@ -545,8 +545,8 @@ public class NestedSetsTreeManagerTest {
 				while (((previousSimpleNestedSetsTreeNode = deque.peek()) !=
 							null) &&
 					   ((nestedSetsTreeNodeRight + 1) ==
-							previousSimpleNestedSetsTreeNode.
-								getNestedSetsTreeNodeRight())) {
+						   previousSimpleNestedSetsTreeNode.
+							   getNestedSetsTreeNodeRight())) {
 
 					sb.append(StringPool.COMMA_AND_SPACE);
 					sb.append(

@@ -352,8 +352,9 @@ body > .lfr-menu-list ul, .active-area-proxy, .entry-display-style .entry-thumbn
 }
 
 .lfr-progress-active .progress-bar-status, .lfr-upload-container .file-uploading .progress-bar .progress {
-	background-size: 40px 40px;
 	$transparent: rgba(255, 255, 255, 0);
+
+	background-size: 40px 40px;
 
 	@include background-image(linear-gradient(-45deg, rgba(255, 255, 255, 0.3) 25%, $transparent 25%, $transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, $transparent 75%, $transparent));
 	@include experimental(animation, progress-bar-stripes 0.5s linear infinite);
@@ -492,6 +493,12 @@ body:first-of-type {
 	}
 }
 
+.mobile.touch body:first-of-type .portlet-content .lfr-icon-actions {
+	.lfr-icon-menu-text, .taglib-text {
+		max-width: 200px;
+	}
+}
+
 .portlet-boundary.yui3-dd-dragging {
 	@include transform(scale(0.8));
 	@include transition(transform 0.3s ease);
@@ -587,5 +594,73 @@ body:first-of-type {
 
 	.progress-wrapper .progressbar {
 		border-radius: 0;
+	}
+}
+
+/* ---------- Switches ---------- */
+
+input.switch {
+	&:focus ~ .switch-bar:before {
+		box-shadow: 0 0 3px #00F;
+	}
+
+	&:empty ~ .switch-bar {
+		&:after, &:before, .switch-icon, .switch-toggle:after, .switch-toggle:before {
+			@include transition(all 100ms ease-in);
+		}
+	}
+}
+
+/* -------- Cover image ---------- */
+
+.taglib-image-selector {
+	.glyphicon-ok {
+		@include transition(opacity 0.2s ease-in-out);
+	}
+
+	.drop-here-info {
+		@include transition(all 0.2s ease-in-out);
+
+		.drop-icons {
+			@include transition(all 0.2s ease-in-out);
+
+			span {
+				@include transition(all 0.3s ease-in-out);
+
+				border-radius: 3px;
+			}
+
+			span:nth-of-type(1) {
+				@include transform(rotate(25deg));
+
+				box-shadow: 5px 4px 0 0 rgba(0, 0, 0, 0.08);
+			}
+
+			span:nth-of-type(2) {
+				@include transform(scale(0.8));
+
+				box-shadow: 0 6px 0 -2px rgba(0, 0, 0, 0.15);
+			}
+
+			span:nth-of-type(3) {
+				@include transform(rotate(-25deg));
+
+				box-shadow: -5px 4px 0 0 rgba(0, 0, 0, 0.08);
+			}
+		}
+	}
+
+	&.drop-active .drop-here-info {
+		span:nth-of-type(1) {
+			@include transform(rotate(-20deg));
+		}
+
+		span:nth-of-type(2) {
+			@include transform(scale(1));
+		}
+
+		span:nth-of-type(3) {
+			@include transform(rotate(15deg));
+		}
 	}
 }

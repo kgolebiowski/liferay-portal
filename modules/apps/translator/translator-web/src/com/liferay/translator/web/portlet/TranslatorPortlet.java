@@ -24,7 +24,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.webcache.WebCacheException;
 import com.liferay.translator.web.configuration.TranslatorConfiguration;
 import com.liferay.translator.web.model.Translation;
-import com.liferay.translator.web.upgrade.TranslatorUpgrade;
+import com.liferay.translator.web.upgrade.TranslatorWebUpgrade;
 import com.liferay.translator.web.util.TranslatorUtil;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Peter Fellwock
  */
 @Component(
-	configurationPid = "com.liferay.translator.web",
+	configurationPid = "com.liferay.translator.web.configuration.TranslatorConfiguration",
 	configurationPolicy = ConfigurationPolicy.OPTIONAL, immediate = true,
 	property = {
 		"com.liferay.portlet.css-class-wrapper=portlet-translator",
@@ -59,7 +59,6 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.private-session-attributes=false",
 		"com.liferay.portlet.remoteable=true",
 		"com.liferay.portlet.render-weight=50",
-		"com.liferay.portlet.struts-path=translator",
 		"com.liferay.portlet.use-default-template=true",
 		"javax.portlet.display-name=Translator",
 		"javax.portlet.expiration-cache=0",
@@ -130,7 +129,8 @@ public class TranslatorPortlet extends MVCPortlet {
 	}
 
 	@Reference(unbind = "-")
-	protected void setTranslatorUpgrade(TranslatorUpgrade translatorUpgrade) {
+	protected void setTranslatorWebUpgrade(
+		TranslatorWebUpgrade translatorWebUpgrade) {
 	}
 
 	private volatile TranslatorConfiguration _translatorConfiguration;

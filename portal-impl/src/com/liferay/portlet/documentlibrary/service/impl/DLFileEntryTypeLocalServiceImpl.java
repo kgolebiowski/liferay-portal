@@ -33,6 +33,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.documentlibrary.DuplicateFileEntryTypeException;
 import com.liferay.portlet.documentlibrary.NoSuchFolderException;
 import com.liferay.portlet.documentlibrary.NoSuchMetadataSetException;
+import com.liferay.portlet.documentlibrary.RequiredFileEntryTypeException;
 import com.liferay.portlet.documentlibrary.model.DLFileEntry;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryMetadata;
 import com.liferay.portlet.documentlibrary.model.DLFileEntryType;
@@ -42,13 +43,14 @@ import com.liferay.portlet.documentlibrary.model.DLFolder;
 import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
 import com.liferay.portlet.documentlibrary.service.base.DLFileEntryTypeLocalServiceBaseImpl;
 import com.liferay.portlet.documentlibrary.util.DLUtil;
-import com.liferay.portlet.dynamicdatamapping.RequiredStructureException;
 import com.liferay.portlet.dynamicdatamapping.StructureDefinitionException;
 import com.liferay.portlet.dynamicdatamapping.io.DDMFormXSDDeserializerUtil;
 import com.liferay.portlet.dynamicdatamapping.model.DDMForm;
+import com.liferay.portlet.dynamicdatamapping.model.DDMFormLayout;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructureConstants;
 import com.liferay.portlet.dynamicdatamapping.storage.StorageType;
+import com.liferay.portlet.dynamicdatamapping.util.DDMUtil;
 import com.liferay.portlet.dynamicdatamapping.util.DDMXMLUtil;
 
 import java.util.ArrayList;
@@ -187,15 +189,15 @@ public class DLFileEntryTypeLocalServiceImpl
 	@Override
 	@SystemEvent(
 		action = SystemEventConstants.ACTION_SKIP,
-		type = SystemEventConstants.TYPE_DELETE)
+		type = SystemEventConstants.TYPE_DELETE
+	)
 	public void deleteFileEntryType(DLFileEntryType dlFileEntryType)
 		throws PortalException {
 
 		if (dlFileEntryPersistence.countByFileEntryTypeId(
 				dlFileEntryType.getFileEntryTypeId()) > 0) {
 
-			throw new RequiredStructureException(
-				RequiredStructureException.REFERENCED_STRUCTURE);
+			throw new RequiredFileEntryTypeException();
 		}
 
 		DDMStructure ddmStructure = ddmStructureLocalService.fetchStructure(
@@ -637,6 +639,9 @@ public class DLFileEntryTypeLocalServiceImpl
 		try {
 			DDMForm ddmForm = getDDMForm(definition);
 
+			DDMFormLayout ddmFormLayout = DDMUtil.getDefaultDDMFormLayout(
+				ddmForm);
+
 			if (ddmStructure == null) {
 				ddmStructure = ddmStructureLocalService.addStructure(
 					userId, groupId,
@@ -644,14 +649,14 @@ public class DLFileEntryTypeLocalServiceImpl
 					classNameLocalService.getClassNameId(
 						DLFileEntryMetadata.class),
 					ddmStructureKey, nameMap, descriptionMap, ddmForm,
-					StorageType.JSON.toString(),
+					ddmFormLayout, StorageType.JSON.toString(),
 					DDMStructureConstants.TYPE_AUTO, serviceContext);
 			}
 			else {
 				ddmStructure = ddmStructureLocalService.updateStructure(
 					ddmStructure.getStructureId(),
 					ddmStructure.getParentStructureId(), nameMap,
-					descriptionMap, ddmForm, serviceContext);
+					descriptionMap, ddmForm, ddmFormLayout, serviceContext);
 			}
 
 			return ddmStructure.getStructureId();

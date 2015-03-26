@@ -15,11 +15,11 @@
 package com.liferay.portlet.blogs;
 
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.portletfilerepository.PortletFileRepositoryUtil;
 import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.test.RandomTestUtil;
 import com.liferay.portlet.blogs.util.test.BlogsTestUtil;
 
 import java.util.ArrayList;
@@ -74,11 +74,9 @@ public class BlogsEntryAttachmentFileEntryHelperUpdateContentTest
 			testUpdateContentWithEmptyBlogsEntryAttachmentFileEntryReferences()
 		throws Exception {
 
-		String content =
-			_blogsEntryAttachmentFileEntryHelper.updateContent(
-				populateContentWithSingleImgTag(_tempFileEntryImgTag),
-				Collections.
-					<BlogsEntryAttachmentFileEntryReference>emptyList());
+		String content = _blogsEntryAttachmentFileEntryHelper.updateContent(
+			populateContentWithSingleImgTag(_tempFileEntryImgTag),
+			Collections.<BlogsEntryAttachmentFileEntryReference>emptyList());
 
 		String expectedContent = populateContentWithSingleImgTag(
 			_tempFileEntryImgTag);
@@ -88,10 +86,9 @@ public class BlogsEntryAttachmentFileEntryHelperUpdateContentTest
 
 	@Test
 	public void testUpdateContentWithMultipleImgTags() throws Exception {
-		String content =
-			_blogsEntryAttachmentFileEntryHelper.updateContent(
-				populateContentWithMultipleImgTags(_tempFileEntryImgTag),
-				_blogsEntryAttachmentFileEntryReferences);
+		String content = _blogsEntryAttachmentFileEntryHelper.updateContent(
+			populateContentWithMultipleImgTags(_tempFileEntryImgTag),
+			_blogsEntryAttachmentFileEntryReferences);
 
 		String expectedContent = populateContentWithMultipleImgTags(
 			"<img src=\"" + _FILE_ENTRY_IMAGE_URL + "\" />");
@@ -101,10 +98,9 @@ public class BlogsEntryAttachmentFileEntryHelperUpdateContentTest
 
 	@Test
 	public void testUpdateContentWithoutImgTag() throws Exception {
-		String content =
-			_blogsEntryAttachmentFileEntryHelper.updateContent(
-				populateContentWithSingleImgTag(StringPool.BLANK),
-				_blogsEntryAttachmentFileEntryReferences);
+		String content = _blogsEntryAttachmentFileEntryHelper.updateContent(
+			populateContentWithSingleImgTag(StringPool.BLANK),
+			_blogsEntryAttachmentFileEntryReferences);
 
 		String expectedContent = populateContentWithSingleImgTag(
 			StringPool.BLANK);
@@ -114,10 +110,9 @@ public class BlogsEntryAttachmentFileEntryHelperUpdateContentTest
 
 	@Test
 	public void testUpdateContentWithSingleImgTag() throws Exception {
-		String content =
-			_blogsEntryAttachmentFileEntryHelper.updateContent(
-				populateContentWithSingleImgTag(_tempFileEntryImgTag),
-				_blogsEntryAttachmentFileEntryReferences);
+		String content = _blogsEntryAttachmentFileEntryHelper.updateContent(
+			populateContentWithSingleImgTag(_tempFileEntryImgTag),
+			_blogsEntryAttachmentFileEntryReferences);
 
 		String expectedContent = populateContentWithSingleImgTag(
 			"<img src=\"" + _FILE_ENTRY_IMAGE_URL + "\" />");

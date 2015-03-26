@@ -19,24 +19,24 @@ import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.SearchContext;
-import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.rule.Sync;
+import com.liferay.portal.kernel.test.rule.SynchronousDestinationTestRule;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.SearchContextTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.Group;
 import com.liferay.portal.model.User;
 import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.test.DeleteAfterTestRun;
-import com.liferay.portal.test.LiferayIntegrationTestRule;
-import com.liferay.portal.test.MainServletTestRule;
-import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationTestRule;
-import com.liferay.portal.util.test.GroupTestUtil;
-import com.liferay.portal.util.test.RandomTestUtil;
-import com.liferay.portal.util.test.SearchContextTestUtil;
-import com.liferay.portal.util.test.ServiceContextTestUtil;
-import com.liferay.portal.util.test.TestPropsValues;
-import com.liferay.portal.util.test.UserTestUtil;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.MainServletTestRule;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMTemplate;
 import com.liferay.portlet.dynamicdatamapping.util.test.DDMStructureTestUtil;
@@ -159,7 +159,7 @@ public class JournalIndexerTest {
 			"Apple Architectural Tablet", true);
 
 		Assert.assertEquals(
-			initialSearchCount  + 2,
+			initialSearchCount + 2,
 			searchCount(_group.getGroupId(), searchContext));
 
 		content = DDMStructureTestUtil.getSampleStructuredContent(
@@ -208,7 +208,7 @@ public class JournalIndexerTest {
 			_group.getGroupId(), folder.getFolderId(), "title", content, true);
 
 		Assert.assertEquals(
-			initialSearchCount  + 1,
+			initialSearchCount + 1,
 			searchCount(
 				_group.getGroupId(), false, WorkflowConstants.STATUS_ANY,
 				searchContext));
@@ -707,6 +707,9 @@ public class JournalIndexerTest {
 			initialSearchCount1 + 1,
 			searchCount(_group.getGroupId(), searchContext1));
 
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
 		if (moveToTrash) {
 			JournalFolderLocalServiceUtil.moveFolderToTrash(
 				TestPropsValues.getUserId(), folder1.getFolderId());
@@ -714,9 +717,6 @@ public class JournalIndexerTest {
 			Assert.assertEquals(
 				initialSearchCount1,
 				searchCount(_group.getGroupId(), searchContext1));
-
-			ServiceContext serviceContext =
-				ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 			article = JournalArticleLocalServiceUtil.getArticle(
 				article.getId());
@@ -728,7 +728,7 @@ public class JournalIndexerTest {
 		else {
 			JournalArticleLocalServiceUtil.moveArticle(
 				_group.getGroupId(), article.getArticleId(),
-				folder2.getFolderId());
+				folder2.getFolderId(), serviceContext);
 		}
 
 		Assert.assertEquals(

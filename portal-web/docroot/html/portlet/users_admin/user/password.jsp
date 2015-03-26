@@ -63,7 +63,7 @@ else {
 	<%= LanguageUtil.format(request, "that-password-does-not-comply-with-the-regular-expression", upe.regex, false) %>
 </liferay-ui:error>
 
-<liferay-ui:error exception="<%= UserPasswordException.MustMatch.class %>" message="the-passwords-you-entered-do-not-match-each-other-please-re-enter-your-password" />
+<liferay-ui:error exception="<%= UserPasswordException.MustMatch.class %>" message="the-passwords-you-entered-do-not-match" />
 <liferay-ui:error exception="<%= UserPasswordException.MustMatchCurrentPassword.class %>" message="the-password-you-entered-for-the-current-password-does-not-match-your-current-password" />
 <liferay-ui:error exception="<%= UserPasswordException.MustNotBeChanged.class %>" message="your-password-cannot-be-changed" />
 
@@ -127,7 +127,7 @@ else {
 	</aui:fieldset>
 
 	<aui:script sandbox="<%= true %>">
-		var customQuestionDiv = $('#<portlet:namespace />customQuestionDiv')
+		var customQuestionDiv = $('#<portlet:namespace />customQuestionDiv');
 
 		$('#<portlet:namespace />reminderQueryQuestion').on(
 			'change',

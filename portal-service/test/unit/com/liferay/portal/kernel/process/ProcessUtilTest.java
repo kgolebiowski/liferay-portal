@@ -16,8 +16,8 @@ package com.liferay.portal.kernel.process;
 
 import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 
 import java.io.IOException;
@@ -200,10 +200,10 @@ public class ProcessUtilTest {
 
 		// Logging
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			LoggingOutputProcessor.class.getName(), Level.INFO);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					LoggingOutputProcessor.class.getName(), Level.INFO)) {
 
-		try {
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
 			Future<ObjectValuePair<Void, Void>> loggingFuture =
@@ -229,9 +229,6 @@ public class ProcessUtilTest {
 				messageRecords.contains(Echo.buildMessage(true, 0)));
 			Assert.assertTrue(
 				messageRecords.contains(Echo.buildMessage(true, 1)));
-		}
-		finally {
-			captureHandler.close();
 		}
 
 		// Collector

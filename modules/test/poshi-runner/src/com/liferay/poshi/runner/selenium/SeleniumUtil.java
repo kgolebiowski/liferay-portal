@@ -14,7 +14,7 @@
 
 package com.liferay.poshi.runner.selenium;
 
-import com.liferay.poshi.runner.PoshiRunnerUtil;
+import com.liferay.poshi.runner.PoshiRunnerGetterUtil;
 import com.liferay.poshi.runner.util.PropsValues;
 
 /**
@@ -43,7 +43,7 @@ public class SeleniumUtil extends PropsValues {
 	}
 
 	private void _startSelenium() {
-		String projectDir = PoshiRunnerUtil.getProjectDir();
+		String projectDir = PoshiRunnerGetterUtil.getProjectDir();
 
 		String portalURL = PORTAL_URL;
 
@@ -87,6 +87,7 @@ public class SeleniumUtil extends PropsValues {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private void _stopSelenium() {
 		if (_selenium != null) {
 			_selenium.stop();

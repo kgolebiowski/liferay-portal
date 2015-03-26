@@ -17,7 +17,8 @@ package com.liferay.portal.kernel.portlet.toolbar;
 import com.liferay.portal.kernel.portlet.toolbar.contributor.PortletToolbarContributor;
 import com.liferay.portal.kernel.portlet.toolbar.contributor.locator.PortletToolbarContributorLocator;
 import com.liferay.portal.kernel.servlet.taglib.ui.Menu;
-import com.liferay.portal.kernel.servlet.taglib.ui.MenuItem;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceReference;
@@ -25,12 +26,17 @@ import com.liferay.registry.ServiceTracker;
 import com.liferay.registry.ServiceTrackerCustomizer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.portlet.PortletRequest;
 
 /**
+ * Provides elements to be rendered in the portlet toolbar. To obtain those
+ * elements, it delegates the task to the {@link
+ * PortletToolbarContributorLocator} instances registered in OSGI.
+ *
  * @author Sergio González
  */
 public class PortletToolbar {
@@ -45,16 +51,14 @@ public class PortletToolbar {
 		_serviceTracker.open();
 	}
 
-	public Menu getContentAdditionMenu(
+	public List<Menu> getPortletTitleMenus(
 		String portletId, PortletRequest portletRequest) {
 
-		Menu menu = new Menu();
+		if ((portletRequest == null) || Validator.isNull(portletId)) {
+			return Collections.emptyList();
+		}
 
-		menu.setCssClass("portlet-options");
-		menu.setDirection("down");
-		menu.setIcon("../aui/plus-sign-2");
-
-		List<MenuItem> contentAdditionMenuItems = new ArrayList<>();
+		List<Menu> portletTitleMenus = new ArrayList<>();
 
 		for (PortletToolbarContributorLocator
 				portletToolbarContributorLocator :
@@ -71,25 +75,19 @@ public class PortletToolbar {
 			for (PortletToolbarContributor portletToolbarContributor :
 					portletToolbarContributors) {
 
-				List<MenuItem> curContentAdditionMenuItems =
-					portletToolbarContributor.getContentAdditionMenuItems(
+				List<Menu> curPortletTitleMenus =
+					portletToolbarContributor.getPortletTitleMenus(
 						portletRequest);
 
-				if (curContentAdditionMenuItems == null) {
+				if (ListUtil.isEmpty(curPortletTitleMenus)) {
 					continue;
 				}
 
-				contentAdditionMenuItems.addAll(curContentAdditionMenuItems);
+				portletTitleMenus.addAll(curPortletTitleMenus);
 			}
 		}
 
-		menu.setMenuItems(contentAdditionMenuItems);
-
-		menu.setMessage("add");
-		menu.setShowArrow(true);
-		menu.setShowWhenSingleIcon(true);
-
-		return menu;
+		return portletTitleMenus;
 	}
 
 	private static final List<PortletToolbarContributorLocator>

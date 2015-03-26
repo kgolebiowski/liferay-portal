@@ -44,6 +44,20 @@
 				base: PATH_JAVASCRIPT + '/liferay/',
 				combine: COMBINE,
 				modules: {
+					'liferay-alloy-editor': {
+						path: 'alloyeditor.js',
+						requires: [
+							'alloy-editor',
+							'liferay-portlet-base'
+						]
+					},
+					'liferay-alloy-editor-source': {
+						path: 'alloyeditor_source.js',
+						requires: [
+							'liferay-fullscreen-source-editor',
+							'liferay-source-editor'
+						]
+					},
 					'liferay-app-view-move': {
 						path: 'app_view_move.js',
 						plugins: {
@@ -379,6 +393,12 @@
 						requires: [
 							'liferay-form',
 							'plugin'
+						]
+					},
+					'liferay-fullscreen-source-editor': {
+						path: 'fullscreen_source_editor.js',
+						requires: [
+							'liferay-source-editor'
 						]
 					},
 					'liferay-history': {
@@ -957,10 +977,6 @@
 		root: PATH_JAVASCRIPT + '/aui/',
 		useBrowserConsole: false
 	};
-
-	if (Browser.isIe() && Browser.getMajorVersion() < 9) {
-		CORE_MODULES.push('aui-base-html5-shiv');
-	}
 
 	CORE_MODULES.push('liferay-browser-selectors');
 })();

@@ -44,6 +44,8 @@ public abstract class BaseWebDriverImpl
 
 		super(webDriver);
 
+		System.setProperty("java.awt.headless", "false");
+
 		String dependenciesDirName =
 			"portal-web//test//functional//com//liferay//portalweb//" +
 				"dependencies//";
@@ -226,6 +228,11 @@ public abstract class BaseWebDriverImpl
 	@Override
 	public void assertNotVisible(String locator) throws Exception {
 		LiferaySeleniumHelper.assertNotVisible(this, locator);
+	}
+
+	@Override
+	public void assertPartialConfirmation(String pattern) throws Exception {
+		LiferaySeleniumHelper.assertPartialConfirmation(this, pattern);
 	}
 
 	@Override

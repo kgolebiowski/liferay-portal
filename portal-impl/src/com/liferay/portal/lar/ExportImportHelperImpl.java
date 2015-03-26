@@ -147,6 +147,30 @@ import org.xml.sax.XMLReader;
  */
 public class ExportImportHelperImpl implements ExportImportHelper {
 
+	@Override
+	public long[] getAllLayoutIds(long groupId, boolean privateLayout) {
+		List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
+			groupId, privateLayout);
+
+		return getLayoutIds(layouts);
+	}
+
+	@Override
+	public Map<Long, Boolean> getAllLayoutIdsMap(
+		long groupId, boolean privateLayout) {
+
+		List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
+			groupId, privateLayout, LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
+
+		Map<Long, Boolean> layoutIdMap = new HashMap<>();
+
+		for (Layout layout : layouts) {
+			layoutIdMap.put(layout.getPlid(), true);
+		}
+
+		return layoutIdMap;
+	}
+
 	/**
 	 * @deprecated As of 7.0.0, moved to {@link
 	 *             ExportImportDateUtil#getCalendar(PortletRequest, String,
@@ -256,7 +280,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			exportPortletControlsMap.get(PortletDataHandlerKeys.PORTLET_DATA),
 			exportPortletControlsMap.get(PortletDataHandlerKeys.PORTLET_SETUP),
 			exportPortletControlsMap.get(
-				PortletDataHandlerKeys.PORTLET_USER_PREFERENCES),
+				PortletDataHandlerKeys.PORTLET_USER_PREFERENCES)
 		};
 	}
 
@@ -331,7 +355,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			importPortletControlsMap.get(PortletDataHandlerKeys.PORTLET_DATA),
 			importPortletControlsMap.get(PortletDataHandlerKeys.PORTLET_SETUP),
 			importPortletControlsMap.get(
-				PortletDataHandlerKeys.PORTLET_USER_PREFERENCES),
+				PortletDataHandlerKeys.PORTLET_USER_PREFERENCES)
 		};
 	}
 
@@ -1008,7 +1032,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 					else if (urlSBString.contains(
 								DATA_HANDLER_PRIVATE_LAYOUT_SET_SECURE_URL) ||
 							 urlSBString.contains(
-								DATA_HANDLER_PRIVATE_LAYOUT_SET_URL)) {
+								 DATA_HANDLER_PRIVATE_LAYOUT_SET_URL)) {
 
 						layoutSet = group.getPrivateLayoutSet();
 					}
@@ -1415,6 +1439,11 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
 				Layout.class);
 
+		String layoutsImportMode = MapUtil.getString(
+			portletDataContext.getParameterMap(),
+			PortletDataHandlerKeys.LAYOUTS_IMPORT_MODE,
+			PortletDataHandlerKeys.LAYOUTS_IMPORT_MODE_MERGE_BY_LAYOUT_UUID);
+
 		while (matcher.find()) {
 			long oldPlid = GetterUtil.getLong(matcher.group(4));
 
@@ -1446,6 +1475,15 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 					StringPool.AT + oldPlid, String.valueOf(oldLayoutId)
 				},
 				new String[] {StringPool.BLANK, String.valueOf(newLayoutId)});
+
+			if ((layout != null) && layout.isPublicLayout() &&
+				layoutsImportMode.equals(
+					PortletDataHandlerKeys.
+						LAYOUTS_IMPORT_MODE_CREATED_FROM_PROTOTYPE)) {
+
+				newLinkToLayout = StringUtil.replace(
+					newLinkToLayout, "private-group", "public");
+			}
 
 			if ((oldGroupId != 0) && (oldGroupId != newGroupId)) {
 				newLinkToLayout = StringUtil.replaceLast(
@@ -1998,16 +2036,14 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 
 			exportCurPortletConfiguration = true;
 
-			exportCurPortletArchivedSetups =
-				MapUtil.getBoolean(
-					parameterMap,
-					PortletDataHandlerKeys.PORTLET_ARCHIVED_SETUPS_ALL);
+			exportCurPortletArchivedSetups = MapUtil.getBoolean(
+				parameterMap,
+				PortletDataHandlerKeys.PORTLET_ARCHIVED_SETUPS_ALL);
 			exportCurPortletSetup = MapUtil.getBoolean(
 				parameterMap, PortletDataHandlerKeys.PORTLET_SETUP_ALL);
-			exportCurPortletUserPreferences =
-				MapUtil.getBoolean(
-					parameterMap,
-					PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL);
+			exportCurPortletUserPreferences = MapUtil.getBoolean(
+				parameterMap,
+				PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL);
 		}
 		else if (rootPortletId != null) {
 			exportCurPortletConfiguration =

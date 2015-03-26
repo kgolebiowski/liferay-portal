@@ -29,6 +29,8 @@ public abstract class BaseMobileDriverImpl
 
 		super(mobileDriver);
 
+		System.setProperty("java.awt.headless", "false");
+
 		_projectDirName = projectDirName;
 	}
 
@@ -174,6 +176,11 @@ public abstract class BaseMobileDriverImpl
 	@Override
 	public void assertNotVisible(String locator) throws Exception {
 		LiferaySeleniumHelper.assertNotVisible(this, locator);
+	}
+
+	@Override
+	public void assertPartialConfirmation(String pattern) throws Exception {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

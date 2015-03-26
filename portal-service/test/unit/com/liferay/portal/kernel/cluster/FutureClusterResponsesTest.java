@@ -14,6 +14,9 @@
 
 package com.liferay.portal.kernel.cluster;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +31,7 @@ import org.junit.Test;
 public class FutureClusterResponsesTest {
 
 	@Test
-	public void testMultipleResponseFailure() {
+	public void testMultipleResponseFailure() throws UnknownHostException {
 		Set<String> clusterNodeIds = new HashSet<>();
 
 		clusterNodeIds.add("1.2.3.4");
@@ -38,17 +41,14 @@ public class FutureClusterResponsesTest {
 		FutureClusterResponses futureClusterResponses =
 			new FutureClusterResponses(clusterNodeIds);
 
-		ClusterNodeResponse clusterNodeResponse1 = new ClusterNodeResponse();
-
-		clusterNodeResponse1.setClusterNode(new ClusterNode("1.2.3.4"));
-
-		futureClusterResponses.addClusterNodeResponse(clusterNodeResponse1);
-
-		ClusterNodeResponse clusterNodeResponse2 = new ClusterNodeResponse();
-
-		clusterNodeResponse2.setClusterNode(new ClusterNode("1.2.3.5"));
-
-		futureClusterResponses.addClusterNodeResponse(clusterNodeResponse2);
+		futureClusterResponses.addClusterNodeResponse(
+			ClusterNodeResponse.createResultClusterNodeResponse(
+				new ClusterNode("1.2.3.4", InetAddress.getLocalHost()), null,
+				null));
+		futureClusterResponses.addClusterNodeResponse(
+			ClusterNodeResponse.createResultClusterNodeResponse(
+				new ClusterNode("1.2.3.5", InetAddress.getLocalHost()), null,
+				null));
 
 		try {
 			futureClusterResponses.get(500, TimeUnit.MILLISECONDS);
@@ -63,7 +63,7 @@ public class FutureClusterResponsesTest {
 	}
 
 	@Test
-	public void testMultipleResponseSuccess() {
+	public void testMultipleResponseSuccess() throws UnknownHostException {
 		Set<String> clusterNodeIds = new HashSet<>();
 
 		clusterNodeIds.add("1.2.3.4");
@@ -73,23 +73,18 @@ public class FutureClusterResponsesTest {
 		FutureClusterResponses futureClusterResponses =
 			new FutureClusterResponses(clusterNodeIds);
 
-		ClusterNodeResponse clusterNodeResponse1 = new ClusterNodeResponse();
-
-		clusterNodeResponse1.setClusterNode(new ClusterNode("1.2.3.4"));
-
-		futureClusterResponses.addClusterNodeResponse(clusterNodeResponse1);
-
-		ClusterNodeResponse clusterNodeResponse2 = new ClusterNodeResponse();
-
-		clusterNodeResponse2.setClusterNode(new ClusterNode("1.2.3.5"));
-
-		futureClusterResponses.addClusterNodeResponse(clusterNodeResponse2);
-
-		ClusterNodeResponse clusterNodeResponse3 = new ClusterNodeResponse();
-
-		clusterNodeResponse3.setClusterNode(new ClusterNode("1.2.3.6"));
-
-		futureClusterResponses.addClusterNodeResponse(clusterNodeResponse3);
+		futureClusterResponses.addClusterNodeResponse(
+			ClusterNodeResponse.createResultClusterNodeResponse(
+				new ClusterNode("1.2.3.4", InetAddress.getLocalHost()), null,
+				null));
+		futureClusterResponses.addClusterNodeResponse(
+			ClusterNodeResponse.createResultClusterNodeResponse(
+				new ClusterNode("1.2.3.5", InetAddress.getLocalHost()), null,
+				null));
+		futureClusterResponses.addClusterNodeResponse(
+			ClusterNodeResponse.createResultClusterNodeResponse(
+				new ClusterNode("1.2.3.6", InetAddress.getLocalHost()), null,
+				null));
 
 		try {
 			futureClusterResponses.get(500, TimeUnit.MILLISECONDS);
@@ -124,7 +119,7 @@ public class FutureClusterResponsesTest {
 	}
 
 	@Test
-	public void testSingleResponseSuccess() {
+	public void testSingleResponseSuccess() throws UnknownHostException {
 		Set<String> clusterNodeIds = new HashSet<>();
 
 		clusterNodeIds.add("test");
@@ -132,11 +127,10 @@ public class FutureClusterResponsesTest {
 		FutureClusterResponses futureClusterResponses =
 			new FutureClusterResponses(clusterNodeIds);
 
-		ClusterNodeResponse clusterNodeResponse = new ClusterNodeResponse();
-
-		clusterNodeResponse.setClusterNode(new ClusterNode("test"));
-
-		futureClusterResponses.addClusterNodeResponse(clusterNodeResponse);
+		futureClusterResponses.addClusterNodeResponse(
+			ClusterNodeResponse.createResultClusterNodeResponse(
+				new ClusterNode("test", InetAddress.getLocalHost()), null,
+				null));
 
 		try {
 			futureClusterResponses.get(500, TimeUnit.MILLISECONDS);

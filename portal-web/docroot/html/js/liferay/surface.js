@@ -129,7 +129,6 @@ AUI.add(
 				var surfaces = instance.getPortletBoundaryIds(instance.getSurfacePortletIds());
 
 				surfaces.push('bottomJS');
-				surfaces.push('breadcrumbs');
 
 				return surfaces;
 			},
@@ -247,6 +246,20 @@ AUI.add(
 				NAME: 'baseScreen',
 
 				prototype: {
+					destructor: function() {
+						var instance = this;
+
+						Surface.EventScreen.superclass.destructor(instance, arguments);
+
+						Liferay.fire(
+							'surfaceScreenDestructor',
+							{
+								app: Surface.app,
+								screen: instance
+							}
+						);
+					},
+
 					activate: function() {
 						var instance = this;
 
@@ -275,20 +288,6 @@ AUI.add(
 						);
 
 						instance.set('dataChannel', {});
-					},
-
-					destructor: function() {
-						var instance = this;
-
-						Surface.EventScreen.superclass.destructor(instance, arguments);
-
-						Liferay.fire(
-							'surfaceScreenDestructor',
-							{
-								app: Surface.app,
-								screen: instance
-							}
-						);
 					},
 
 					flip: function() {

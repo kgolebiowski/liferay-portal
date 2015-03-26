@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.captcha.Captcha;
 import com.liferay.portal.kernel.captcha.CaptchaUtil;
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactoryUtil;
+import com.liferay.portal.kernel.deploy.DeployManagerUtil;
 import com.liferay.portal.kernel.deploy.auto.AutoDeployListener;
 import com.liferay.portal.kernel.deploy.hot.BaseHotDeployListener;
 import com.liferay.portal.kernel.deploy.hot.HotDeployEvent;
@@ -41,6 +42,7 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.lock.LockListener;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.log.SanitizerLogWrapper;
 import com.liferay.portal.kernel.plugin.PluginPackage;
 import com.liferay.portal.kernel.sanitizer.Sanitizer;
 import com.liferay.portal.kernel.search.IndexerPostProcessor;
@@ -532,9 +534,23 @@ public class HookHotDeployListener
 		initLanguageProperties(
 			servletContextName, portletClassLoader, rootElement);
 
-		initCustomJspDir(
-			servletContext, servletContextName, portletClassLoader,
-			hotDeployEvent.getPluginPackage(), rootElement);
+		try {
+			initCustomJspDir(
+				servletContext, servletContextName, portletClassLoader,
+				hotDeployEvent.getPluginPackage(), rootElement);
+		}
+		catch (DuplicateCustomJspException dcje) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(servletContextName + " will be undeployed");
+			}
+
+			HotDeployUtil.fireUndeployEvent(
+				new HotDeployEvent(servletContext, portletClassLoader));
+
+			DeployManagerUtil.undeploy(servletContextName);
+
+			return;
+		}
 
 		initDynamicDataMappingFormFieldRenderers(
 			servletContextName, portletClassLoader, rootElement);
@@ -646,7 +662,7 @@ public class HookHotDeployListener
 	}
 
 	protected void getCustomJsps(
-		ServletContext servletContext, String webDir, String resourcePath,
+		ServletContext servletContext, String resourcePath,
 		List<String> customJsps) {
 
 		Set<String> resourcePaths = servletContext.getResourcePaths(
@@ -658,11 +674,10 @@ public class HookHotDeployListener
 
 		for (String curResourcePath : resourcePaths) {
 			if (curResourcePath.endsWith(StringPool.SLASH)) {
-				getCustomJsps(
-					servletContext, webDir, curResourcePath, customJsps);
+				getCustomJsps(servletContext, curResourcePath, customJsps);
 			}
 			else {
-				String customJsp = webDir + curResourcePath;
+				String customJsp = curResourcePath;
 
 				customJsp = StringUtil.replace(
 					customJsp, StringPool.DOUBLE_SLASH, StringPool.SLASH);
@@ -708,6 +723,16 @@ public class HookHotDeployListener
 			return (BasePersistence<?>)PortletBeanLocatorUtil.locate(
 				servletContextName, beanName);
 		}
+	}
+
+	protected String getPortalJsp(String customJsp, String customJspDir) {
+		if (Validator.isNull(customJsp) || Validator.isNull(customJspDir)) {
+			return null;
+		}
+
+		int pos = customJsp.indexOf(customJspDir);
+
+		return customJsp.substring(pos + customJspDir.length());
 	}
 
 	protected File getPortalJspBackupFile(File portalJspFile) {
@@ -907,9 +932,7 @@ public class HookHotDeployListener
 		String portalWebDir = PortalUtil.getPortalWebDir();
 
 		for (String customJsp : customJsps) {
-			int pos = customJsp.indexOf(customJspDir);
-
-			String portalJsp = customJsp.substring(pos + customJspDir.length());
+			String portalJsp = getPortalJsp(customJsp, customJspDir);
 
 			if (customJspGlobal) {
 				File portalJspFile = new File(portalWebDir + portalJsp);
@@ -925,7 +948,9 @@ public class HookHotDeployListener
 					servletContextName, portalJsp);
 			}
 
-			FileUtil.copyFile(customJsp, portalWebDir + portalJsp);
+			FileUtil.write(
+				portalWebDir + portalJsp,
+				customJspBag.getCustomJspInputStream(customJsp));
 		}
 
 		if (!customJspGlobal) {
@@ -962,30 +987,39 @@ public class HookHotDeployListener
 
 		List<String> customJsps = new ArrayList<>();
 
-		String webDir = servletContext.getRealPath(StringPool.SLASH);
-
-		getCustomJsps(servletContext, webDir, customJspDir, customJsps);
+		getCustomJsps(servletContext, customJspDir, customJsps);
 
 		if (customJsps.isEmpty()) {
 			return;
 		}
 
 		CustomJspBag customJspBag = new CustomJspBag(
-			customJspDir, customJspGlobal, customJsps);
+			servletContext, customJspDir, customJspGlobal, customJsps);
 
 		if (_log.isDebugEnabled()) {
-			StringBundler sb = new StringBundler(customJsps.size() * 2 + 1);
+			StringBundler sb = new StringBundler(customJsps.size() * 2);
 
 			sb.append("Custom JSP files:\n");
 
-			for (String customJsp : customJsps) {
+			for (int i = 0; i < customJsps.size(); i++) {
+				String customJsp = customJsps.get(0);
+
 				sb.append(customJsp);
-				sb.append(StringPool.NEW_LINE);
+
+				if ((i + 1) < customJsps.size()) {
+					sb.append(StringPool.NEW_LINE);
+				}
 			}
 
-			sb.setIndex(sb.index() - 1);
+			Log log = SanitizerLogWrapper.allowCRLF(_log);
 
-			_log.debug(sb.toString());
+			log.debug(sb.toString());
+		}
+
+		if (customJspGlobal && !_customJspBagsMap.isEmpty() &&
+			!_customJspBagsMap.containsKey(servletContextName)) {
+
+			verifyCustomJsps(servletContextName, customJspBag);
 		}
 
 		_customJspBagsMap.put(servletContextName, customJspBag);
@@ -2351,6 +2385,84 @@ public class HookHotDeployListener
 		field.set(null, value);
 	}
 
+	protected void verifyCustomJsps(
+			String servletContextName, CustomJspBag customJspBag)
+		throws DuplicateCustomJspException {
+
+		Set<String> customJsps = new HashSet<>();
+
+		for (String customJsp : customJspBag.getCustomJsps()) {
+			String portalJsp = getPortalJsp(
+				customJsp, customJspBag.getCustomJspDir());
+
+			customJsps.add(portalJsp);
+		}
+
+		Map<String, String> conflictingCustomJsps = new HashMap<>();
+
+		for (Map.Entry<String, CustomJspBag> entry :
+				_customJspBagsMap.entrySet()) {
+
+			CustomJspBag currentCustomJspBag = entry.getValue();
+
+			if (!currentCustomJspBag.isCustomJspGlobal()) {
+				continue;
+			}
+
+			String currentServletContextName = entry.getKey();
+
+			List<String> currentCustomJsps =
+				currentCustomJspBag.getCustomJsps();
+
+			for (String currentCustomJsp : currentCustomJsps) {
+				String currentPortalJsp = getPortalJsp(
+					currentCustomJsp, currentCustomJspBag.getCustomJspDir());
+
+				if (customJsps.contains(currentPortalJsp)) {
+					conflictingCustomJsps.put(
+						currentPortalJsp, currentServletContextName);
+				}
+			}
+		}
+
+		if (conflictingCustomJsps.isEmpty()) {
+			return;
+		}
+
+		_log.error(servletContextName + " conflicts with the installed hooks");
+
+		if (_log.isDebugEnabled()) {
+			Log log = SanitizerLogWrapper.allowCRLF(_log);
+
+			StringBundler sb = new StringBundler(
+				conflictingCustomJsps.size() * 4 + 2);
+
+			sb.append("Colliding JSP files in ");
+			sb.append(servletContextName);
+			sb.append(StringPool.NEW_LINE);
+
+			int i = 0;
+
+			for (Map.Entry<String, String> entry :
+					conflictingCustomJsps.entrySet()) {
+
+				sb.append(entry.getKey());
+				sb.append(" with ");
+				sb.append(entry.getValue());
+
+				if ((i + 1) < conflictingCustomJsps.size()) {
+					sb.append(StringPool.NEW_LINE);
+				}
+
+				i++;
+			}
+
+			log.debug(sb.toString());
+		}
+
+		throw new DuplicateCustomJspException();
+	}
+
 	private static final String[] _PROPS_KEYS_EVENTS = {
 		LOGIN_EVENTS_POST, LOGIN_EVENTS_PRE, LOGOUT_EVENTS_POST,
 		LOGOUT_EVENTS_PRE, SERVLET_SERVICE_EVENTS_POST,
@@ -2392,8 +2504,7 @@ public class HookHotDeployListener
 	};
 
 	private static final String[] _PROPS_VALUES_INTEGER = {
-		"session.max.allowed", "users.image.max.height",
-		"users.image.max.width",
+		"session.max.allowed", "users.image.max.height", "users.image.max.width"
 	};
 
 	private static final String[] _PROPS_VALUES_LONG = {
@@ -2477,9 +2588,10 @@ public class HookHotDeployListener
 	private class CustomJspBag {
 
 		public CustomJspBag(
-			String customJspDir, boolean customJspGlobal,
-			List<String> customJsps) {
+			ServletContext servletContext, String customJspDir,
+			boolean customJspGlobal, List<String> customJsps) {
 
+			_servletContext = servletContext;
 			_customJspDir = customJspDir;
 			_customJspGlobal = customJspGlobal;
 			_customJsps = customJsps;
@@ -2487,6 +2599,10 @@ public class HookHotDeployListener
 
 		public String getCustomJspDir() {
 			return _customJspDir;
+		}
+
+		public InputStream getCustomJspInputStream(String customJsp) {
+			return _servletContext.getResourceAsStream(customJsp);
 		}
 
 		public List<String> getCustomJsps() {
@@ -2500,6 +2616,7 @@ public class HookHotDeployListener
 		private final String _customJspDir;
 		private final boolean _customJspGlobal;
 		private final List<String> _customJsps;
+		private final ServletContext _servletContext;
 
 	}
 

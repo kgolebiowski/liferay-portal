@@ -58,6 +58,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.security.auth.CompanyThreadLocal;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionCacheUtil;
+import com.liferay.portal.security.permission.UserPermissionCheckerBag;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.base.RoleLocalServiceBaseImpl;
 import com.liferay.portal.util.PortalUtil;
@@ -444,7 +445,8 @@ public class RoleLocalServiceImpl extends RoleLocalServiceBaseImpl {
 	@Override
 	@SystemEvent(
 		action = SystemEventConstants.ACTION_SKIP,
-		type = SystemEventConstants.TYPE_DELETE)
+		type = SystemEventConstants.TYPE_DELETE
+	)
 	public Role deleteRole(Role role) throws PortalException {
 		if (role.isSystem() && !CompanyThreadLocal.isDeleteInProcess()) {
 			throw new RequiredRoleException();
@@ -587,9 +589,6 @@ public class RoleLocalServiceImpl extends RoleLocalServiceBaseImpl {
 		else if (group.isOrganization()) {
 			role = getRole(
 				group.getCompanyId(), RoleConstants.ORGANIZATION_USER);
-		}
-		else if (group.isUser() || group.isUserGroup()) {
-			role = getRole(group.getCompanyId(), RoleConstants.POWER_USER);
 		}
 		else {
 			role = getRole(group.getCompanyId(), RoleConstants.USER);
@@ -1018,27 +1017,39 @@ public class RoleLocalServiceImpl extends RoleLocalServiceBaseImpl {
 				return true;
 			}
 
-			ThreadLocalCache<Integer> threadLocalCache =
+			ThreadLocalCache<Boolean> threadLocalCache =
 				ThreadLocalCacheManager.getThreadLocalCache(
 					Lifecycle.REQUEST, RoleLocalServiceImpl.class.getName());
 
 			String key = String.valueOf(role.getRoleId()).concat(
 				String.valueOf(userId));
 
-			Integer value = threadLocalCache.get(key);
+			Boolean value = threadLocalCache.get(key);
 
-			if (value == null) {
-				value = roleFinder.countByR_U(role.getRoleId(), userId);
-
-				threadLocalCache.put(key, value);
+			if (value != null) {
+				return value;
 			}
 
-			if (value > 0) {
-				return true;
+			UserPermissionCheckerBag userPermissionCheckerBag =
+				PermissionCacheUtil.getUserBag(userId);
+
+			if (userPermissionCheckerBag != null) {
+				value = userPermissionCheckerBag.hasRole(role);
 			}
 			else {
-				return false;
+				int count = roleFinder.countByR_U(role.getRoleId(), userId);
+
+				if (count > 0) {
+					value = true;
+				}
+				else {
+					value = false;
+				}
 			}
+
+			threadLocalCache.put(key, value);
+
+			return value;
 		}
 		else {
 			return userPersistence.containsRole(userId, role.getRoleId());

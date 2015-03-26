@@ -18,7 +18,18 @@ import com.liferay.portal.GroupParentException;
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.test.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.rule.Sync;
+import com.liferay.portal.kernel.test.rule.SynchronousDestinationTestRule;
+import com.liferay.portal.kernel.test.util.CompanyTestUtil;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.RoleTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.Company;
@@ -36,26 +47,14 @@ import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.security.permission.PermissionThreadLocal;
-import com.liferay.portal.test.DeleteAfterTestRun;
-import com.liferay.portal.test.LiferayIntegrationTestRule;
-import com.liferay.portal.test.MainServletTestRule;
-import com.liferay.portal.test.Sync;
-import com.liferay.portal.test.SynchronousDestinationTestRule;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.MainServletTestRule;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.test.CompanyTestUtil;
-import com.liferay.portal.util.test.GroupTestUtil;
 import com.liferay.portal.util.test.LayoutTestUtil;
-import com.liferay.portal.util.test.OrganizationTestUtil;
-import com.liferay.portal.util.test.RandomTestUtil;
-import com.liferay.portal.util.test.RoleTestUtil;
-import com.liferay.portal.util.test.ServiceContextTestUtil;
-import com.liferay.portal.util.test.TestPropsValues;
-import com.liferay.portal.util.test.UserTestUtil;
 import com.liferay.portlet.asset.service.AssetTagLocalServiceUtil;
 import com.liferay.portlet.blogs.model.BlogsEntry;
 import com.liferay.portlet.blogs.service.BlogsEntryLocalServiceUtil;
-import com.liferay.portlet.blogs.util.test.BlogsTestUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,7 +74,7 @@ import org.junit.Test;
  * @author Roberto Díaz
  * @author Sergio González
  */
-@Sync
+@Sync(cleanTransaction = true)
 public class GroupServiceTest {
 
 	@ClassRule
@@ -203,8 +202,9 @@ public class GroupServiceTest {
 		User user = UserTestUtil.addUser(
 			RandomTestUtil.randomString(), group.getGroupId());
 
-		BlogsEntry blogsEntry = BlogsTestUtil.addEntry(
-			user.getUserId(), group, true);
+		BlogsEntry blogsEntry = BlogsEntryLocalServiceUtil.addEntry(
+			user.getUserId(), RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), serviceContext);
 
 		Assert.assertNotNull(
 			BlogsEntryLocalServiceUtil.fetchBlogsEntry(
@@ -462,7 +462,7 @@ public class GroupServiceTest {
 	public void testGroupIsGlobalScopeLabel() throws Exception {
 		ThemeDisplay themeDisplay = new ThemeDisplay();
 
-		Group group  = addGroup(false, false, false);
+		Group group = addGroup(false, false, false);
 
 		Company company = CompanyLocalServiceUtil.getCompany(
 			group.getCompanyId());
@@ -594,29 +594,23 @@ public class GroupServiceTest {
 		testSelectableParentSites(true);
 	}
 
-	@Test
+	@Test(expected = GroupParentException.MustNotHaveChildParent.class)
 	public void testSelectFirstChildGroupAsParentSite() throws Exception {
 		Group group1 = GroupTestUtil.addGroup();
 
 		Group group11 = GroupTestUtil.addGroup(group1.getGroupId());
 
-		try {
-			GroupLocalServiceUtil.updateGroup(
-				group1.getGroupId(), group11.getGroupId(), group1.getNameMap(),
-				group1.getDescriptionMap(), group1.getType(),
-				group1.isManualMembership(), group1.getMembershipRestriction(),
-				group1.getFriendlyURL(), group1.isInheritContent(),
-				group1.isActive(), ServiceContextTestUtil.getServiceContext());
+		GroupLocalServiceUtil.updateGroup(
+			group1.getGroupId(), group11.getGroupId(), group1.getNameMap(),
+			group1.getDescriptionMap(), group1.getType(),
+			group1.isManualMembership(), group1.getMembershipRestriction(),
+			group1.getFriendlyURL(), group1.isInheritContent(),
+			group1.isActive(), ServiceContextTestUtil.getServiceContext());
 
-			Assert.fail("A child group cannot be its parent group");
-		}
-		catch (GroupParentException gpe) {
-			Assert.assertEquals(
-				GroupParentException.CHILD_DESCENDANT, gpe.getType());
-		}
+		Assert.fail("A child group cannot be its parent group");
 	}
 
-	@Test
+	@Test(expected = GroupParentException.MustNotHaveChildParent.class)
 	public void testSelectLastChildGroupAsParentSite() throws Exception {
 		Group group1 = GroupTestUtil.addGroup();
 
@@ -626,24 +620,17 @@ public class GroupServiceTest {
 
 		Group group1111 = GroupTestUtil.addGroup(group111.getGroupId());
 
-		try {
-			GroupLocalServiceUtil.updateGroup(
-				group1.getGroupId(), group1111.getGroupId(),
-				group1.getNameMap(), group1.getDescriptionMap(),
-				group1.getType(), group1.isManualMembership(),
-				group1.getMembershipRestriction(), group1.getFriendlyURL(),
-				group1.isInheritContent(), group1.isActive(),
-				ServiceContextTestUtil.getServiceContext());
+		GroupLocalServiceUtil.updateGroup(
+			group1.getGroupId(), group1111.getGroupId(), group1.getNameMap(),
+			group1.getDescriptionMap(), group1.getType(),
+			group1.isManualMembership(), group1.getMembershipRestriction(),
+			group1.getFriendlyURL(), group1.isInheritContent(),
+			group1.isActive(), ServiceContextTestUtil.getServiceContext());
 
-			Assert.fail("A child group cannot be its parent group");
-		}
-		catch (GroupParentException gpe) {
-			Assert.assertEquals(
-				GroupParentException.CHILD_DESCENDANT, gpe.getType());
-		}
+		Assert.fail("A child group cannot be its parent group");
 	}
 
-	@Test
+	@Test(expected = GroupParentException.MustNotHaveStagingParent.class)
 	public void testSelectLiveGroupAsParentSite() throws Exception {
 		Group group = GroupTestUtil.addGroup();
 
@@ -651,44 +638,32 @@ public class GroupServiceTest {
 
 		Assert.assertTrue(group.hasStagingGroup());
 
-		try {
-			Group stagingGroup = group.getStagingGroup();
+		Group stagingGroup = group.getStagingGroup();
 
-			GroupLocalServiceUtil.updateGroup(
-				stagingGroup.getGroupId(), group.getGroupId(),
-				stagingGroup.getNameMap(), stagingGroup.getDescriptionMap(),
-				stagingGroup.getType(), stagingGroup.isManualMembership(),
-				stagingGroup.getMembershipRestriction(),
-				stagingGroup.getFriendlyURL(), stagingGroup.isInheritContent(),
-				stagingGroup.isActive(),
-				ServiceContextTestUtil.getServiceContext());
+		GroupLocalServiceUtil.updateGroup(
+			stagingGroup.getGroupId(), group.getGroupId(),
+			stagingGroup.getNameMap(), stagingGroup.getDescriptionMap(),
+			stagingGroup.getType(), stagingGroup.isManualMembership(),
+			stagingGroup.getMembershipRestriction(),
+			stagingGroup.getFriendlyURL(), stagingGroup.isInheritContent(),
+			stagingGroup.isActive(),
+			ServiceContextTestUtil.getServiceContext());
 
-			Assert.fail("A group cannot have its live group as parent");
-		}
-		catch (GroupParentException gpe) {
-			Assert.assertEquals(
-				GroupParentException.STAGING_DESCENDANT, gpe.getType());
-		}
+		Assert.fail("A group cannot have its live group as parent");
 	}
 
-	@Test
+	@Test(expected = GroupParentException.MustNotBeOwnParent.class)
 	public void testSelectOwnGroupAsParentSite() throws Exception {
 		Group group = GroupTestUtil.addGroup();
 
-		try {
-			GroupLocalServiceUtil.updateGroup(
-				group.getGroupId(), group.getGroupId(), group.getNameMap(),
-				group.getDescriptionMap(), group.getType(),
-				group.isManualMembership(), group.getMembershipRestriction(),
-				group.getFriendlyURL(), group.isInheritContent(),
-				group.isActive(), ServiceContextTestUtil.getServiceContext());
+		GroupLocalServiceUtil.updateGroup(
+			group.getGroupId(), group.getGroupId(), group.getNameMap(),
+			group.getDescriptionMap(), group.getType(),
+			group.isManualMembership(), group.getMembershipRestriction(),
+			group.getFriendlyURL(), group.isInheritContent(), group.isActive(),
+			ServiceContextTestUtil.getServiceContext());
 
-			Assert.fail("A group cannot be its own parent");
-		}
-		catch (GroupParentException gpe) {
-			Assert.assertEquals(
-				GroupParentException.SELF_DESCENDANT, gpe.getType());
-		}
+		Assert.fail("A group cannot be its own parent");
 	}
 
 	@Test

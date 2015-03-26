@@ -215,7 +215,7 @@ public class DLFolderTrashHandler extends DLBaseTrashHandler {
 		if ((dlFolder == null) ||
 			((dlFolder.getParentFolderId() > 0) &&
 			 (DLFolderLocalServiceUtil.fetchFolder(
-				dlFolder.getParentFolderId()) == null))) {
+				 dlFolder.getParentFolderId()) == null))) {
 
 			return false;
 		}
@@ -318,6 +318,7 @@ public class DLFolderTrashHandler extends DLBaseTrashHandler {
 
 			ree.setDuplicateEntryId(duplicateDLFileEntry.getFileEntryId());
 			ree.setOldName(duplicateDLFileEntry.getTitle());
+			ree.setOverridable(false);
 			ree.setTrashEntryId(trashEntryId);
 
 			throw ree;

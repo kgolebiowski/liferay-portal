@@ -50,9 +50,10 @@ import org.tukaani.xz.XZInputStream;
  * @author Julio Camarero
  */
 @Component(
-	configurationPid = "com.liferay.ip.geocoder",
+	configurationPid = "com.liferay.ip.geocoder.internal.IPGeocoderConfiguration",
 	configurationPolicy = ConfigurationPolicy.OPTIONAL, name = "IPGeocoder",
-	service = IPGeocoder.class)
+	service = IPGeocoder.class
+)
 public class IPGeocoderImpl implements IPGeocoder {
 
 	@Activate

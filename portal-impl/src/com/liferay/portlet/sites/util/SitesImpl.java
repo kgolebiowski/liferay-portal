@@ -663,10 +663,6 @@ public class SitesImpl implements Sites {
 			PortletDataHandlerKeys.PORTLET_DATA,
 			new String[] {Boolean.TRUE.toString()});
 		parameterMap.put(
-			PortletDataHandlerKeys.PORTLET_DATA + StringPool.UNDERLINE +
-				PortletKeys.ASSET_CATEGORIES_ADMIN,
-			new String[] {Boolean.TRUE.toString()});
-		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_DATA_ALL,
 			new String[] {Boolean.TRUE.toString()});
 		parameterMap.put(
@@ -839,7 +835,7 @@ public class SitesImpl implements Sites {
 			((companyContentSharingEnabled ==
 				CONTENT_SHARING_WITH_CHILDREN_ENABLED_BY_DEFAULT) &&
 			 (groupContentSharingEnabled ==
-				CONTENT_SHARING_WITH_CHILDREN_DEFAULT_VALUE))) {
+				 CONTENT_SHARING_WITH_CHILDREN_DEFAULT_VALUE))) {
 
 			return true;
 		}
@@ -1477,7 +1473,7 @@ public class SitesImpl implements Sites {
 		}
 		else if (!group.isUser() &&
 				 !GroupPermissionUtil.contains(
-					permissionChecker, group, ActionKeys.UPDATE)) {
+					 permissionChecker, group, ActionKeys.UPDATE)) {
 
 			throw new PrincipalException();
 		}
@@ -1679,10 +1675,6 @@ public class SitesImpl implements Sites {
 			new String[] {Boolean.TRUE.toString()});
 		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_CONFIGURATION_ALL,
-			new String[] {Boolean.TRUE.toString()});
-		parameterMap.put(
-			PortletDataHandlerKeys.PORTLET_DATA + StringPool.UNDERLINE +
-				PortletKeys.ASSET_CATEGORIES_ADMIN,
 			new String[] {Boolean.TRUE.toString()});
 		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_SETUP_ALL,

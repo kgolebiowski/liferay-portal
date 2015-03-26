@@ -15,7 +15,7 @@
 package com.liferay.registry;
 
 import com.liferay.registry.util.StringPlus;
-import com.liferay.registry.util.UnmodifiableMapDictionary;
+import com.liferay.registry.util.UnmodifiableCaseInsensitiveMapDictionary;
 
 import java.lang.reflect.Array;
 
@@ -414,16 +414,8 @@ public class BasicRegistryImpl implements Registry {
 			ServiceTracker<S, T> serviceTracker =
 				(ServiceTracker<S, T>)entry.getKey();
 
-			T service = serviceTracker.getService(basicServiceReference);
-
-			if (service == null) {
-				continue;
-			}
-
-			serviceTracker.remove(basicServiceReference);
-
 			try {
-				serviceTracker.removedService(basicServiceReference, service);
+				serviceTracker.remove(basicServiceReference);
 			}
 			catch (Throwable t) {
 				t.printStackTrace();
@@ -446,7 +438,7 @@ public class BasicRegistryImpl implements Registry {
 		@Override
 		public boolean matches(Map<String, Object> properties) {
 			Dictionary<String, Object> dictionary =
-				new UnmodifiableMapDictionary<String, Object>(properties);
+				new UnmodifiableCaseInsensitiveMapDictionary<>(properties);
 
 			return _filter.match(dictionary);
 		}
@@ -457,7 +449,7 @@ public class BasicRegistryImpl implements Registry {
 				(BasicServiceReference<?>)serviceReference;
 
 			Dictionary<String, Object> dictionary =
-				new UnmodifiableMapDictionary<String, Object>(
+				new UnmodifiableCaseInsensitiveMapDictionary<>(
 					basicServiceReference._properties);
 
 			return _filter.match(dictionary);
@@ -529,7 +521,7 @@ public class BasicRegistryImpl implements Registry {
 
 		@Override
 		public Map<String, Object> getProperties() {
-			return new HashMap<String, Object>(_properties);
+			return new HashMap<>(_properties);
 		}
 
 		@Override

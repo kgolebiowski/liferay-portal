@@ -78,18 +78,7 @@
 				A.Get.css(
 					headerCssPaths,
 					{
-						insertBefore: head.get('firstChild').getDOM(),
-						onSuccess: function(event) {
-							if (Liferay.Browser.isIe()) {
-								A.all('body link').appendTo(head);
-
-								A.all('link.lfr-css-file').each(
-									function(item, index) {
-										document.createStyleSheet(item.get('href'));
-									}
-								);
-							}
-						}
+						insertBefore: head.get('firstChild').getDOM()
 					}
 				);
 			}
@@ -240,7 +229,7 @@
 
 			data.currentURL = Liferay.currentURL;
 
-			return instance.addHTML(
+			instance.addHTML(
 				{
 					beforePortletLoaded: beforePortletLoaded,
 					data: data,

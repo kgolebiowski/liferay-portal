@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -101,12 +102,13 @@ public class DownloadFilesHandler extends BaseHandler {
 
 						Handler<Void> handler = handlers.get(field.getKey());
 
-						JsonNode fieldValue = field.getValue();
+						JsonNode valueJsonNode = field.getValue();
 
-						String exception = handler.getException(
-							fieldValue.textValue());
+						JsonNode exceptionJsonNode = valueJsonNode.get(
+							"exception");
 
-						handler.handlePortalException(exception);
+						handler.handlePortalException(
+							exceptionJsonNode.textValue());
 					}
 
 					break;
@@ -122,9 +124,21 @@ public class DownloadFilesHandler extends BaseHandler {
 					continue;
 				}
 
-				downloadFileHandler.copyFile(
-					syncFile, Paths.get(syncFile.getFilePathName()),
-					zipInputStream);
+				if (_logger.isTraceEnabled()) {
+					_logger.trace(
+						"Handling response {} file path {}",
+							DownloadFileHandler.class.getSimpleName(),
+							syncFile.getFilePathName());
+				}
+
+				try {
+					downloadFileHandler.copyFile(
+						syncFile, Paths.get(syncFile.getFilePathName()),
+						new CloseShieldInputStream(zipInputStream));
+				}
+				catch (Exception e) {
+					_logger.error(e.getMessage(), e);
+				}
 			}
 		}
 		catch (Exception e) {

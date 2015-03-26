@@ -20,10 +20,10 @@ import com.liferay.portal.kernel.nio.intraband.CompletionHandler.CompletionType;
 import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
 import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.GCUtil;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.Time;
 
 import java.io.IOException;
@@ -144,21 +144,20 @@ public class BaseIntrabandTest {
 			ReflectionTestUtil.setFieldValue(
 				AtomicReference.class, "valueOffset", valueOffset + 1);
 
-			FutureTask<Void> registerFutureTask =
-				new FutureTask<>(
-					new Callable<Void>() {
+			FutureTask<Void> registerFutureTask = new FutureTask<>(
+				new Callable<Void>() {
 
-						@Override
-						public Void call() {
-							_mockIntraband.registerDatagramReceiveHandler(
-								_TYPE, datagramReceiveHandler2);
+					@Override
+					public Void call() {
+						_mockIntraband.registerDatagramReceiveHandler(
+							_TYPE, datagramReceiveHandler2);
 
-							Assert.fail();
+						Assert.fail();
 
-							return null;
-						}
+						return null;
+					}
 
-					});
+				});
 
 			Thread registerThread = new Thread(
 				registerFutureTask, "Register Thread");
@@ -262,10 +261,9 @@ public class BaseIntrabandTest {
 
 	@Test
 	public void testHandleReading() throws Exception {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			BaseIntraband.class.getName(), Level.FINE);
-
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					BaseIntraband.class.getName(), Level.FINE)) {
 
 			// IOException, new receive datagram, debug log
 
@@ -816,21 +814,17 @@ public class BaseIntrabandTest {
 				Assert.assertTrue(logRecords.isEmpty());
 			}
 		}
-		finally {
-			captureHandler.close();
-		}
 	}
 
 	@Test
 	public void testHandleWriting() throws Exception {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			BaseIntraband.class.getName(), Level.FINE);
-
 		ChannelContext channelContext = null;
 		Datagram requestDatagram = null;
 		RecordCompletionHandler<Object> recordCompletionHandler = null;
 
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					BaseIntraband.class.getName(), Level.FINE)) {
 
 			// IOException, new send datagram, debug log
 
@@ -915,9 +909,6 @@ public class BaseIntrabandTest {
 
 			Assert.assertNotNull(recordCompletionHandler.getIOException());
 			Assert.assertTrue(logRecords.isEmpty());
-		}
-		finally {
-			captureHandler.close();
 		}
 
 		// Huge datagram write
@@ -1058,10 +1049,9 @@ public class BaseIntrabandTest {
 		Assert.assertTrue(responseWaitingMap.isEmpty());
 		Assert.assertTrue(timeoutSequenceIds.isEmpty());
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			BaseIntraband.class.getName(), Level.WARNING);
-
-		try {
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					BaseIntraband.class.getName(), Level.WARNING)) {
 
 			// Clean up timeout, hit, with log
 
@@ -1173,9 +1163,6 @@ public class BaseIntrabandTest {
 			// Clean up timeout, miss
 
 			_mockIntraband.cleanUpTimeoutResponseWaitingDatagrams();
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 

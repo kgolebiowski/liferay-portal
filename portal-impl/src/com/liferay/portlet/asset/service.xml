@@ -239,8 +239,6 @@
 		<reference package-path="com.liferay.portlet.messageboards" entity="MBMessage" />
 		<reference package-path="com.liferay.portlet.social" entity="SocialActivity" />
 		<reference package-path="com.liferay.portlet.social" entity="SocialActivityCounter" />
-		<reference package-path="com.liferay.portlet.wiki" entity="WikiPage" />
-		<reference package-path="com.liferay.portlet.wiki" entity="WikiPageResource" />
 	</entity>
 	<entity name="AssetLink" local-service="true" remote-service="false">
 
@@ -338,7 +336,7 @@
 		<finder name="GroupId" return-type="Collection">
 			<finder-column name="groupId" arrayable-operator="OR" />
 		</finder>
-		<finder name="G_N" return-type="AssetTag">
+		<finder name="G_N" return-type="AssetTag" unique="true">
 			<finder-column name="groupId" />
 			<finder-column name="name" />
 		</finder>

@@ -133,6 +133,7 @@ public class PortalRequestProcessor extends TilesRequestProcessor {
 		_publicPaths.add(_PATH_PORTAL_RENDER_PORTLET);
 		_publicPaths.add(_PATH_PORTAL_RESILIENCY);
 		_publicPaths.add(_PATH_PORTAL_TCK);
+		_publicPaths.add(_PATH_PORTAL_UPDATE_LANGUAGE);
 		_publicPaths.add(_PATH_PORTAL_UPDATE_PASSWORD);
 		_publicPaths.add(_PATH_PORTAL_VERIFY_EMAIL_ADDRESS);
 		_publicPaths.add(PropsValues.AUTH_LOGIN_DISABLED_PATH);
@@ -449,8 +450,7 @@ public class PortalRequestProcessor extends TilesRequestProcessor {
 	}
 
 	protected boolean isPortletPath(String path) {
-		if ((path != null) &&
-			!path.equals(_PATH_C) &&
+		if ((path != null) && !path.equals(_PATH_C) &&
 			!path.startsWith(_PATH_COMMON) &&
 			!path.contains(_PATH_J_SECURITY_CHECK) &&
 			!path.startsWith(_PATH_PORTAL)) {
@@ -1046,6 +1046,9 @@ public class PortalRequestProcessor extends TilesRequestProcessor {
 
 	private static final String _PATH_PORTAL_UPDATE_EMAIL_ADDRESS =
 		"/portal/update_email_address";
+
+	private static final String _PATH_PORTAL_UPDATE_LANGUAGE =
+		"/portal/update_language";
 
 	private static final String _PATH_PORTAL_UPDATE_PASSWORD =
 		"/portal/update_password";

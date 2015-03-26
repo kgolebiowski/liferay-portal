@@ -19,16 +19,12 @@ import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.model.LayoutPrototype;
 import com.liferay.portal.model.LayoutTypePortlet;
-import com.liferay.portal.model.LayoutTypePortletConstants;
-import com.liferay.portal.service.LayoutLocalServiceUtil;
 import com.liferay.portal.service.LayoutPrototypeLocalServiceUtil;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.util.PortletKeys;
 
 import java.util.HashMap;
 import java.util.List;
@@ -65,10 +61,6 @@ public class AddDefaultLayoutPrototypesAction
 		if (layout == null) {
 			return;
 		}
-
-		addPortletId(layout, PortletKeys.BLOGS, "column-1");
-
-		addPortletId(layout, PortletKeys.RECENT_BLOGGERS, "column-2");
 	}
 
 	protected Layout addLayoutPrototype(
@@ -122,46 +114,10 @@ public class AddDefaultLayoutPrototypesAction
 			List<LayoutPrototype> layoutPrototypes)
 		throws Exception {
 
-		Layout layout = addLayoutPrototype(
+		addLayoutPrototype(
 			companyId, defaultUserId, "layout-prototype-web-content-title",
 			"layout-prototype-web-content-description", "2_columns_ii",
 			layoutPrototypes);
-
-		if (layout == null) {
-			return;
-		}
-
-		addPortletId(layout, PortletKeys.SEARCH, "column-2");
-		String portletId = addPortletId(
-			layout, PortletKeys.ASSET_PUBLISHER, "column-2");
-
-		UnicodeProperties typeSettingsProperties =
-			layout.getTypeSettingsProperties();
-
-		typeSettingsProperties.setProperty(
-			LayoutTypePortletConstants.DEFAULT_ASSET_PUBLISHER_PORTLET_ID,
-			portletId);
-
-		layout = LayoutLocalServiceUtil.updateLayout(
-			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
-			layout.getTypeSettings());
-	}
-
-	protected void addWikiPage(
-			long companyId, long defaultUserId,
-			List<LayoutPrototype> layoutPrototypes)
-		throws Exception {
-
-		Layout layout = addLayoutPrototype(
-			companyId, defaultUserId, "layout-prototype-wiki-title",
-			"layout-prototype-wiki-description", "2_columns_iii",
-			layoutPrototypes);
-
-		if (layout == null) {
-			return;
-		}
-
-		addPortletId(layout, PortletKeys.WIKI, "column-1");
 	}
 
 	protected void doRun(long companyId) throws Exception {
@@ -173,7 +129,6 @@ public class AddDefaultLayoutPrototypesAction
 
 		addBlogPage(companyId, defaultUserId, layoutPrototypes);
 		addWebContentPage(companyId, defaultUserId, layoutPrototypes);
-		addWikiPage(companyId, defaultUserId, layoutPrototypes);
 	}
 
 }

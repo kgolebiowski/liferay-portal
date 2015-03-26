@@ -304,7 +304,8 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 
 		if (className.equals(Group.class.getName())) {
 			if (!site && (liveGroupId == 0) &&
-				!groupKey.equals(GroupConstants.CONTROL_PANEL)) {
+				!groupKey.equals(GroupConstants.CONTROL_PANEL) &&
+				!groupKey.equals(GroupConstants.USER_PERSONAL_PANEL)) {
 
 				throw new IllegalArgumentException();
 			}
@@ -708,6 +709,12 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 						GroupConstants.USER_PERSONAL_SITE_FRIENDLY_URL;
 					site = false;
 				}
+				else if (groupKey.equals(GroupConstants.USER_PERSONAL_PANEL)) {
+					type = GroupConstants.TYPE_SITE_PRIVATE;
+					friendlyURL =
+						GroupConstants.USER_PERSONAL_PANEL_FRIENDLY_URL;
+					site = false;
+				}
 
 				group = groupLocalService.addGroup(
 					defaultUserId, GroupConstants.DEFAULT_PARENT_GROUP_ID,
@@ -736,6 +743,15 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 
 				if (layoutSet.getPageCount() == 0) {
 					addDefaultGuestPublicLayouts(group);
+				}
+			}
+
+			if (group.isUserPersonalPanel()) {
+				LayoutSet layoutSet = layoutSetLocalService.getLayoutSet(
+					group.getGroupId(), true);
+
+				if (layoutSet.getPageCount() == 0) {
+					addUserPersonalPanelLayouts(group);
 				}
 			}
 
@@ -770,17 +786,15 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 				 PortalUtil.isSystemGroup(group.getGroupKey())) &&
 				!CompanyThreadLocal.isDeleteInProcess()) {
 
-				throw new RequiredGroupException(
-					String.valueOf(group.getGroupId()),
-					RequiredGroupException.SYSTEM_GROUP);
+				throw new RequiredGroupException.MustNotDeleteSystemGroup(
+					group.getGroupId());
 			}
 
 			if (groupPersistence.countByC_P_S(
 					group.getCompanyId(), group.getGroupId(), true) > 0) {
 
-				throw new RequiredGroupException(
-					String.valueOf(group.getGroupId()),
-					RequiredGroupException.PARENT_GROUP);
+				throw new RequiredGroupException.MustNotDeleteGroupThatHasChild(
+					group.getGroupId());
 			}
 
 			List<BackgroundTask> backgroundTasks =
@@ -955,6 +969,10 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 					group.getCompanyId(), Group.class.getName(),
 					ResourceConstants.SCOPE_INDIVIDUAL, group.getGroupId());
 			}
+
+			// Trash
+
+			trashEntryLocalService.deleteEntries(group.getGroupId());
 
 			// Workflow
 
@@ -1280,7 +1298,7 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 
 	/**
 	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             Group#getDescriptiveName(Locale)
+	 *             Group#getDescriptiveName(Locale)}
 	 */
 	@Deprecated
 	@Override
@@ -1292,7 +1310,7 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 
 	/**
 	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             Group#getDescriptiveName(Locale)
+	 *             Group#getDescriptiveName(Locale)}
 	 */
 	@Deprecated
 	@Override
@@ -3326,9 +3344,8 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 		if (PortalUtil.isSystemGroup(group.getGroupKey()) &&
 			!groupKey.equals(group.getGroupKey())) {
 
-			throw new RequiredGroupException(
-				String.valueOf(group.getGroupId()),
-				RequiredGroupException.SYSTEM_GROUP);
+			throw new RequiredGroupException.MustNotDeleteSystemGroup(
+				group.getGroupId());
 		}
 
 		validateFriendlyURL(
@@ -3637,10 +3654,6 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 			PortletDataHandlerKeys.PORTLET_DATA,
 			new String[] {Boolean.TRUE.toString()});
 		parameterMap.put(
-			PortletDataHandlerKeys.PORTLET_DATA + StringPool.UNDERLINE +
-				PortletKeys.ASSET_CATEGORIES_ADMIN,
-			new String[] {Boolean.TRUE.toString()});
-		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_DATA_CONTROL_DEFAULT,
 			new String[] {Boolean.TRUE.toString()});
 
@@ -3673,6 +3686,25 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 				}
 			}
 		}
+	}
+
+	protected void addUserPersonalPanelLayouts(Group group)
+		throws PortalException {
+
+		long defaultUserId = userLocalService.getDefaultUserId(
+			group.getCompanyId());
+
+		String friendlyURL = getFriendlyURL(
+			PropsValues.USER_PERSONAL_PANEL_LAYOUT_FRIENDLY_URL);
+
+		ServiceContext serviceContext = new ServiceContext();
+
+		layoutLocalService.addLayout(
+			defaultUserId, group.getGroupId(), true,
+			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID,
+			PropsValues.USER_PERSONAL_PANEL_LAYOUT_NAME, StringPool.BLANK,
+			StringPool.BLANK, LayoutConstants.TYPE_USER_PERSONAL_PANEL, false,
+			friendlyURL, serviceContext);
 	}
 
 	protected void deletePortletData(Group group) throws PortalException {
@@ -3713,7 +3745,7 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 			parentGroupIdEquals = false;
 		}
 
-		params = new LinkedHashMap<String, Object>(params);
+		params = new LinkedHashMap<>(params);
 
 		Boolean active = (Boolean)params.remove("active");
 		List<Long> excludedGroupIds = (List<Long>)params.remove(
@@ -3773,7 +3805,9 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 
 			String groupKey = group.getGroupKey();
 
-			if (groupKey.equals(GroupConstants.CONTROL_PANEL)) {
+			if (groupKey.equals(GroupConstants.CONTROL_PANEL) ||
+				groupKey.equals(GroupConstants.USER_PERSONAL_PANEL)) {
+
 				iterator.remove();
 
 				continue;
@@ -4162,15 +4196,6 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 		Role role = roleLocalService.getRole(
 			group.getCompanyId(), RoleConstants.USER);
 
-		List<Portlet> portlets = portletLocalService.getPortlets(
-			group.getCompanyId(), false, false);
-
-		for (Portlet portlet : portlets) {
-			setRolePermissions(
-				group, role, portlet.getPortletId(),
-				new String[] {ActionKeys.VIEW});
-		}
-
 		setRolePermissions(
 			group, role, Layout.class.getName(),
 			new String[] {ActionKeys.VIEW});
@@ -4185,6 +4210,9 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 
 		role = roleLocalService.getRole(
 			group.getCompanyId(), RoleConstants.POWER_USER);
+
+		List<Portlet> portlets = portletLocalService.getPortlets(
+			group.getCompanyId(), false, false);
 
 		for (Portlet portlet : portlets) {
 			List<String> actions =
@@ -4594,8 +4622,7 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 		}
 
 		if (groupId == parentGroupId) {
-			throw new GroupParentException(
-				GroupParentException.SELF_DESCENDANT);
+			throw new GroupParentException.MustNotBeOwnParent(groupId);
 		}
 
 		Group group = groupPersistence.fetchByPrimaryKey(groupId);
@@ -4610,19 +4637,19 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 			// Prevent circular groupal references
 
 			if (isParentGroup(groupId, parentGroupId)) {
-				throw new GroupParentException(
-					GroupParentException.CHILD_DESCENDANT);
+				throw new GroupParentException.MustNotHaveChildParent(
+					groupId, parentGroupId);
 			}
 		}
 
 		Group parentGroup = groupPersistence.findByPrimaryKey(parentGroupId);
 
 		if (group.isStagingGroup()) {
-			Group stagingGroup = parentGroup.getStagingGroup();
+			long stagingGroupId = parentGroup.getStagingGroup().getGroupId();
 
-			if (groupId == stagingGroup.getGroupId()) {
-				throw new GroupParentException(
-					GroupParentException.STAGING_DESCENDANT);
+			if (groupId == stagingGroupId) {
+				throw new GroupParentException.MustNotHaveStagingParent(
+					groupId, stagingGroupId);
 			}
 		}
 	}

@@ -17,6 +17,8 @@ package com.liferay.taglib.ui.context;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.provider.PortletProvider;
+import com.liferay.portal.kernel.provider.PortletProviderUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -32,7 +34,6 @@ import com.liferay.portal.model.Group;
 import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PortletKeys;
 import com.liferay.portlet.PortletURLFactoryUtil;
 import com.liferay.portlet.asset.AssetRendererFactoryRegistryUtil;
 import com.liferay.portlet.asset.model.AssetEntry;
@@ -307,9 +308,11 @@ public class InputAssetLinksDisplayContext {
 		long controlPanelPlid = PortalUtil.getControlPanelPlid(
 			_themeDisplay.getCompanyId());
 
+		String portletId = PortletProviderUtil.getPortletId(
+			assetRendererFactory.getClassName(), PortletProvider.Action.BROWSE);
+
 		PortletURL portletURL = PortletURLFactoryUtil.create(
-			_request, PortletKeys.ASSET_BROWSER, controlPanelPlid,
-			PortletRequest.RENDER_PHASE);
+			_request, portletId, controlPanelPlid, PortletRequest.RENDER_PHASE);
 
 		long groupId = _getAssetBrowserGroupId(assetRendererFactory);
 
@@ -344,10 +347,9 @@ public class InputAssetLinksDisplayContext {
 		ClassTypeReader classTypeReader =
 			assetRendererFactory.getClassTypeReader();
 
-		List<ClassType> classTypes =
-			classTypeReader.getAvailableClassTypes(
-				PortalUtil.getCurrentAndAncestorSiteGroupIds(groupId),
-				_themeDisplay.getLocale());
+		List<ClassType> classTypes = classTypeReader.getAvailableClassTypes(
+			PortalUtil.getCurrentAndAncestorSiteGroupIds(groupId),
+			_themeDisplay.getLocale());
 
 		if (classTypes.isEmpty()) {
 			return Collections.emptyList();

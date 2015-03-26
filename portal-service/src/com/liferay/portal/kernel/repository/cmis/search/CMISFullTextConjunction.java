@@ -20,7 +20,7 @@ import com.liferay.portal.kernel.util.StringPool;
 import java.util.List;
 
 /**
- * @author Ivan Zaera
+ * @author Iván Zaera
  */
 public class CMISFullTextConjunction extends CMISJunction {
 

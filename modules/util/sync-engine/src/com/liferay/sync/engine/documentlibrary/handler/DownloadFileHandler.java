@@ -15,14 +15,16 @@
 package com.liferay.sync.engine.documentlibrary.handler;
 
 import com.liferay.sync.engine.documentlibrary.event.Event;
+import com.liferay.sync.engine.documentlibrary.util.FileEventUtil;
 import com.liferay.sync.engine.filesystem.Watcher;
-import com.liferay.sync.engine.filesystem.WatcherRegistry;
+import com.liferay.sync.engine.filesystem.util.WatcherRegistry;
 import com.liferay.sync.engine.model.SyncAccount;
 import com.liferay.sync.engine.model.SyncFile;
 import com.liferay.sync.engine.service.SyncAccountService;
 import com.liferay.sync.engine.service.SyncFileService;
 import com.liferay.sync.engine.session.Session;
 import com.liferay.sync.engine.session.SessionManager;
+import com.liferay.sync.engine.util.FileKeyUtil;
 import com.liferay.sync.engine.util.FileUtil;
 import com.liferay.sync.engine.util.IODeltaUtil;
 import com.liferay.sync.engine.util.StreamUtil;
@@ -34,7 +36,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileTime;
 
 import java.util.List;
 
@@ -86,9 +87,54 @@ public class DownloadFileHandler extends BaseHandler {
 			return;
 		}
 
-		SyncFile syncFile = (SyncFile)getParameterValue("syncFile");
+		SyncFile syncFile = getLocalSyncFile();
 
-		SyncFileService.deleteSyncFile(syncFile, false);
+		if ((Boolean)getParameterValue("patch")) {
+			FileEventUtil.downloadFile(getSyncAccountId(), syncFile);
+		}
+		else {
+			SyncFileService.deleteSyncFile(syncFile, false);
+		}
+	}
+
+	@Override
+	public boolean handlePortalException(String exception) throws Exception {
+		SyncFile syncFile = getLocalSyncFile();
+
+		if (exception.equals(
+				"com.liferay.portlet.documentlibrary." +
+					"NoSuchFileVersionException") &&
+			(Boolean)getParameterValue("patch")) {
+
+			if (_logger.isDebugEnabled()) {
+				_logger.debug(
+					"Handling exception {} file path {}", exception,
+					syncFile.getFilePathName());
+			}
+
+			FileEventUtil.downloadFile(getSyncAccountId(), syncFile);
+
+			return true;
+		}
+
+		if (exception.equals(
+				"com.liferay.portlet.documentlibrary." +
+					"NoSuchFileEntryException") ||
+			exception.equals(
+				"com.liferay.portlet.documentlibrary.NoSuchFileException")) {
+
+			if (_logger.isDebugEnabled()) {
+				_logger.debug(
+					"Handling exception {} file path {}", exception,
+					syncFile.getFilePathName());
+			}
+
+			SyncFileService.deleteSyncFile(syncFile, false);
+
+			return true;
+		}
+
+		return super.handlePortalException(exception);
 	}
 
 	protected void copyFile(
@@ -110,7 +156,9 @@ public class DownloadFileHandler extends BaseHandler {
 				syncAccount.getFilePathName(), ".data",
 				String.valueOf(syncFile.getSyncFileId()));
 
-			if (Files.exists(filePath)) {
+			boolean exists = Files.exists(filePath);
+
+			if (exists) {
 				Files.copy(
 					filePath, tempFilePath,
 					StandardCopyOption.REPLACE_EXISTING);
@@ -127,26 +175,25 @@ public class DownloadFileHandler extends BaseHandler {
 
 			downloadedFilePathNames.add(filePath.toString());
 
-			FileTime fileTime = FileTime.fromMillis(syncFile.getModifiedTime());
+			if (exists) {
+				syncFile.setUiEvent(SyncFile.UI_EVENT_DOWNLOADED_UPDATE);
+			}
+			else {
+				syncFile.setUiEvent(SyncFile.UI_EVENT_DOWNLOADED_NEW);
+			}
 
-			Files.setLastModifiedTime(tempFilePath, fileTime);
+			FileKeyUtil.writeFileKey(
+				tempFilePath, String.valueOf(syncFile.getSyncFileId()), false);
+
+			FileUtil.setModifiedTime(tempFilePath, syncFile.getModifiedTime());
 
 			Files.move(
 				tempFilePath, filePath, StandardCopyOption.ATOMIC_MOVE,
 				StandardCopyOption.REPLACE_EXISTING);
 
-			if (syncFile.getFileKey() == null) {
-				syncFile.setUiEvent(SyncFile.UI_EVENT_DOWNLOADED_NEW);
-			}
-			else {
-				syncFile.setUiEvent(SyncFile.UI_EVENT_DOWNLOADED_UPDATE);
-			}
-
 			syncFile.setState(SyncFile.STATE_SYNCED);
 
 			SyncFileService.update(syncFile);
-
-			SyncFileService.updateFileKeySyncFile(syncFile);
 
 			IODeltaUtil.checksums(syncFile);
 		}
@@ -184,7 +231,7 @@ public class DownloadFileHandler extends BaseHandler {
 
 		InputStream inputStream = null;
 
-		SyncFile syncFile = (SyncFile)getParameterValue("syncFile");
+		SyncFile syncFile = getLocalSyncFile();
 
 		if (isUnsynced(syncFile)) {
 			return;

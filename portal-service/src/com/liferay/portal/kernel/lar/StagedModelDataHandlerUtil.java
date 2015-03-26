@@ -150,6 +150,10 @@ public class StagedModelDataHandlerUtil {
 		StagedModelDataHandler<T> stagedModelDataHandler =
 			_getStagedModelDataHandler(stagedModel);
 
+		if (stagedModelDataHandler == null) {
+			return;
+		}
+
 		stagedModelDataHandler.exportStagedModel(
 			portletDataContext, stagedModel);
 	}
@@ -204,11 +208,15 @@ public class StagedModelDataHandlerUtil {
 		boolean missing = GetterUtil.getBoolean(
 			referenceElement.attributeValue("missing"));
 
-		if (missing) {
-			StagedModelDataHandler<?> stagedModelDataHandler =
-				StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
-					stagedModelClassName);
+		StagedModelDataHandler<?> stagedModelDataHandler =
+			StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
+				stagedModelClassName);
 
+		if (stagedModelDataHandler == null) {
+			return;
+		}
+
+		if (missing) {
 			stagedModelDataHandler.importMissingReference(
 				portletDataContext, referenceElement);
 
@@ -244,11 +252,15 @@ public class StagedModelDataHandlerUtil {
 			boolean missing = GetterUtil.getBoolean(
 				referenceElement.attributeValue("missing"));
 
-			if (missing) {
-				StagedModelDataHandler<?> stagedModelDataHandler =
-					StagedModelDataHandlerRegistryUtil.
-						getStagedModelDataHandler(stagedModelClass.getName());
+			StagedModelDataHandler<?> stagedModelDataHandler =
+				StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
+					stagedModelClassName);
 
+			if (stagedModelDataHandler == null) {
+				continue;
+			}
+
+			if (missing) {
 				stagedModelDataHandler.importMissingReference(
 					portletDataContext, referenceElement);
 
@@ -293,6 +305,10 @@ public class StagedModelDataHandlerUtil {
 
 		StagedModelDataHandler<T> stagedModelDataHandler =
 			_getStagedModelDataHandler(stagedModel);
+
+		if (stagedModelDataHandler == null) {
+			return;
+		}
 
 		stagedModelDataHandler.importStagedModel(
 			portletDataContext, stagedModel);

@@ -677,6 +677,42 @@ select:focus {
 	}
 }
 
+/* ---------- Switches ---------- */
+
+input.switch {
+	&:empty ~ .switch-bar {
+		&:before {
+			background-color: #868B96;
+		}
+
+		.switch-toggle {
+			&:after {
+				font-weight: bold;
+			}
+		}
+
+		.button-icon {
+			color: #868B96;
+		}
+	}
+
+	&:checked ~ .switch-bar {
+		&:before {
+			background-color: #34ADAB;
+		}
+
+		.switch-toggle {
+			&:after {
+				color: #34ADAB;
+			}
+		}
+
+		.button-icon {
+			color: #34ADAB;
+		}
+	}
+}
+
 /* ---------- Hidden accessible ---------- */
 
 #banner h2, #banner h3, .site-breadcrumbs h1 {
@@ -785,26 +821,6 @@ body.yui3-skin-sam .yui3-widget-mask {
 	}
 
 	background-color: #FFF;
-}
-
-.ie {
-	#navigation {
-		filter: none;
-	}
-}
-
-.ie6, .ie7 {
-	.panel.panel-default .panel-heading {
-		background: none no-repeat 0 50%;
-
-		&.toggler-header-collapsed {
-			background-image: url(../images/arrows/05_right.png);
-		}
-
-		&.toggler-header-expanded {
-			background-image: url(../images/arrows/05_down.png);
-		}
-	}
 }
 
 /* ---------- Portlet wrapper and icons ---------- */
@@ -1043,7 +1059,7 @@ body.yui3-skin-sam .yui3-widget-mask {
 			.ace_string {
 				color: #FF6C58;
 
-				&.ace_regex {
+				&.ace_regex {
 					color: #F00;
 				}
 			}
@@ -1081,6 +1097,10 @@ body.yui3-skin-sam .yui3-widget-mask {
 	}
 }
 
+.lfr-source-editor-fullscreen .lfr-source-editor {
+	border-width: 0;
+}
+
 /* ---------- Alloy editor ---------- */
 
 .alloy-editor-toolbar {
@@ -1109,6 +1129,7 @@ body.yui3-skin-sam .yui3-widget-mask {
 	border-color: transparent;
 	border-radius: 0;
 	color: #868896;
+	height: 20px;
 
 	&:focus {
 		outline: none;

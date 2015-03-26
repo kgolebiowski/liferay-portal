@@ -42,8 +42,6 @@ import com.liferay.portal.kernel.lar.lifecycle.ExportImportLifecycleManager;
 import com.liferay.portal.kernel.lar.xstream.XStreamAliasRegistryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.Indexer;
-import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -67,7 +65,6 @@ import com.liferay.portal.model.LayoutPrototype;
 import com.liferay.portal.model.LayoutSet;
 import com.liferay.portal.model.LayoutSetPrototype;
 import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.User;
 import com.liferay.portal.model.impl.LayoutImpl;
 import com.liferay.portal.security.permission.PermissionCacheUtil;
 import com.liferay.portal.service.GroupLocalServiceUtil;
@@ -138,7 +135,8 @@ public class LayoutImporter {
 			ExportImportLifecycleManager.fireExportImportLifecycleEvent(
 				ExportImportLifecycleConstants.EVENT_LAYOUT_IMPORT_SUCCEEDED,
 				PortletDataContextFactoryUtil.clonePortletDataContext(
-					portletDataContext));
+					portletDataContext),
+				userId);
 		}
 		catch (Throwable t) {
 			ExportImportLifecycleManager.fireExportImportLifecycleEvent(
@@ -491,7 +489,7 @@ public class LayoutImporter {
 				"layout", ArrayUtil.toStringArray(portletIds), manifestSummary);
 		}
 
-		// Read asset tags, expando tables, locks, and permissions to make them
+		// Read expando tables, locks, and permissions to make them
 		// available to the data handlers through the portlet data context
 
 		if (importPermissions) {
@@ -509,7 +507,6 @@ public class LayoutImporter {
 			_permissionImporter.readPortletDataPermissions(portletDataContext);
 		}
 
-		_portletImporter.readAssetTags(portletDataContext);
 		_portletImporter.readExpandoTables(portletDataContext);
 		_portletImporter.readLocks(portletDataContext);
 
@@ -743,15 +740,6 @@ public class LayoutImporter {
 					PortletDataHandlerKeys.PORTLET_USER_PREFERENCES));
 		}
 
-		if (importPermissions) {
-			if (userId > 0) {
-				Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(
-					User.class);
-
-				indexer.reindex(userId);
-			}
-		}
-
 		// Import services
 
 		if (_log.isDebugEnabled() && !portletElements.isEmpty()) {
@@ -930,13 +918,10 @@ public class LayoutImporter {
 					portletDataContext.getCompanyId());
 			}
 			else if (Validator.isNotNull(scopeLayoutUuid)) {
-				boolean privateLayout = GetterUtil.getBoolean(
-					portletElement.attributeValue("private-layout"));
-
 				Layout scopeLayout =
 					LayoutLocalServiceUtil.getLayoutByUuidAndGroupId(
 						scopeLayoutUuid, portletDataContext.getGroupId(),
-						privateLayout);
+						portletDataContext.isPrivateLayout());
 
 				if (scopeLayout.hasScopeGroup()) {
 					scopeGroup = scopeLayout.getScopeGroup();
@@ -961,6 +946,9 @@ public class LayoutImporter {
 
 				if (group.isStaged() && !group.isStagedRemotely()) {
 					try {
+						boolean privateLayout = GetterUtil.getBoolean(
+							portletElement.attributeValue("private-layout"));
+
 						Layout oldLayout =
 							LayoutLocalServiceUtil.getLayoutByUuidAndGroupId(
 								scopeLayoutUuid,
@@ -1038,6 +1026,13 @@ public class LayoutImporter {
 					layoutElement.attributeValue("layout-id"));
 
 				Layout layout = layouts.get(layoutId);
+
+				// Layout might have not been imported due to a controlled
+				// error. See SitesImpl#addMergeFailFriendlyURLLayout.
+
+				if (layout == null) {
+					continue;
+				}
 
 				int layoutPriority = GetterUtil.getInteger(
 					layoutElement.attributeValue("layout-priority"));
@@ -1140,7 +1135,19 @@ public class LayoutImporter {
 			long sourceGroupId = GetterUtil.getLong(
 				headerElement.attributeValue("group-id"));
 
-			if (group.isCompany() ^ (sourceCompanyGroupId == sourceGroupId)) {
+			boolean companySourceGroup = false;
+
+			if (sourceCompanyGroupId == sourceGroupId) {
+				companySourceGroup = true;
+			}
+			else if (group.isStaged() || group.hasStagingGroup()) {
+				Group sourceGroup = GroupLocalServiceUtil.fetchGroup(
+					sourceGroupId);
+
+				companySourceGroup = sourceGroup.isCompany();
+			}
+
+			if (group.isCompany() ^ companySourceGroup) {
 				throw new LARTypeException(
 					"A company site can only be imported to a company site");
 			}
